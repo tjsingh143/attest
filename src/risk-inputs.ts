@@ -32,15 +32,23 @@ const APP_SCHEMAS = [...APPLICATION_SCHEMAS];
 const EXTRA_RELS = [...APPLICATION_RELATIONS_EXTRA];
 
 /**
- * How a resource is reached from outside the server. Decided by the grant
- * surface and the policy set together, because either one alone gives the wrong
- * answer -- see WP0 D0.13.
+ * EFFECTIVE CURRENT REACHABILITY -- the brief's question, and only that.
+ *
+ * Three values, matching the brief: reachable by anonymous callers, by any
+ * signed-in account, or only server-side. An earlier version of this file
+ * invented a fourth value, `anonymous_latent`, for `realtime.messages`, which
+ * grants `anon` INSERT/SELECT/UPDATE while every policy on it names
+ * `authenticated`.
+ *
+ * That was a scoring level dressed as a measurement. Whether a granted-but-
+ * refused condition deserves its own rung is a rubric decision, and inventing
+ * the rung pre-empted it. The underlying condition is not lost: it is recorded
+ * as two separate booleans below, so the rubric can treat it however it likes
+ * -- or not at all.
  */
 export type ExposureClass =
-  /** A signed-out caller holds a grant and a policy admits them (or RLS is off). */
+  /** A signed-out caller can actually reach data here today. */
   | "anonymous"
-  /** A signed-out caller holds a grant, but no policy admits them. Denied today. */
-  | "anonymous_latent"
   /** Reachable by any signed-in account. */
   | "authenticated"
   /** No client-presentable role reaches it at all. */
@@ -64,6 +72,16 @@ export interface RelationLink {
   readonly onDelete: string;
 }
 
+/** An inferred path from a column to `auth.users`. See `inferredIdentityColumns`. */
+export interface IdentityLinkage {
+  readonly column: string;
+  /** e.g. ["public.profiles", "auth.users"] — the relations traversed, in order. */
+  readonly via: readonly string[];
+  /** Human-readable, e.g. "public.wallets.user_id -> public.profiles.id -> auth.users". */
+  readonly path: string;
+  readonly hops: number;
+}
+
 export interface PolicyFact {
   readonly name: string;
   readonly command: string;
@@ -85,21 +103,35 @@ export interface RiskInput {
   readonly columns: readonly ColumnFact[];
   readonly columnCount: number;
   /**
-   * The columns that say whose row this is.
-   *
-   * Computed transitively, because in Arc21 almost nothing points at
-   * `auth.users` directly: `public.profiles.id` is a foreign key to
-   * `auth.users` AND is `profiles`' own primary key, which makes `profiles` an
-   * identity relation, and the thirty-odd tables carrying `user_id ->
-   * profiles.id` are therefore naming a person too. A one-hop version of this
-   * reported almost every table as having no owner, which is the opposite of
-   * the truth and would have made "blast radius" unscoreable.
+   * Columns holding a foreign key DIRECTLY to `auth.users`. Measured, not
+   * inferred: in Arc21 only `public.profiles.id` qualifies.
    */
-  readonly identityColumns: readonly string[];
+  readonly directIdentityColumns: readonly string[];
+  /**
+   * Columns that reach `auth.users` through one or more intermediate relations.
+   *
+   * This is an INFERENCE, and it is labelled as one everywhere it is reported.
+   * The inference is: a relation whose PRIMARY KEY is a foreign key to an
+   * identity relation is itself an identity relation, so a column pointing at
+   * it is naming a person. In Arc21 that resolves `public.profiles`, and the
+   * thirty-odd tables carrying `user_id -> profiles.id` resolve through it.
+   *
+   * It is kept separate from `directIdentityColumns` rather than merged,
+   * because "this column IS a user id" and "this column reaches a user id in
+   * two hops" are different claims, and a rubric may reasonably weigh a
+   * one-to-one identity table differently from a direct reference. The path is
+   * recorded so the reasoning can be checked rather than trusted.
+   */
+  readonly inferredIdentityColumns: readonly IdentityLinkage[];
 
   // --- "exposure" ---
+  /** Effective current reachability. The brief's three values, nothing more. */
   readonly exposure: ExposureClass;
   readonly exposureDetail: string;
+  /** Raw fact: does a signed-out caller hold any privilege here? */
+  readonly anonymousGrantExists: boolean;
+  /** Raw fact: does any policy currently admit `anon` or `PUBLIC`? */
+  readonly anonymousPolicyPermits: boolean;
   readonly reachableBy: Readonly<Record<string, readonly string[]>>;
   readonly columnReachableBy: Readonly<Record<string, readonly string[]>>;
 
@@ -180,8 +212,14 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
   );
 
   const policiesByResource = new Map<string, PolicyFact[]>();
+  /** Which roles each resource's policies name. Raw fact, used for the two
+   *  anonymous booleans rather than for any classification. */
+  const policyRoles = new Map<string, Set<string>>();
   for (const p of raw.policies) {
     const key = s(p.resource);
+    const named = policyRoles.get(key) ?? new Set<string>();
+    for (const role of Array.isArray(p.roles) ? p.roles.map(String) : []) named.add(role);
+    policyRoles.set(key, named);
     policiesByResource.set(key, [
       ...(policiesByResource.get(key) ?? []),
       {
@@ -210,19 +248,25 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
     pkColumns.set(resource, new Set(cols.filter((c) => c.is_primary_key === true).map((c) => s(c.column_name))));
   }
   const identityRelations = new Set<string>(["auth.users"]);
+  /** For each identity relation, the chain of relations from it to auth.users. */
+  const identityPaths = new Map<string, string[]>([["auth.users", []]]);
   for (let pass = 0; pass < 5; pass++) {
     let grew = false;
     for (const [resource, links] of outbound) {
       if (identityRelations.has(resource)) continue;
       const pk = pkColumns.get(resource) ?? new Set<string>();
       if (pk.size === 0) continue;
-      const isIdentity = links.some(
+      const hit = links.find(
         (l) =>
           identityRelations.has(l.relation) &&
           l.columns.length === pk.size &&
           l.columns.every((c) => pk.has(c)),
       );
-      if (isIdentity) { identityRelations.add(resource); grew = true; }
+      if (hit) {
+        identityRelations.add(resource);
+        identityPaths.set(resource, [hit.relation, ...(identityPaths.get(hit.relation) ?? [])]);
+        grew = true;
+      }
     }
     if (!grew) break;
   }
@@ -249,6 +293,8 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
     }
 
     const exposure = classifyExposure(r.reachableBy, obs, r.rlsEnabled);
+    const anonGrantees = Object.keys(r.reachableBy).filter((g) => g === "anon" || g === "PUBLIC");
+    const namedRoles = policyRoles.get(r.resource) ?? new Set<string>();
 
     const triggers = triggerControls.filter((t) => t.resource === r.resource);
 
@@ -269,14 +315,27 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
         clientWritable: colWritable.get(s(c.column_name)) ?? [],
       })),
       columnCount: cols.length,
-      identityColumns: [
-        ...new Set(
-          links.filter((l) => identityRelations.has(l.relation)).flatMap((l) => l.columns),
-        ),
+      directIdentityColumns: [
+        ...new Set(links.filter((l) => l.relation === "auth.users").flatMap((l) => l.columns)),
       ].sort(),
+      inferredIdentityColumns: links
+        .filter((l) => l.relation !== "auth.users" && identityPaths.has(l.relation))
+        .flatMap((l) => {
+          const tail = identityPaths.get(l.relation) ?? [];
+          const via = [l.relation, ...tail];
+          return l.columns.map((col) => ({
+            column: col,
+            via,
+            path: `${r.resource}.${col} -> ${via.join(" -> ")}`,
+            hops: via.length,
+          }));
+        })
+        .sort((a, b) => a.column.localeCompare(b.column)),
 
       exposure: exposure.klass,
       exposureDetail: exposure.detail,
+      anonymousGrantExists: anonGrantees.length > 0,
+      anonymousPolicyPermits: namedRoles.has("anon") || namedRoles.has("PUBLIC"),
       reachableBy: r.reachableBy,
       columnReachableBy: r.columnReachableBy,
 
@@ -303,9 +362,15 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
   }
 
   const counts: Record<string, number> = { resources: resources.length };
-  for (const e of ["anonymous", "anonymous_latent", "authenticated", "server_only"] as const) {
+  for (const e of ["anonymous", "authenticated", "server_only"] as const) {
     counts[`exposure.${e}`] = resources.filter((r) => r.exposure === e).length;
   }
+  counts.anonymousGrantExists = resources.filter((r) => r.anonymousGrantExists).length;
+  counts.anonymousGrantWithoutPermittingPolicy = resources.filter(
+    (r) => r.anonymousGrantExists && !r.anonymousPolicyPermits,
+  ).length;
+  counts.directIdentity = resources.filter((r) => r.directIdentityColumns.length > 0).length;
+  counts.inferredIdentity = resources.filter((r) => r.inferredIdentityColumns.length > 0).length;
   counts.totalPolicies = resources.reduce((a, r) => a + r.policyCount, 0);
 
   return { inventory, inputs: { resources, counts } };
@@ -327,16 +392,11 @@ function classifyExposure(
   const grantees = Object.keys(reachableBy);
   const anonGrant = grantees.includes("anon") || grantees.includes("PUBLIC");
 
+  // Effective reachability: a grant alone is not reach if no policy admits it.
   if (anonGrant && observations.includes("anon_reachable")) {
     return {
       klass: "anonymous",
       detail: `anon holds ${(reachableBy["anon"] ?? reachableBy["PUBLIC"] ?? []).join(", ")} and a policy names anon or PUBLIC`,
-    };
-  }
-  if (anonGrant && observations.includes("anon_granted_but_no_policy_admits_it")) {
-    return {
-      klass: "anonymous_latent",
-      detail: `anon holds ${(reachableBy["anon"] ?? []).join(", ")}, but no policy admits anon — refused today by row security alone`,
     };
   }
   if (grantees.includes("authenticated")) {

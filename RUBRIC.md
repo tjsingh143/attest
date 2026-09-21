@@ -23,9 +23,9 @@ tables below are complete, and will name exactly what is missing.
 The rubric has three moving parts and they are separable:
 
 1. **Dimensions** — the questions you ask about each resource. The brief fixes which five you
-   must ask. You decide what the possible answers are and what each one is worth.
-2. **Combination** — how five answers become one tier. You decide the weights, the arithmetic,
-   and where the boundaries between High, Medium and Low fall.
+   must ask. You decide what the possible answers are and how they rank.
+2. **Architecture** — how five answers become one tier. The brief requires three tiers and does
+   **not** require numbers; Part 2 sets out the structures available without choosing one.
 3. **Allocation** — what testing each tier earns. The brief supplies the shape of this from
    FDA's Computer Software Assurance model; you decide whether it is right for this system and
    write down why.
@@ -70,12 +70,12 @@ answer to before you write them down:
 - Is a public catalogue (`cosmetics`, `rulesets`) genuinely the lowest category, or does
   *integrity* of a catalogue matter more than its confidentiality?
 
-| Level | What qualifies | Score |
+| Level | What qualifies | Rating |
 |---|---|---|
-| `_____` | _____ | `_` |
-| `_____` | _____ | `_` |
-| `_____` | _____ | `_` |
-| `_____` | _____ | `_` |
+| `_____` | _____ | `_____` |
+| `_____` | _____ | `_____` |
+| `_____` | _____ | `_____` |
+| `_____` | _____ | `_____` |
 
 **Why this dimension is in the rubric** *(your words — you will be asked to restate this)*:
 
@@ -93,15 +93,27 @@ are worth relative to each other, or which resource belongs in which.
 
 **What Attest measured.**
 
-- **Which column says whose row this is.** Computed from foreign keys, transitively: almost
-  nothing in Arc21 points at `auth.users` directly, but `public.profiles.id` is a foreign key
-  to `auth.users` *and* is `profiles`' own primary key, so `profiles` is an identity relation
-  and the thirty-odd tables carrying `user_id → profiles.id` are naming a person too. 28 of 40
-  resources have an owner column; 12 do not.
+- **Which column says whose row this is** — and whether that is a measurement or an inference,
+  kept apart:
+  - **Direct** (7 resources): a foreign key straight to `auth.users`. Measured.
+  - **Inferred** (21 resources): the column reaches `auth.users` through an intermediate
+    relation, and the full path is recorded — e.g.
+    `public.wallets.user_id -> public.profiles -> auth.users`. The inference is that a relation
+    whose *primary key* is a foreign key to an identity relation is itself an identity relation.
+    You may treat a two-hop linkage exactly like a direct one; that is a reasonable reading. It
+    is your call to make rather than the scaffold's, so the two are reported separately and each
+    path is printed so the reasoning can be checked rather than trusted.
+  - **Neither** (12 resources): no identity linkage at all — catalogues, `realtime.messages`,
+    `tournament_matches`, the `private` engine-state tables.
 - **How many relations depend on this one.** `public.profiles` is depended on by 24. Most
   resources are depended on by none.
 - **Which SECURITY DEFINER functions name it** — the server-side paths that reach a resource
   regardless of the caller's policies.
+
+Worth knowing while you score: Arc21 is **not consistent** about which it uses. Seven tables
+carry a foreign key straight to `auth.users`; twenty-one go through `profiles`. That is an
+observation about the schema, not a finding, and it is stated here only because a rubric that
+treated the two differently would be rating an inconsistency rather than a risk.
 
 **What you decide.** Which resource is which, and what each level scores. The hard cases are
 the ones where the structure does not settle it:
@@ -113,11 +125,11 @@ the ones where the structure does not settle it:
 - `public.rulesets` has no owner and 6 dependants, and is a read-only catalogue. Is a
   catalogue "all users" or is it its own thing?
 
-| Level *(from the brief)* | What qualifies | Score |
+| Level *(from the brief)* | What qualifies | Rating |
 |---|---|---|
-| one user | _____ | `_` |
-| all users | _____ | `_` |
-| shared state | _____ | `_` |
+| one user | _____ | `_____` |
+| all users | _____ | `_____` |
+| shared state | _____ | `_____` |
 
 **Why this dimension is in the rubric** *(your words)*:
 
@@ -150,11 +162,11 @@ and the balance no longer reconciles.
 - Arc21's invariant is that balance and ledger must reconcile. Does a resource participating in
   that invariant get its own level?
 
-| Level | What qualifies | Score |
+| Level | What qualifies | Rating |
 |---|---|---|
-| `_____` | _____ | `_` |
-| `_____` | _____ | `_` |
-| `_____` | _____ | `_` |
+| `_____` | _____ | `_____` |
+| `_____` | _____ | `_____` |
+| `_____` | _____ | `_____` |
 
 **Why this dimension is in the rubric** *(your words)*:
 
@@ -180,11 +192,11 @@ actually possible in practice. Those are properties of an operating environment 
 have. If you score this dimension partly on facts that are not in the database, say so here, or
 the score will look more evidenced than it is.
 
-| Level | What qualifies | Score |
+| Level | What qualifies | Rating |
 |---|---|---|
-| `_____` | _____ | `_` |
-| `_____` | _____ | `_` |
-| `_____` | _____ | `_` |
+| `_____` | _____ | `_____` |
+| `_____` | _____ | `_____` |
+| `_____` | _____ | `_____` |
 
 **Why this dimension is in the rubric** *(your words)*:
 
@@ -194,47 +206,56 @@ _____
 
 ## Dimension 5 — Exposure
 
-**The question.** Who can reach this at all: anonymous callers, any signed-in account, or only
-the server?
+**The question, in the brief's own terms.** Is this resource **effectively reachable** by
+anonymous users, by any authenticated user, or only server-side?
 
-**This is the one dimension where Attest has already done the classification**, because it is
-decided by the catalogs rather than by opinion. The classification uses the grant surface and
-the policy set **together**, because either one alone gives the wrong answer.
+**This is the one dimension where Attest has already done the classification**, because
+effective reachability is decided by the catalogs rather than by opinion. It uses the grant
+surface and the policy set together, because either alone gives the wrong answer: a grant with
+no policy admitting it is not reach.
 
 Measured, across all 40 resources:
 
-| Class | Count | Meaning |
-|---|---:|---|
-| anonymous | 4 | a signed-out caller holds a grant **and** a policy names `anon` or `PUBLIC` |
-| anonymous (latent) | 1 | a signed-out caller holds a grant, and **no** policy admits them |
-| authenticated | 29 | reachable by any signed-in account |
-| server-only | 6 | no client-presentable role reaches it at all |
+| Effective reachability | Count |
+|---|---:|
+| anonymous | 4 |
+| authenticated | 30 |
+| server-only | 6 |
 
-**A decision you have to make, and it is not cosmetic.** The brief names three levels:
-anonymous, authenticated, server-side. Attest found **four** classes, because
-`realtime.messages` does not fit any of the three: `anon` holds `INSERT`, `SELECT` and `UPDATE`
-on it, and all three of Arc21's policies on it name `authenticated`. So it is granted to
-anonymous callers and refused to them. It is denied today, by row-level security alone, and the
-grant becomes live the moment a permissive policy naming `anon` is added or RLS is switched off
-on that table.
+### The latent condition, kept as facts rather than as a level
 
-You must decide whether that is:
+An earlier draft invented a fourth level, "anonymous (latent)", for the one resource that
+carries an anonymous grant no policy admits. That was a scoring decision dressed as a
+measurement, and it has been removed. The underlying condition is not lost — it is recorded as
+two separate booleans on every resource:
 
-- its own level, scoring between anonymous and authenticated; or
-- folded into `anonymous` — treating a latent grant as exposure, on the grounds that only one
-  policy change stands between it and reality; or
-- folded into `authenticated` — treating today's effective reachability as the thing that
-  matters.
+| Fact | Count |
+|---|---:|
+| Resources where an anonymous grant exists | 5 |
+| …of those, where no policy currently permits anonymous access | **1** |
 
-Whichever you choose, it goes in `DECISIONS.md`, because it is exactly the kind of call
-somebody will want to argue with.
+The one is `realtime.messages`, which reads:
 
-| Level | What qualifies | Score |
+- effective current reachability: **authenticated**
+- anonymous grant exists: **yes** (`anon` holds `INSERT`, `SELECT`, `UPDATE`)
+- anonymous policy currently permits access: **no** (all three policies name `authenticated`)
+
+**What you do with that is a rubric decision and it is yours.** You might score exposure purely
+on effective reachability and ignore the booleans; you might use the latent condition as a
+modifier or a floor; you might treat it as something the findings narrative mentions and the
+score does not. All three are defensible. Whichever you choose goes in `DECISIONS.md`, because
+somebody will ask.
+
+| Level *(from the brief)* | What qualifies | Rating |
 |---|---|---|
-| anonymous | _____ | `_` |
-| anonymous (latent) | _____ | `_` |
-| authenticated | _____ | `_` |
-| server-only | _____ | `_` |
+| anonymous | _____ | `_____` |
+| authenticated | _____ | `_____` |
+| server-only | _____ | `_____` |
+
+**Does the latent-grant condition affect the exposure rating?** If so, how — and if not, say so
+explicitly, because silence reads as an oversight:
+
+_____
 
 **Why this dimension is in the rubric** *(your words)*:
 
@@ -242,42 +263,124 @@ _____
 
 ---
 
-# Part 2 — How five answers become one tier
+# Part 2 — Rubric architecture
 
-## 2.1 Weights
+**The brief requires five dimensions and three tiers. It does not require numbers.**
 
-Do the dimensions count equally? If not, which dominates, and why?
+An earlier draft of this scaffold went straight to weights, a weighted sum and numeric
+thresholds. That was an architectural assumption presented as a form to fill in, and it would
+have shaped the rubric before you chose its shape. It has been removed.
 
-The question that decides this: **when two dimensions disagree, which one wins?** A resource
-that is server-only but holds state whose corruption would be unrecoverable — is that High or
-Low? Your weights are the answer to that, whether or not you write them down deliberately.
+Below are the structures available, what each commits you to, and what each costs. **No
+recommendation is made and no default is set.** Choose, then write down why.
+
+---
+
+## Option A — Ordinal ratings with rule-based tier assignment
+
+Each dimension gets an ordinal level (`low` / `medium` / `high`, or named levels of your own).
+Tiers come from explicit written rules over combinations:
+
+> *High if exposure is anonymous and integrity impact is high; or if reversibility is
+> "irreversible" regardless of anything else. Medium if …*
+
+**What it commits you to.** That the levels are *ranks*, not quantities — and nothing more.
+You never have to claim that "shared state" is three times worse than "one user".
+
+**What you get.** Every tier traces to a named rule. "Why is this High?" has a one-line answer
+that somebody can disagree with specifically. There is no arithmetic to hide a judgment inside.
+
+**What it costs.** Rules have to cover the space without gaps or contradictions. Five
+dimensions at three levels is 243 combinations; you will not write 243 rules, you will write an
+ordered list of clauses with a fallthrough, and you will need to check that the ordering does
+what you think. Sensitivity analysis is coarser — "what if exposure mattered slightly less" has
+no natural expression when nothing is numeric, so you perturb rules rather than dials.
+
+**A common variant:** *lexicographic* — consult the dimensions in a fixed priority order and
+let the first one that discriminates decide. Simpler to state, and it means the lower-priority
+dimensions frequently do no work at all.
+
+---
+
+## Option B — Numeric scores with weights and thresholds
+
+Levels map to numbers, dimensions carry weights, the weighted sum is compared against
+thresholds.
+
+**What it commits you to.** That the dimensions are commensurable and that the levels sit on an
+interval scale. Scoring "shared state = 3" and "one user = 1" asserts that the gap between them
+is twice the gap between 1 and 2. You may not believe that, and the model will not tell you.
+
+**What you get.** Compactness — five weights and two thresholds fully specify it. Sensitivity
+analysis is natural and cheap: move a weight, see what moves. Adding a resource requires no new
+rules.
+
+**What it costs.** *Compensation.* A high score on one dimension is cancelled by low scores
+elsewhere. A server-only resource whose corruption would be unrecoverable averages out to Low,
+because exposure contributes nothing. That is the known failure of additive models and it is a
+live case here: `private.game_state_private` scores nothing on exposure by construction.
+
+Threshold placement also does a great deal of silent work — small moves reshuffle the
+distribution — and "why is exposure weighted 3 rather than 2" is a question that needs an answer
+you can actually give.
+
+---
+
+## Option C — Hybrid: a base model plus floors
+
+Either of the above, plus named conditions that impose a **minimum tier** regardless of what
+the base model produces:
+
+> *Any resource whose corruption is irreversible is at least Medium, whatever else it scores.*
+
+**What it commits you to.** Two mechanisms, both of which a reader has to check.
+
+**What you get.** It fixes compensation directly, and it lets you keep a simple base model while
+handling the exceptions explicitly — instead of distorting weights until the model happens to
+produce the answer you already knew was right. Distorting weights to reach a predetermined
+answer is the thing that makes a rubric unfalsifiable; a floor is the honest version of the same
+intervention, because it is visible.
+
+**What it costs.** Floors can become a dumping ground. If most resources end up floored, the
+base model is not doing the work and the dimensions or their weights were wrong. A reasonable
+self-check: if more than a handful of resources are decided by a floor, revisit the base.
+
+---
+
+## 2.1 The architecture I have chosen
+
+**Chosen:** `_____`
+
+**Why, and what I am accepting by choosing it:**
+
+_____
+
+## 2.2 The specification
+
+Fill in whichever of these your architecture actually needs. **Delete the ones it does not.**
+A rubric carrying an unused weights table invites the reader to assume the weights mattered.
+
+**If rule-based (A):** the ordered rules that assign a tier.
+
+| # | Rule | Tier |
+|---|---|---|
+| 1 | `_____` | `_____` |
+| 2 | `_____` | `_____` |
+| 3 | `_____` | `_____` |
+| … | `_____` | `_____` |
+| fallthrough | everything not matched above | `_____` |
+
+**If numeric (B):** the weights, the aggregation and the thresholds.
 
 | Dimension | Weight |
 |---|---:|
-| What the data is | `_` |
-| Blast radius | `_` |
-| Integrity impact | `_` |
-| Reversibility | `_` |
-| Exposure | `_` |
+| What the data is | `_____` |
+| Blast radius | `_____` |
+| Integrity impact | `_____` |
+| Reversibility | `_____` |
+| Exposure | `_____` |
 
-## 2.2 Aggregation
-
-How do weighted scores combine into one number?
-
-- `weighted_sum` — every dimension contributes; a low score anywhere pulls the total down.
-- `max` — the worst dimension decides; a resource is as risky as its worst property.
-- `weighted_sum_with_floor` — weighted sum, but any resource scoring the top level on a named
-  dimension is floored at a given tier regardless of its total.
-
-The third exists because of a real case: a purely additive rubric will rate a server-only
-resource low no matter how catastrophic its corruption would be, simply because one dimension
-scores nothing. If you think that is wrong, a floor is how you say so.
-
-**Chosen rule:** `_____`
-
-**Why:** _____
-
-## 2.3 Tier thresholds
+Aggregation: `_____`
 
 | Tier | Condition |
 |---|---|
@@ -285,10 +388,24 @@ scores nothing. If you think that is wrong, a floor is how you say so.
 | Medium | `_____` |
 | Low | `_____` |
 
-**Set these before you score anything.** Setting them afterwards, once you can see which
-resources land where, is rubric-tuning, and the brief calls it out by name: *"Do not tune the
-rubric after seeing results. If you find yourself adjusting a tier because it makes the
-findings look better or the work smaller, stop and log it in `DECISIONS.md` as exactly that."*
+**If hybrid (C):** the base model above, plus the floors.
+
+| Condition | Minimum tier | Why this cannot be left to the base model |
+|---|---|---|
+| `_____` | `_____` | `_____` |
+
+---
+
+## 2.3 Before you score anything
+
+Whatever the architecture, fix it **before** assigning levels to resources. Setting rules or
+thresholds afterwards, once you can see where things land, is rubric-tuning, and the brief names
+it:
+
+> *"Do not tune the rubric after seeing results. If you find yourself adjusting a tier because
+> it makes the findings look better or the work smaller, stop and log it in `DECISIONS.md` as
+> exactly that."*
+
 
 ---
 
@@ -297,54 +414,56 @@ findings look better or the work smaller, stop and log it in `DECISIONS.md` as e
 One row per resource in the control inventory. The four `*(fact)*` columns are filled in from
 the catalogs and are not yours to change; the five on the right are.
 
-Write the **level label** you defined in Part 1 into each cell, replacing `?`.
+Write the **level label** you defined in Part 1 into each cell, replacing `?`. `*` on an owner
+column marks an **inferred** identity linkage rather than a direct foreign key to `auth.users`;
+the full path is in each resource's dossier.
 
 Full dossiers — every column, every dependency, every guard, every server function that touches
 each resource — are in `evidence/runs/<run-id>/risk-inputs.md`. Score from those, not from this
 summary; the summary exists to keep the table readable, not to be sufficient.
 
-| Resource | *(fact)* Exposure | *(fact)* Owner col | *(fact)* Dep by | *(fact)* Guards | Data | Blast | Integrity | Revers | Exposure |
-|---|---|---|---:|---:|:---:|:---:|:---:|:---:|:---:|
-| `public.rulesets` | anonymous | — | 6 | 1 | ? | ? | ? | ? | ? |
-| `public.cosmetics` | anonymous | — | 5 | 1 | ? | ? | ? | ? | ? |
-| `public.career_nodes` | anonymous | — | 3 | 1 | ? | ? | ? | ? | ? |
-| `public.tournaments` | anonymous | — | 3 | 1 | ? | ? | ? | ? | ? |
-| `realtime.messages` | anon-latent | — | 0 | 0 | ? | ? | ? | ? | ? |
-| `public.profiles` | authenticated | `id` | 24 | 3 | ? | ? | ? | ? | ? |
-| `public.game_sessions` | authenticated | `host_user_id` | 11 | 2 | ? | ? | ? | ? | ? |
-| `public.wallet_ledger` | authenticated | `user_id` | 4 | 3 | ? | ? | ? | ? | ? |
-| `public.tournament_entries` | authenticated | `user_id` | 3 | 1 | ? | ? | ? | ? | ? |
-| `public.hand_records` | authenticated | — | 2 | 1 | ? | ? | ? | ? | ? |
-| `public.rooms` | authenticated | `host_user_id` | 2 | 1 | ? | ? | ? | ? | ? |
-| `public.career_attempts` | authenticated | `user_id` | 1 | 1 | ? | ? | ? | ? | ? |
-| `public.game_session_seats` | authenticated | `user_id` | 1 | 1 | ? | ? | ? | ? | ? |
-| `public.hand_players` | authenticated | `user_id` | 1 | 1 | ? | ? | ? | ? | ? |
-| `public.wallets` | authenticated | `user_id` | 1 | 2 | ? | ? | ? | ? | ? |
-| `public.blocks` | authenticated | `blocked_id`, `blocker_id` | 0 | 0 | ? | ? | ? | ? | ? |
-| `public.career_progress` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.daily_challenges_public` | authenticated | — | 0 | 0 | ? | ? | ? | ? | ? |
-| `public.daily_entries` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.friend_requests` | authenticated | `receiver_id`, `sender_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.friendships` | authenticated | `user_id_a`, `user_id_b` | 0 | 0 | ? | ? | ? | ? | ? |
-| `public.game_events` | authenticated | `recipient_user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.loadouts` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.matchmaking_queue` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.notifications` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.player_actions` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.player_daily_xp` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.player_decision_periods` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.player_mode_stats` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.player_stats` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.push_tokens` | authenticated | `user_id` | 0 | 0 | ? | ? | ? | ? | ? |
-| `public.room_members` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.tournament_matches` | authenticated | — | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.user_cosmetics` | authenticated | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.daily_challenges` | server-only | — | 2 | 2 | ? | ? | ? | ? | ? |
-| `private.career_drill_seeds` | server-only | — | 0 | 0 | ? | ? | ? | ? | ? |
-| `private.game_commands` | server-only | `user_id` | 0 | 0 | ? | ? | ? | ? | ? |
-| `private.game_state_private` | server-only | — | 0 | 0 | ? | ? | ? | ? | ? |
-| `public.rate_limit_events` | server-only | `user_id` | 0 | 1 | ? | ? | ? | ? | ? |
-| `public.rate_limit_policies` | server-only | — | 0 | 1 | ? | ? | ? | ? | ? |
+| Resource | *(fact)* Reachable by | *(fact)* Anon grant | *(fact)* Owner col | *(fact)* Dep by | Data | Blast | Integrity | Revers | Exposure |
+|---|---|:---:|---|---:|:---:|:---:|:---:|:---:|:---:|
+| `public.rulesets` | anonymous | yes | — | 6 | ? | ? | ? | ? | ? |
+| `public.cosmetics` | anonymous | yes | — | 5 | ? | ? | ? | ? | ? |
+| `public.career_nodes` | anonymous | yes | — | 3 | ? | ? | ? | ? | ? |
+| `public.tournaments` | anonymous | yes | — | 3 | ? | ? | ? | ? | ? |
+| `public.profiles` | authenticated | no | `id` | 24 | ? | ? | ? | ? | ? |
+| `public.game_sessions` | authenticated | no | `host_user_id`* | 11 | ? | ? | ? | ? | ? |
+| `public.wallet_ledger` | authenticated | no | `user_id`* | 4 | ? | ? | ? | ? | ? |
+| `public.tournament_entries` | authenticated | no | `user_id`* | 3 | ? | ? | ? | ? | ? |
+| `public.hand_records` | authenticated | no | — | 2 | ? | ? | ? | ? | ? |
+| `public.rooms` | authenticated | no | `host_user_id` | 2 | ? | ? | ? | ? | ? |
+| `public.career_attempts` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
+| `public.game_session_seats` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
+| `public.hand_players` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
+| `public.wallets` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
+| `public.blocks` | authenticated | no | `blocked_id`*, `blocker_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.career_progress` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.daily_challenges_public` | authenticated | no | — | 0 | ? | ? | ? | ? | ? |
+| `public.daily_entries` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.friend_requests` | authenticated | no | `receiver_id`*, `sender_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.friendships` | authenticated | no | `user_id_a`*, `user_id_b`* | 0 | ? | ? | ? | ? | ? |
+| `public.game_events` | authenticated | no | `recipient_user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.loadouts` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.matchmaking_queue` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
+| `public.notifications` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.player_actions` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.player_daily_xp` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
+| `public.player_decision_periods` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
+| `public.player_mode_stats` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.player_stats` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.push_tokens` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `public.room_members` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
+| `public.tournament_matches` | authenticated | no | — | 0 | ? | ? | ? | ? | ? |
+| `public.user_cosmetics` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `realtime.messages` | authenticated | yes, **no policy** | — | 0 | ? | ? | ? | ? | ? |
+| `public.daily_challenges` | server-only | no | — | 2 | ? | ? | ? | ? | ? |
+| `private.career_drill_seeds` | server-only | no | — | 0 | ? | ? | ? | ? | ? |
+| `private.game_commands` | server-only | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
+| `private.game_state_private` | server-only | no | — | 0 | ? | ? | ? | ? | ? |
+| `public.rate_limit_events` | server-only | no | `user_id` | 0 | ? | ? | ? | ? | ? |
+| `public.rate_limit_policies` | server-only | no | — | 0 | ? | ? | ? | ? | ? |
 
 ### Tier assignments that were not obvious
 
@@ -387,18 +506,37 @@ yours to decide.
 
 ## 4.2 The control-test login can assume `service_role`
 
-**The fact.** `authenticator` — the PostgreSQL login every control test uses, and the login
-PostgREST uses in production — is a member of `service_role`. `set role service_role` from that
-login succeeds. `service_role` holds `BYPASSRLS`. Both halves were executed in WP1, not
-inferred.
+**The database fact, executed in WP1.** `authenticator` — the PostgreSQL login every control
+test uses, and the login PostgREST uses — is a member of `service_role`. `set role service_role`
+from that login succeeds. `service_role` holds `BYPASSRLS`.
 
-This is a property of the role setup, not an artifact of the harness. What stops a control test
-from silently running on a bypassing role is a thrown exception in `src/db.ts`, and nothing in
-the database.
+**What the Arc21 repository establishes about whether that is reachable.** Investigated before
+asking you to rate it, so the rating is made against evidence rather than imagination. No secret
+value was read or printed; only names, file locations and code shapes.
 
-**Four questions you said this has to answer before it can be rated.** They are the right
-questions and Attest cannot answer any of them from the catalogs — the first two are about
-architecture and deployment, the last two about consequence and credential handling.
+| Question | What the repository establishes |
+|---|---|
+| What login path does the app use? | **Two, and they are separate.** The client (`src/lib/supabase/client.ts`) constructs a Supabase client from a URL and a *publishable* key only, and talks HTTPS to PostgREST/GoTrue/Realtime. Edge Functions (Deno, server-side) additionally hold a direct Postgres connection via `SUPABASE_DB_URL` — documented in `_shared/env.ts` as necessary because `SELECT … FOR UPDATE` across statements does not survive PostgREST's connection model, and no API role, `service_role` included, holds `USAGE` on `private`. |
+| Does ordinary client code ever hold direct database credentials? | **No, in this repository.** The only variables reaching the client bundle are `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Stronger: `src/lib/supabase/config.ts` *refuses to configure the client* if the publishable key looks like a server secret — it rejects the prefixes `sb_secret_`, `sbp_`, `postgres://` and `postgresql://` with a `SERVER_SECRET_IN_CLIENT_BUNDLE` problem, and `tests/auth/supabase-config.test.ts` covers it. |
+| Can client-controlled code issue arbitrary SQL or `SET ROLE`? | **No path found.** Zero functions in `public` or `private` that are callable by `anon`, `authenticated` or `PUBLIC` contain dynamic `EXECUTE`. Zero functions anywhere in those schemas contain `SET ROLE`. Client RPC calls name functions as literals. PostgREST derives the role from the signed JWT's `role` claim, so claiming `service_role` requires the signing key, which is not a client-visible variable. |
+| Where is the service-role credential referenced? | **One code file.** `supabase/functions/_shared/env.ts` (`serviceRoleKey()` → `SUPABASE_SERVICE_ROLE_KEY`), consumed by exactly two Edge Functions: `_shared/realtime-broadcast.ts` and `send-notifications/index.ts`. Elsewhere it appears only in `.env.example` (empty placeholder) and three documentation files. |
+| Is it confined to server-side code? | **Yes, within this repository.** Every reference is under `supabase/functions/`, which runs in the server-side Deno runtime. |
+| Is `authenticator → service_role` Arc21's doing or platform infrastructure? | **Platform.** No Arc21 migration creates a role, grants a role, or mentions `authenticator` at all — the role graph comes from the Supabase bootstrap and is present on any Supabase instance. The transition also requires a **direct PostgreSQL connection authenticated as `authenticator`**, which no Arc21 client code opens. |
+
+### What the repository does NOT establish — marked unknown rather than inferred
+
+- **Which role `SUPABASE_DB_URL` names.** `.env.example` carries an empty placeholder;
+  `.env.local` is gitignored and untracked, and was not read. **Unknown.**
+- **Whether the deployed project exposes a PostgreSQL port publicly**, and to what.
+  Deployment configuration is not in this repository. **Unknown.**
+- **How the `authenticator` credential is handled in the hosted environment**, who holds it, and
+  whether it is rotated. **Unknown.**
+- **Whether the hosted JWT signing key is confined** as the local one appears to be. **Unknown.**
+
+### Your assessment
+
+The four questions, now answerable against the evidence above for the first two and still
+requiring your judgment for the last two.
 
 1. **What real application path, if any, could obtain that login or its credentials?**
 
@@ -416,7 +554,11 @@ architecture and deployment, the last two about consequence and credential handl
 
    _____
 
-**Your assessment:** _____
+**How this affects the rubric, if at all** *(it is a property of the role graph rather than of
+any one resource, so scoring it per-resource would count it forty times — but it may reasonably
+inform a floor, a tier, or nothing):*
+
+_____
 
 ---
 

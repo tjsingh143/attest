@@ -39,9 +39,10 @@ const SECTIONS: readonly { readonly heading: RegExp; readonly label: string }[] 
   { heading: /^## Dimension 3 —/m, label: "Dimension 3 — integrity impact" },
   { heading: /^## Dimension 4 —/m, label: "Dimension 4 — reversibility" },
   { heading: /^## Dimension 5 —/m, label: "Dimension 5 — exposure" },
-  { heading: /^## 2\.1 Weights/m, label: "Part 2.1 — weights" },
-  { heading: /^## 2\.2 Aggregation/m, label: "Part 2.2 — aggregation rule" },
-  { heading: /^## 2\.3 Tier thresholds/m, label: "Part 2.3 — tier thresholds" },
+  { heading: /^# Part 2 — Rubric architecture/m, label: "Part 2 — architecture (explanatory)" },
+  { heading: /^## 2\.1 The architecture I have chosen/m, label: "Part 2.1 — architecture chosen" },
+  { heading: /^## 2\.2 The specification/m, label: "Part 2.2 — its specification" },
+  { heading: /^## 2\.3 Before you score/m, label: "Part 2.3 — (no input required)" },
   { heading: /^# Part 3 —/m, label: "Part 3 — per-resource scoring" },
   { heading: /^## 4\.1 /m, label: "Part 4.1 — FORCE ROW LEVEL SECURITY assessment" },
   { heading: /^## 4\.2 /m, label: "Part 4.2 — service_role reachability assessment" },
@@ -129,6 +130,8 @@ export function formatRubricStatus(st: RubricStatus): string {
   for (const o of st.outstanding) L.push(`    ${o.section.padEnd(52)} ${o.missing}`);
   L.push("");
   L.push(`  ${st.proseBlanks} written answers and ${st.unscoredCells} score cells outstanding.`);
+  L.push("  Part 2.2 offers three specifications; delete the two your architecture does not use,");
+  L.push("  and that count drops accordingly.");
   if (st.unscoredResources.length) {
     L.push(`  ${st.unscoredResources.length} resources have no score in any dimension.`);
   }

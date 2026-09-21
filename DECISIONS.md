@@ -615,7 +615,7 @@ owner" for `public.wallets` would rate it as shared state.
 a measurement; `blocks` carries `blocker_id` **and** `blocked_id`, and only the catalog says
 both are people.
 
-### D2.3 — Exposure has four classes where the brief names three, and the fourth is the author's call
+### D2.3 — Exposure has four classes where the brief names three, and the fourth is the author's call — **REVERSED, see D2.6**
 
 **Decided.** The scaffold classifies exposure as `anonymous`, `anonymous_latent`,
 `authenticated` or `server_only`, and explicitly asks the author to decide what to do with the
@@ -658,3 +658,72 @@ more confident than the evidence supports.
 Part 4.2 therefore records the four questions the author specified as the things that must be
 answered before the `service_role` reachability can be rated, and leaves them open. Attest can
 answer none of them: two are about architecture, two about consequence.
+
+### D2.6 — Reverses D2.3: exposure keeps the brief's three values, and the latent condition becomes two facts
+
+**Decided.** `ExposureClass` is `anonymous | authenticated | server_only` — effective current
+reachability, and nothing else. The granted-but-refused condition is recorded as two separate
+booleans on every resource: `anonymousGrantExists` and `anonymousPolicyPermits`.
+
+**Why D2.3 was wrong.** It invented a fourth class, `anonymous_latent`, and presented it as a
+measurement. It was not one. Whether a grant that no policy admits deserves its own rung between
+"anonymous" and "authenticated" is precisely a rubric judgment — it is the question of whether
+you rate what is reachable today or what is one policy change away — and creating the rung
+answered it before the author saw it.
+
+The distinction is worth stating generally, because it is the trap this whole scaffold exists to
+avoid: *a classification the catalogs decide is a fact; a classification that encodes how much
+something matters is a score.* "anon holds INSERT and no policy names anon" is the first.
+"…therefore it sits between anonymous and authenticated" is the second.
+
+**What is preserved.** Everything. `realtime.messages` now reads: effective reachability
+`authenticated`, anonymous grant exists `yes`, anonymous policy permits `no`. The rubric can
+treat those three facts however it likes — including ignoring the last two — and the scaffold
+has no opinion.
+
+**What would change.** Under D2.3 the author inherits a four-level exposure scale and has to
+argue their way out of it. Under this one they inherit three levels and two facts, and decide
+what the facts are worth.
+
+### D2.7 — Identity linkage is split into measured and inferred, with the path recorded
+
+**Decided.** `directIdentityColumns` holds columns with a foreign key straight to `auth.users`
+(7 resources). `inferredIdentityColumns` holds columns that reach it through an intermediate
+relation (21 resources), each carrying the full path — e.g.
+`public.wallets.user_id -> public.profiles -> auth.users`.
+
+**Why.** D2.2 computed the transitive closure and reported one merged list, which quietly
+asserted that a two-hop linkage and a direct foreign key are the same claim. They are not. The
+inference — a relation whose primary key is a foreign key to an identity relation is itself an
+identity relation — is sound and it is still an inference, and a rubric may reasonably weigh a
+one-to-one identity table differently from a direct reference.
+
+Printing the path matters more than the split does: it turns "trust this" into "check this".
+
+**A schema observation that fell out of it, and is not a finding.** Arc21 is not consistent
+about which it uses. Seven tables carry a foreign key straight to `auth.users`; twenty-one go
+through `profiles`; twelve have no identity linkage. That is recorded in `RUBRIC.md` only so
+that a rubric does not end up rating the inconsistency instead of the risk.
+
+### D2.8 — The rubric architecture is not assumed to be numeric
+
+**Decided.** `RUBRIC.md` Part 2 sets out three structures — ordinal with rule-based tier
+assignment, numeric with weights and thresholds, and a hybrid with floors — with the
+consequences and costs of each, and recommends none. The author chooses, and deletes the
+specifications their choice does not use.
+
+**Why the first draft was wrong.** It went straight to a weights table, an aggregation rule and
+numeric thresholds. The brief requires five dimensions and three tiers; it does not require
+numbers. Presenting a weights table as a form to fill in made a numeric model the default
+through layout alone, and a default expressed as a form is the hardest kind to notice and argue
+with.
+
+The difference is not cosmetic. A numeric model asserts that the dimensions are commensurable
+and that levels sit on an interval scale — that the gap between "one user" and "all users" is a
+quantity that can be multiplied by a weight. A rule-based model asserts only that the levels
+rank. Those are different claims about the world and the author should be the one making
+whichever gets made.
+
+**What would change.** Under the first draft the author would very likely have filled in the
+weights table, because it was there. The cost of this version is that Part 2 is longer and asks
+a question before it asks for input.

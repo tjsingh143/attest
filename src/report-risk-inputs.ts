@@ -13,10 +13,17 @@ const yn = (v: boolean) => (v ? "yes" : "no");
 
 const EXPOSURE_LABEL: Record<string, string> = {
   anonymous: "anonymous",
-  anonymous_latent: "anonymous (latent)",
   authenticated: "authenticated",
   server_only: "server-only",
 };
+
+/** Short form of a resource's identity linkage for the summary table. */
+function identitySummary(r: RiskInput): string {
+  const direct = r.directIdentityColumns.map((c) => `\`${c}\``);
+  const inferred = r.inferredIdentityColumns.map((l) => `\`${l.column}\`*`);
+  const all = [...direct, ...inferred];
+  return all.length ? all.join(", ") : "—";
+}
 
 export function renderRiskInputsMarkdown(
   inputs: RiskInputs,
@@ -71,10 +78,10 @@ export function renderRiskInputsMarkdown(
   p(`Sorted by exposure, then by how many other relations depend on it — not because that is the`);
   p(`ranking, but because reading them in a consistent order makes the outliers visible.`);
   p();
-  p(`| Resource | Exposure | Identity column | Cols | Referenced by | Policies | Refusing triggers | Written by definer fns |`);
-  p(`|---|---|---|---:|---:|---:|---:|---:|`);
+  p(`| Resource | Reachable by | Anon grant? | Anon policy? | Identity column | Cols | Dep. by | Policies | Refusing triggers |`);
+  p(`|---|---|:---:|:---:|---|---:|---:|---:|---:|`);
 
-  const order: Record<string, number> = { anonymous: 0, anonymous_latent: 1, authenticated: 2, server_only: 3 };
+  const order: Record<string, number> = { anonymous: 0, authenticated: 1, server_only: 2 };
   const sorted = [...inputs.resources].sort(
     (a, b) =>
       (order[a.exposure] ?? 9) - (order[b.exposure] ?? 9) ||
@@ -84,14 +91,24 @@ export function renderRiskInputsMarkdown(
 
   for (const r of sorted) {
     p(
-      `| \`${cell(r.resource)}\` | ${EXPOSURE_LABEL[r.exposure]} | ${r.identityColumns.length ? r.identityColumns.map((c) => `\`${c}\``).join(", ") : "—"} | ${r.columnCount} | ${r.referencedByCount} | ${r.policyCount} | ${r.refusingTriggers.length} | ${r.writtenByDefinerFunctions.length} |`,
+      `| \`${cell(r.resource)}\` | ${EXPOSURE_LABEL[r.exposure]} | ${r.anonymousGrantExists ? "yes" : "no"} | ${r.anonymousPolicyPermits ? "yes" : "no"} | ${identitySummary(r)} | ${r.columnCount} | ${r.referencedByCount} | ${r.policyCount} | ${r.refusingTriggers.length} |`,
     );
   }
   p();
-  p(`Counts by exposure: ` +
-    (["anonymous", "anonymous_latent", "authenticated", "server_only"] as const)
+  p(`Counts by effective reachability: ` +
+    (["anonymous", "authenticated", "server_only"] as const)
       .map((e) => `**${inputs.counts[`exposure.${e}`]}** ${EXPOSURE_LABEL[e]}`)
       .join(", ") + `.`);
+  p();
+  p(`\`*\` on an identity column marks an **inferred** linkage — the column reaches \`auth.users\``);
+  p(`through an intermediate relation rather than pointing at it directly. The full path is in each`);
+  p(`resource's dossier. ${inputs.counts.directIdentity} resource(s) have a direct identity column;`);
+  p(`${inputs.counts.inferredIdentity} have an inferred one.`);
+  p();
+  p(`**Anon grant?** and **Anon policy?** are raw facts kept separate from reachability on purpose.`);
+  p(`A resource can carry an anonymous grant that no policy currently admits — \`realtime.messages\``);
+  p(`is the case — which is neither "anonymous" nor nothing. Whether that condition changes a score`);
+  p(`is a rubric decision, so it is reported as two booleans and not folded into a level.`);
   p();
 
   // --- per-resource dossiers ---------------------------------------------
@@ -117,9 +134,12 @@ export function renderRiskInputsMarkdown(
     p(`| | |`);
     p(`|---|---|`);
     p(`| Kind | ${cell(r.kind)}, owned by \`${cell(r.owner)}\` |`);
-    p(`| Exposure | **${EXPOSURE_LABEL[r.exposure]}** — ${cell(r.exposureDetail)} |`);
     p(`| Row-level security | enabled: ${yn(r.rlsEnabled)}, forced: ${yn(r.rlsForced)} |`);
-    p(`| Identity column | ${r.identityColumns.length ? r.identityColumns.map((c) => `\`${c}\``).join(", ") + " → `auth.users`" : "none — this table does not record whose row it is"} |`);
+    p(`| Reachable by | **${EXPOSURE_LABEL[r.exposure]}** — ${cell(r.exposureDetail)} |`);
+    p(`| Anonymous grant exists | ${yn(r.anonymousGrantExists)} |`);
+    p(`| Anonymous policy currently permits | ${yn(r.anonymousPolicyPermits)} |`);
+    p(`| Identity column (direct FK to \`auth.users\`) | ${r.directIdentityColumns.length ? r.directIdentityColumns.map((c) => "`" + c + "`").join(", ") : "none"} |`);
+    p(`| Identity linkage (**inferred** — path shown) | ${r.inferredIdentityColumns.length ? r.inferredIdentityColumns.map((l) => "`" + cell(l.path) + "`").join("<br>") : "none"} |`);
     p(`| Depended on by | ${r.referencedByCount} relation(s)${r.cascadingInbound.length ? `, ${r.cascadingInbound.length} of them ON DELETE CASCADE` : ""} |`);
     p(`| Published to realtime | ${yn(r.realtimePublished)} |`);
     p();
