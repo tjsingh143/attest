@@ -1,7 +1,7 @@
 {
   "meta": {
-    "runId": "20260921T184025Z-5695a4c3df2d",
-    "startedAt": "2026-09-21T18:40:25.141Z",
+    "runId": "20260921T184251Z-5695a4c3df2d",
+    "startedAt": "2026-09-21T18:42:51.382Z",
     "schemaVersion": {
       "migrationSetSha256": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
       "migrationCount": 59,
@@ -399,6 +399,7 @@
     "control.write_guard_trigger": 52,
     "observation.deny_by_default": 5,
     "observation.rls_enabled_not_forced": 39,
-    "observation.anon_reachable": 5
+    "observation.anon_reachable": 4,
+    "observation.anon_granted_but_no_policy_admits_it": 1
   }
 }

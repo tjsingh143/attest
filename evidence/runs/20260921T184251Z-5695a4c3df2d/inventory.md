@@ -5,8 +5,8 @@ disposable local instance rebuilt from migrations. Nothing in this document is h
 
 | | |
 |---|---|
-| Run | `20260921T184025Z-5695a4c3df2d` |
-| Started | 2026-09-21T18:40:25.141Z |
+| Run | `20260921T184251Z-5695a4c3df2d` |
+| Started | 2026-09-21T18:42:51.382Z |
 | Instance | 127.0.0.1:54322/postgres |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
 | Migrations | 59 files |
@@ -551,13 +551,16 @@ are not ranked.** Whether any of them matters is decided by the risk rubric (WP2
 written up by hand (WP5). Listing them here pre-ranked would be this tool quietly writing
 both.
 
-### Reachable without an account — 5
+### Granted to anon, but no policy admits anon — denied by row security, and the grant is latent — 1
 
-- `public.career_nodes` — reachable without an account: anon holds SELECT
-- `public.cosmetics` — reachable without an account: anon holds SELECT
-- `public.rulesets` — reachable without an account: anon holds SELECT
-- `public.tournaments` — reachable without an account: anon holds SELECT
-- `realtime.messages` — reachable without an account: anon holds INSERT, SELECT, UPDATE
+- `realtime.messages` — anon holds INSERT, SELECT, UPDATE, but no policy names anon or PUBLIC — row security refuses every such statement. The grant is latent: it becomes live the moment a permissive policy naming anon or PUBLIC is added, or row security is switched off
+
+### Reachable without an account — 4
+
+- `public.career_nodes` — reachable without an account: anon holds SELECT, and a policy names anon or PUBLIC
+- `public.cosmetics` — reachable without an account: anon holds SELECT, and a policy names anon or PUBLIC
+- `public.rulesets` — reachable without an account: anon holds SELECT, and a policy names anon or PUBLIC
+- `public.tournaments` — reachable without an account: anon holds SELECT, and a policy names anon or PUBLIC
 
 ### Row-level security on with no policy, and no client-reachable grant (denies everything) — 5
 

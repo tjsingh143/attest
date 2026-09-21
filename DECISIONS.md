@@ -283,3 +283,25 @@ only shown to work if there is a non-participant present to be refused.
 would be faster and would not depend on the trigger. It would also mean the harness could
 create states the application cannot, and a test passing against an impossible row proves
 nothing.
+
+### D0.13 — "Reachable by anon" is split into granted-and-admitted versus granted-but-denied
+
+**Decided.** The classifier distinguishes a resource where `anon` holds a grant **and** a
+policy names `anon` or `PUBLIC` (genuinely reachable) from one where `anon` holds a grant but
+no policy admits it (refused by row security, grant latent).
+
+**Why.** The first version collapsed both into "reachable without an account" and was wrong
+about `realtime.messages`: `anon` holds `INSERT`, `SELECT` and `UPDATE` on it — a Supabase
+platform default — while all three of Arc21's policies on it are `to authenticated`. Row
+security refuses `anon` every time. Reporting that as anonymous reach would have been a false
+positive on the single most sensitive channel in the system, and WP3 family 4 would have been
+written to test for an exposure that does not exist.
+
+Recording it as nothing at all would have been the opposite error. The grant is real and it is
+latent: it becomes live the moment a permissive policy naming `anon` or `PUBLIC` is added to
+that table, or row security is switched off on it. That is a genuine standing condition, and
+it is a different test from "can anon read this today".
+
+**What would change.** Under the collapsed version the anon surface reads as five application
+resources. Under this one it reads as four reachable plus one latent — and the four are all
+read-only catalogue tables whose policies name `anon` on purpose.

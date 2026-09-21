@@ -130,6 +130,7 @@ export interface Observation {
     | "grant_without_policy"
     | "rls_enabled_not_forced"
     | "anon_reachable"
+    | "anon_granted_but_no_policy_admits_it"
     | "public_grant"
     | "view_bypasses_invoker_rls"
     | "write_policy_without_with_check"
@@ -215,9 +216,14 @@ export function buildInventory(raw: RawProbes): Inventory {
   }
 
   const policiesByResource = new Map<string, Record<string, unknown>[]>();
+  /** Which roles each resource's policies actually name. */
+  const policyRoles = new Map<string, Set<string>>();
   for (const p of raw.policies) {
     const res = s(p.resource);
     policiesByResource.set(res, [...(policiesByResource.get(res) ?? []), p]);
+    const set = policyRoles.get(res) ?? new Set<string>();
+    for (const role of arr(p.roles, "policies.roles")) set.add(role);
+    policyRoles.set(res, set);
   }
 
   // Schema USAGE decides whether anything inside a schema is reachable at all.
@@ -333,13 +339,36 @@ export function buildInventory(raw: RawProbes): Inventory {
         });
       }
       if (anonReachable) {
-        observations.push({
-          resource, kind: "anon_reachable",
-          detail: `reachable without an account: ${clientReachable
-            .filter((g) => g === "anon" || g === "PUBLIC")
-            .map((g) => `${g} holds ${(reachableBy[g] ?? []).join(", ")}`)
-            .join("; ")}`,
-        });
+        // A grant and a policy are two different gates and a table can pass one
+        // while failing the other. `realtime.messages` is the case that forced
+        // this distinction: `anon` holds INSERT, SELECT and UPDATE on it, and
+        // all three of its policies are `to authenticated`, so row security
+        // refuses `anon` every time despite the grant. Calling that "reachable
+        // without an account" would have been wrong, and calling it nothing at
+        // all would have hidden a live grant sitting behind a policy set that
+        // is the only thing denying it.
+        const named = policyRoles.get(resource) ?? new Set<string>();
+        const admitsAnon = named.has("anon") || named.has("PUBLIC");
+        const held = clientReachable
+          .filter((g) => g === "anon" || g === "PUBLIC")
+          .map((g) => `${g} holds ${(reachableBy[g] ?? []).join(", ")}`)
+          .join("; ");
+
+        if (!rlsEnabled || admitsAnon) {
+          observations.push({
+            resource, kind: "anon_reachable",
+            detail: rlsEnabled
+              ? `reachable without an account: ${held}, and a policy names anon or PUBLIC`
+              : `reachable without an account: ${held}, with row-level security off`,
+          });
+        } else {
+          observations.push({
+            resource, kind: "anon_granted_but_no_policy_admits_it",
+            detail: `${held}, but no policy names anon or PUBLIC — row security refuses every ` +
+              `such statement. The grant is latent: it becomes live the moment a permissive ` +
+              `policy naming anon or PUBLIC is added, or row security is switched off`,
+          });
+        }
       }
       if (Object.keys(reachableBy).includes("PUBLIC")) {
         observations.push({

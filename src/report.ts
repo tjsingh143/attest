@@ -35,6 +35,8 @@ const OBSERVATION_HEADINGS: Record<Observation["kind"], string> = {
   rls_enabled_not_forced:
     "Row-level security enabled but not FORCED (the table owner is not subject to it)",
   anon_reachable: "Reachable without an account",
+  anon_granted_but_no_policy_admits_it:
+    "Granted to anon, but no policy admits anon — denied by row security, and the grant is latent",
   public_grant: "Granted to PUBLIC",
   view_bypasses_invoker_rls:
     "View is not security_invoker, so underlying policies run as the view owner",
