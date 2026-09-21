@@ -5,11 +5,11 @@ were deliberately broken in a disposable instance and put back.
 
 | | |
 |---|---|
-| Run | `20260921T191413Z-5695a4c3df2d` |
-| Started | 2026-09-21T19:14:45.590Z |
+| Run | `20260921T233124Z-5695a4c3df2d` |
+| Started | 2026-09-21T23:32:00.173Z |
 | Instance | 127.0.0.1:54322/postgres |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0` sources `c4c75ac55c3b` |
+| Harness version | `0.1.0` sources `a1df0d1c52a0` |
 | Evidence records | 37 |
 
 | Claim | Result |

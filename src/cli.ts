@@ -100,6 +100,25 @@ function reportValidation(v: Awaited<ReturnType<typeof validate>>): void {
   }
 }
 
+async function cmdRiskInputs(fixedRunId?: string): Promise<void> {
+  const startedAt = new Date();
+  const sv = await readSchemaVersion();
+  const runId = fixedRunId ?? makeRunId(startedAt, shortVersion(sv));
+  console.log("risk inputs (WP2 scaffold)");
+  const { inputs } = await withSession(adminSession("risk-inputs"), (a) => buildRiskInputs(a));
+  const runDir = join(RUNS_ROOT, runId);
+  await mkdir(runDir, { recursive: true });
+  await writeFile(join(runDir, "risk-inputs.json"), JSON.stringify(inputs, null, 2) + "\n");
+  await writeFile(
+    join(runDir, "risk-inputs.md"),
+    renderRiskInputsMarkdown(inputs, {
+      runId, schemaVersion: sv.migrationSetSha256, startedAt: startedAt.toISOString(),
+    }),
+  );
+  console.log(`  ${inputs.counts.resources} resources profiled, no scores assigned`);
+  console.log(`  written to evidence/runs/${runId}/`);
+}
+
 async function main(): Promise<void> {
   const cmd = process.argv[2] ?? "run";
   switch (cmd) {
@@ -109,25 +128,9 @@ async function main(): Promise<void> {
     case "inventory":
       await cmdInventory();
       break;
-    case "risk-inputs": {
-      const startedAt = new Date();
-      const sv = await readSchemaVersion();
-      const runId = makeRunId(startedAt, shortVersion(sv));
-      console.log("risk inputs (WP2 scaffold)");
-      const { inputs } = await withSession(adminSession("risk-inputs"), (a) => buildRiskInputs(a));
-      const runDir = join(RUNS_ROOT, runId);
-      await mkdir(runDir, { recursive: true });
-      await writeFile(join(runDir, "risk-inputs.json"), JSON.stringify(inputs, null, 2) + "\n");
-      await writeFile(
-        join(runDir, "risk-inputs.md"),
-        renderRiskInputsMarkdown(inputs, {
-          runId, schemaVersion: sv.migrationSetSha256, startedAt: startedAt.toISOString(),
-        }),
-      );
-      console.log(`  ${inputs.counts.resources} resources profiled, no scores assigned`);
-      console.log(`  written to evidence/runs/${runId}/`);
+    case "risk-inputs":
+      await cmdRiskInputs();
       break;
-    }
     case "rubric": {
       console.log("rubric (WP2)");
       const st = await readRubricStatus();
@@ -149,7 +152,10 @@ async function main(): Promise<void> {
       await cmdInventory(runId);
       console.log("validate (WP1)");
       const v = await validate((s) => console.log(s), runId);
+      await cmdRiskInputs(runId);
       reportValidation(v);
+      console.log("rubric (WP2)");
+      console.log(formatRubricStatus(await readRubricStatus()));
       break;
     }
     default:
