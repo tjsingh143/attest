@@ -1,6 +1,7 @@
 # Attest — access control assurance harness
 
-**Status: work in progress. WP0 and WP1 of eight are complete.** Numbers below are from a real run and
+**Status: work in progress. WP0 and WP1 of eight are complete; WP2's scaffold is built and
+awaiting the author's rubric.** Numbers below are from a real run and
 are reproducible; the project is not finished and nothing here should be read as a completed
 audit.
 
@@ -45,6 +46,8 @@ deterministic seed, and writes a control inventory to `evidence/runs/<run-id>/`.
 | `npm run attest bringup` | rebuild from migrations, verify the version, seed |
 | `npm run attest inventory` | read the control inventory from the catalogs |
 | `npm run attest validate` | break five controls on purpose, confirm the harness notices, put them back |
+| `npm run attest risk-inputs` | assemble the per-resource facts a risk rubric needs — no scores |
+| `npm run attest rubric` | report what is still unauthored in `RUBRIC.md` |
 
 **This is destructive.** `bringup` drops and rebuilds the database. The harness refuses to
 run against anything but a loopback address, and deliberately attempts unauthorized reads and
@@ -99,6 +102,7 @@ Full transcript: `evidence/runs/<run-id>/wp1-validation.md`.
 | `seed/seed.sql` | Deterministic synthetic test data. |
 | `evidence/runs/` | One directory per run. Never hand-edited. |
 | `DECISIONS.md` | Every judgment call, with its alternatives and its reasoning. |
+| `RUBRIC.md` | The risk rubric. Written by hand; the harness supplies facts, not scores. |
 
 ## Limitations
 
@@ -149,5 +153,7 @@ borrowed from those tools is cited where it is used.
 
 ## Not yet done
 
-WP2 risk rubric, WP3 control testing, WP4 drift detection, WP5 remediation cycle, WP6 framework
+WP2's rubric itself — `RUBRIC.md` is scaffolded with the facts filled in and the judgments
+blank, because the rubric is one of four artifacts the author writes rather than the harness.
+Then WP3 control testing, WP4 drift detection, WP5 remediation cycle, WP6 framework
 mapping, WP7 reporting.

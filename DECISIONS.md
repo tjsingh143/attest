@@ -568,3 +568,93 @@ Two fixes, because one would not have been enough:
 
 **What would change.** Without the second fix the first would have closed this instance of the
 bug and left the class open. The class is the part worth having caught.
+
+---
+
+## WP2 — Risk rubric scaffold
+
+The entries below cover the **scaffold only**. The rubric's dimensions, levels, weights,
+aggregation rule, thresholds and every per-resource tier are the author's, and are recorded in
+`RUBRIC.md` and in the WP2 entries the author adds here after authoring it.
+
+### D2.1 — The scaffold supplies facts and refuses to supply judgments
+
+**Decided.** `risk-inputs.md` contains no score, no tier, no severity and no ranking. It
+contains, per resource, what the database says: every column and type, which column carries the
+identity, what depends on it, what it depends on, which triggers can refuse a write, which
+server functions name it, and how it is exposed.
+
+**Why.** Brief §1.1 reserves the rubric for the author. The reservation is easy to honour in
+name and hard to honour in fact, because a scaffold that pre-sorts resources, or names its
+columns suggestively, or orders them by anything that looks like severity, has made most of the
+decision already. The worksheet is therefore sorted by exposure class and dependant count —
+stated in the document as a reading order rather than a ranking — and every judgment column
+arrives holding `?`.
+
+**The line that was drawn.** A classification the catalogs decide is a fact; what it is worth is
+a judgment. `exposure` is the only dimension the scaffold classifies, because grants and
+policies decide it outright. Nothing else is pre-filled.
+
+### D2.2 — The identity column is computed transitively
+
+**Decided.** "Which column says whose row this is" is resolved by walking foreign keys to a
+fixed point: `auth.users`, plus any relation whose **primary key** is a foreign key to an
+identity relation, and then any column pointing at one of those.
+
+**Why.** The one-hop version reported that almost nothing in Arc21 has an owner, which is the
+opposite of the truth. Only `public.profiles` references `auth.users` directly, via
+`profiles.id` — which is also `profiles`' primary key, making `profiles` an identity relation —
+and the thirty-odd tables carrying `user_id → profiles.id` are naming a person through it. The
+naive result was 7 of 40 resources with an owner column; the correct one is 28.
+
+That matters because blast radius is unscoreable without it. A rubric handed "this table has no
+owner" for `public.wallets` would rate it as shared state.
+
+**Alternative rejected.** Matching column names against a list like `user_id`, `owner_id`,
+`sender_id`. It would have produced roughly the right answer here and it is a guess dressed as
+a measurement; `blocks` carries `blocker_id` **and** `blocked_id`, and only the catalog says
+both are people.
+
+### D2.3 — Exposure has four classes where the brief names three, and the fourth is the author's call
+
+**Decided.** The scaffold classifies exposure as `anonymous`, `anonymous_latent`,
+`authenticated` or `server_only`, and explicitly asks the author to decide what to do with the
+extra one rather than resolving it.
+
+**Why.** The brief's three — anonymous, authenticated, server-side — do not describe
+`realtime.messages`, which grants `anon` `INSERT`, `SELECT` and `UPDATE` while every policy on
+it names `authenticated`. It is granted to anonymous callers and refused to them. Folding it
+into `anonymous` overstates today's reachability; folding it into `authenticated` hides a live
+grant that becomes real on one policy change. Either is defensible and the choice changes a
+score, so it is a decision and not a definition.
+
+### D2.4 — No scorer is written until the rubric exists
+
+**Decided.** `attest rubric` reports what is still blank and computes nothing. The parser, the
+tier computation and the sensitivity analysis are written after `RUBRIC.md` is authored, to fit
+what it says.
+
+**Why.** A parser written first would fix the rubric's shape before the author chose it — how
+many levels a dimension may have, whether weights are numbers, what an aggregation rule is
+allowed to be. The author would then write a rubric that satisfies the format. That is the
+harness authoring the rubric through the back door, and it would be invisible in the finished
+document.
+
+**Cost, accepted.** The scoring tooling is written twice if the rubric's shape turns out to need
+something the first pass did not anticipate. That is cheaper than a rubric shaped by a parser.
+
+### D2.5 — Two cross-cutting facts are carried as evidence, not as dimensions
+
+**Decided.** The absence of `FORCE ROW LEVEL SECURITY` and the `authenticator → service_role`
+reachability are recorded in `RUBRIC.md` Part 4 as factual inputs with no severity, not as
+rubric dimensions and not as findings.
+
+**Why.** Both are properties of the role and table setup rather than of any single resource, so
+scoring them per-resource would double-count them across 40 rows. Both also require information
+the database does not hold — what deployment looks like, who holds which credential, what an
+attacker could do with the transition — so a score derived from the catalogs alone would be
+more confident than the evidence supports.
+
+Part 4.2 therefore records the four questions the author specified as the things that must be
+answered before the `service_role` reachability can be rated, and leaves them open. Attest can
+answer none of them: two are about architecture, two about consequence.

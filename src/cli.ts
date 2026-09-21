@@ -20,6 +20,9 @@ import { renderInventoryMarkdown, type RunMeta } from "./report.ts";
 import { readAppliedState, readSchemaVersion, shortVersion } from "./schema-version.ts";
 import { validate } from "./validate.ts";
 import { readHarnessVersion } from "./harness-version.ts";
+import { buildRiskInputs } from "./risk-inputs.ts";
+import { renderRiskInputsMarkdown } from "./report-risk-inputs.ts";
+import { formatRubricStatus, readRubricStatus } from "./rubric.ts";
 
 /**
  * Sortable, unique, and it says what it is: when, and against which schema.
@@ -106,6 +109,32 @@ async function main(): Promise<void> {
     case "inventory":
       await cmdInventory();
       break;
+    case "risk-inputs": {
+      const startedAt = new Date();
+      const sv = await readSchemaVersion();
+      const runId = makeRunId(startedAt, shortVersion(sv));
+      console.log("risk inputs (WP2 scaffold)");
+      const { inputs } = await withSession(adminSession("risk-inputs"), (a) => buildRiskInputs(a));
+      const runDir = join(RUNS_ROOT, runId);
+      await mkdir(runDir, { recursive: true });
+      await writeFile(join(runDir, "risk-inputs.json"), JSON.stringify(inputs, null, 2) + "\n");
+      await writeFile(
+        join(runDir, "risk-inputs.md"),
+        renderRiskInputsMarkdown(inputs, {
+          runId, schemaVersion: sv.migrationSetSha256, startedAt: startedAt.toISOString(),
+        }),
+      );
+      console.log(`  ${inputs.counts.resources} resources profiled, no scores assigned`);
+      console.log(`  written to evidence/runs/${runId}/`);
+      break;
+    }
+    case "rubric": {
+      console.log("rubric (WP2)");
+      const st = await readRubricStatus();
+      console.log(formatRubricStatus(st));
+      if (!st.authored) process.exitCode = 2;
+      break;
+    }
     case "validate": {
       console.log("validate (WP1)");
       const v = await validate((s) => console.log(s));
@@ -124,7 +153,7 @@ async function main(): Promise<void> {
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|run]`);
       process.exitCode = 2;
   }
 }

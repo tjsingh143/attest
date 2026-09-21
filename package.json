@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Attest — an access control assurance harness for a PostgreSQL row-level-security application. Reads controls from the system catalogs, tests them under role-scoped sessions, and emits timestamped evidence.",
-  "engines": { "node": ">=23.6" },
+  "description": "Attest \u2014 an access control assurance harness for a PostgreSQL row-level-security application. Reads controls from the system catalogs, tests them under role-scoped sessions, and emits timestamped evidence.",
+  "engines": {
+    "node": ">=23.6"
+  },
   "scripts": {
     "attest": "node src/cli.ts",
     "bringup": "node src/cli.ts bringup",
     "inventory": "node src/cli.ts inventory",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "rubric": "node src/cli.ts rubric",
+    "risk-inputs": "node src/cli.ts risk-inputs"
   },
   "dependencies": {
     "pg": "^8.16.3"
