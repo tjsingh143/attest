@@ -1,0 +1,14 @@
+node_modules/
+.local-backups/
+.DS_Store
+*.log
+
+# The Arc21 working copy is the system under test, not part of this repository.
+# It is a local copy of a separate repo and is deliberately not vendored here.
+arc21 copy/
+
+# The project brief is the governing requirements document, and it also contains
+# the author's job-application strategy and personal career notes. Held out of
+# version control until the author decides whether this repository will be
+# published. Adding it later is trivial; removing it from history is not.
+PROJECT_BRIEF.md
