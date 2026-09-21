@@ -1,0 +1,405 @@
+{
+  "meta": {
+    "runId": "20260921T184418Z-5695a4c3df2d",
+    "startedAt": "2026-09-21T18:44:18.876Z",
+    "schemaVersion": {
+      "migrationSetSha256": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+      "migrationCount": 59,
+      "migrations": [
+        {
+          "filename": "20260813120000_foundation.sql",
+          "version": "20260813120000",
+          "sha256": "32bd998a8eb5a5458d9d7e7ea7ae10d77080ddc8d81d97d0169fcbf2e4d864a4",
+          "bytes": 10706
+        },
+        {
+          "filename": "20260813120100_profiles.sql",
+          "version": "20260813120100",
+          "sha256": "1ba7d275e250c4c149ed2974a84e5827ad159b1e135a6a6b8d220ff306e5a7f4",
+          "bytes": 20473
+        },
+        {
+          "filename": "20260813120200_wallets.sql",
+          "version": "20260813120200",
+          "sha256": "8f950a4befc8919a56c303e63c96748829a3526e8b92d18a5a2a41a692a9979f",
+          "bytes": 14096
+        },
+        {
+          "filename": "20260813120300_social.sql",
+          "version": "20260813120300",
+          "sha256": "a7840d453f407703bc28c6d18a57e851ec8749d20678e1462b407cd49d622440",
+          "bytes": 14096
+        },
+        {
+          "filename": "20260813120400_rulesets.sql",
+          "version": "20260813120400",
+          "sha256": "c93fa1217dac2d8e6accd87e996d599dfd668d81be1d78e59dc33735985f7322",
+          "bytes": 2694
+        },
+        {
+          "filename": "20260813120500_games.sql",
+          "version": "20260813120500",
+          "sha256": "661abe7abd62cbef1122122e313c6092caea5c92d9df9152cddb44f31acfd688",
+          "bytes": 12518
+        },
+        {
+          "filename": "20260813120600_hands.sql",
+          "version": "20260813120600",
+          "sha256": "0c5828d7c18525158aea087292e9003539cd678b6c17be0f95e57ffabd4e8256",
+          "bytes": 9637
+        },
+        {
+          "filename": "20260813120700_career.sql",
+          "version": "20260813120700",
+          "sha256": "fa63a6928d9910feb9097a212225f4db35d5d131581d83da456185ec58e0aa4d",
+          "bytes": 5582
+        },
+        {
+          "filename": "20260813120800_tournaments.sql",
+          "version": "20260813120800",
+          "sha256": "3a374e276fd41671508a31c4d12cbf3d681bc8abd493a12a32ee921f2976ba4d",
+          "bytes": 10425
+        },
+        {
+          "filename": "20260813120900_daily.sql",
+          "version": "20260813120900",
+          "sha256": "f737ef4a2c4fa53d2e843e2a19655997e67c552dfa6a7557d3cf020a6c1d08a8",
+          "bytes": 8687
+        },
+        {
+          "filename": "20260813121000_cosmetics.sql",
+          "version": "20260813121000",
+          "sha256": "2b33807bd2683cc5ad9d7b6ed4e790bb52bc803a907c3c13977e00954326aabe",
+          "bytes": 8248
+        },
+        {
+          "filename": "20260813121100_notifications.sql",
+          "version": "20260813121100",
+          "sha256": "b788d8925125bc4c82a353e3afab97bc03cd9019bc8520ddb1133d595bec6945",
+          "bytes": 4946
+        },
+        {
+          "filename": "20260813121200_hardening.sql",
+          "version": "20260813121200",
+          "sha256": "5eceb5f5a9c14c77a7569b06c47ce2bfd1471a86ff12d729b0e4a597523b1c13",
+          "bytes": 9948
+        },
+        {
+          "filename": "20260815120000_command_idempotency.sql",
+          "version": "20260815120000",
+          "sha256": "91ac4f4a04dc55f550242c0c9a8b608b56dad18d23bea1aa11b8e200e8f126ac",
+          "bytes": 5834
+        },
+        {
+          "filename": "20260815180000_wallet_ledger_apply_order.sql",
+          "version": "20260815180000",
+          "sha256": "43a3b22bb8b7e2fa5eeb8ea9b5997e3f36acd9aa0e6f40c0ba2fc05d39b1b92f",
+          "bytes": 2831
+        },
+        {
+          "filename": "20260815190000_starting_wallet_and_recovery_reason.sql",
+          "version": "20260815190000",
+          "sha256": "4c6c516791919a80347954f2fe7822919c6271187218506c6f6f4c6ea27bf7d5",
+          "bytes": 3949
+        },
+        {
+          "filename": "20260815190100_recovery_grant.sql",
+          "version": "20260815190100",
+          "sha256": "6bbc65ed85381aec848104cb7a47c67cae67fdb130d368171f2257d94bcc2eca",
+          "bytes": 3229
+        },
+        {
+          "filename": "20260815200000_delete_own_account.sql",
+          "version": "20260815200000",
+          "sha256": "996c5b5a901bf22fbaa45cb9c682b6e9c0133431b84f38d340dff56d7ba4c61f",
+          "bytes": 2643
+        },
+        {
+          "filename": "20260815210000_settlement_stats_and_xp.sql",
+          "version": "20260815210000",
+          "sha256": "7a9effa2098b6219116ecce7199bbe32c1f3a5c2d8c19d61ee9730a6b552e499",
+          "bytes": 6226
+        },
+        {
+          "filename": "20260816100000_friends.sql",
+          "version": "20260816100000",
+          "sha256": "d2528c0ef61a1edc6c5677f79e787bc38d8ba1525d9debefb50a42d218ef04a6",
+          "bytes": 12035
+        },
+        {
+          "filename": "20260816110000_rooms.sql",
+          "version": "20260816110000",
+          "sha256": "a9e9fe53cb1bd80da3597ebeffaa161aebde4b9153d79e825423944c7b17f9a1",
+          "bytes": 14801
+        },
+        {
+          "filename": "20260816120000_list_blocked.sql",
+          "version": "20260816120000",
+          "sha256": "7c55a665f9dc170501c588a74335122320291d703effa8d2d9202e8bc5b7eacd",
+          "bytes": 2418
+        },
+        {
+          "filename": "20260816130000_expire_rooms_on_use.sql",
+          "version": "20260816130000",
+          "sha256": "d6bc265b832d990d1869fc1e9334625af3290a3c1c02cfad33e6c85b4ac0b19d",
+          "bytes": 1962
+        },
+        {
+          "filename": "20260817100000_matchmaking.sql",
+          "version": "20260817100000",
+          "sha256": "f64a19d595f7b44bd2bda882dd08579c5accf044815db22ce39fb2f27931099d",
+          "bytes": 9833
+        },
+        {
+          "filename": "20260817200000_daily_challenge_and_sprint.sql",
+          "version": "20260817200000",
+          "sha256": "bcdf2c9248a0d70d324abff6719bbb4968fc1f96831dc79247e3ecc90cd74955",
+          "bytes": 17520
+        },
+        {
+          "filename": "20260817300000_decisions_and_leaderboards.sql",
+          "version": "20260817300000",
+          "sha256": "b4e0788ccd1dd428833fb9d2b003eacd67aa646b68e80bd5d0ae783910cb5f66",
+          "bytes": 20484
+        },
+        {
+          "filename": "20260817310000_cosmetic_unlocks.sql",
+          "version": "20260817310000",
+          "sha256": "866c6b357f4fbb18c3752130d2954512a21bcff9bf66509f4e020d25d79085ed",
+          "bytes": 13926
+        },
+        {
+          "filename": "20260817320000_derive_level_from_xp.sql",
+          "version": "20260817320000",
+          "sha256": "6064ceb06278d4a5b0dcc09b6f544431d20fe3d04b509b43c7550403282c212f",
+          "bytes": 5874
+        },
+        {
+          "filename": "20260817400000_notification_delivery.sql",
+          "version": "20260817400000",
+          "sha256": "bda41f25114506f940fb75b51b2a1b41e9217a145ad19595e61000d30f6dccfe",
+          "bytes": 24557
+        },
+        {
+          "filename": "20260818100000_rate_limits.sql",
+          "version": "20260818100000",
+          "sha256": "15440c6b7e12c1c82687e58c901694c00ee8a5668773573c4a0ef7287f96f939",
+          "bytes": 34679
+        },
+        {
+          "filename": "20260818110000_daily_accuracy_tiebreak.sql",
+          "version": "20260818110000",
+          "sha256": "5d979ba1e89d55babf2afb063d65f64296ea963b531c2ec8ca7ddf2f180b14bd",
+          "bytes": 10686
+        },
+        {
+          "filename": "20260818120000_authorization_gate.sql",
+          "version": "20260818120000",
+          "sha256": "b487416a74a596050a7ab6436b3c420b5f090d6c71045fc02c4c43effbcf547e",
+          "bytes": 20934
+        },
+        {
+          "filename": "20260823100000_one_live_seat.sql",
+          "version": "20260823100000",
+          "sha256": "c8d71dbb2fbb84f644ff6891b862a25668a3a2a846cca8fe041c0083009027af",
+          "bytes": 8987
+        },
+        {
+          "filename": "20260823110000_catalogue_ships_in_migrations.sql",
+          "version": "20260823110000",
+          "sha256": "aac67acd6fba5782a8d0d887a05ed3e9ba5ffe3159e1f9a14db7fce86c039c8d",
+          "bytes": 8873
+        },
+        {
+          "filename": "20260823120000_career_catalogue.sql",
+          "version": "20260823120000",
+          "sha256": "7efef894a1325fa120b4d3580e621aa2c24d0b18e4021e419a3c3ff2e58fecdb",
+          "bytes": 13405
+        },
+        {
+          "filename": "20260823130000_career_attempts.sql",
+          "version": "20260823130000",
+          "sha256": "3190f57b8063dfae1e0772b58468ae02182543f268f90bc5a838082c0e24f869",
+          "bytes": 26873
+        },
+        {
+          "filename": "20260823140000_quick_play_assistance.sql",
+          "version": "20260823140000",
+          "sha256": "60a7e004f4eb59f24d34737eeb087592a9b35e529c546666c7efd2d8e89aa572",
+          "bytes": 2191
+        },
+        {
+          "filename": "20260823150000_signup_handle_must_be_permitted.sql",
+          "version": "20260823150000",
+          "sha256": "2a32cc3874f17dfce64c1a476ae7ff18991761e87971eb2133080335a6c5854a",
+          "bytes": 7320
+        },
+        {
+          "filename": "20260823160000_my_competition_record.sql",
+          "version": "20260823160000",
+          "sha256": "4909119bfed55e088f74e3078a7f41a931e031086afe46c38c061109a6f2377b",
+          "bytes": 16925
+        },
+        {
+          "filename": "20260823170000_remove_room_member.sql",
+          "version": "20260823170000",
+          "sha256": "946ad748b5b617db3791c3d28fd7b662466827f9a35f0ef6598cbc1a34f471ac",
+          "bytes": 16330
+        },
+        {
+          "filename": "20260823180000_room_seats_and_removal.sql",
+          "version": "20260823180000",
+          "sha256": "a6b3dcf367f0f6cb07366ef8a43730b90b3abb84ed9fec6fd85ec97d28086183",
+          "bytes": 7278
+        },
+        {
+          "filename": "20260823190000_player_public_profile.sql",
+          "version": "20260823190000",
+          "sha256": "985a79151f931140618acc2797066f6fb41baaf839e308d323cbddf51e007edf",
+          "bytes": 19759
+        },
+        {
+          "filename": "20260824020000_cosmetic_unlock_fallthrough.sql",
+          "version": "20260824020000",
+          "sha256": "af8768bf4da86370134eaf15a5c80ceca736b4804869cf7a1c4d5800c67a7042",
+          "bytes": 6311
+        },
+        {
+          "filename": "20260829120000_account_lifecycle_completeness.sql",
+          "version": "20260829120000",
+          "sha256": "ca3dc432d22fe972443656dd36d737b90ddb4e55c602879d087d931721c70842",
+          "bytes": 33493
+        },
+        {
+          "filename": "20260830120000_active_session_lookup.sql",
+          "version": "20260830120000",
+          "sha256": "eca2eae9c2c29d7c99f618a2827fe31174c0d7f4fe07f643a4828b42434c5630",
+          "bytes": 20254
+        },
+        {
+          "filename": "20260830130000_room_lifecycle_and_presence.sql",
+          "version": "20260830130000",
+          "sha256": "36f83d8c366f342368e336c26a2ca9bad9242c04a7c939536ac862d1d2d686ae",
+          "bytes": 34840
+        },
+        {
+          "filename": "20260830140000_refusals_are_not_faults.sql",
+          "version": "20260830140000",
+          "sha256": "ab7f89a2512028758c6f6f12e5e8309bad943b265a3168d1bd985efb780078f6",
+          "bytes": 12172
+        },
+        {
+          "filename": "20260831120000_realtime_channel_authorization.sql",
+          "version": "20260831120000",
+          "sha256": "5d1fded3576e68fb3b39abb47bc3b5c67f69242e635d972fe6d240b9dda7384e",
+          "bytes": 4831
+        },
+        {
+          "filename": "20260901120000_public_tables_keep_taking_players.sql",
+          "version": "20260901120000",
+          "sha256": "7409f6a5089e4fad637cc5085542ca2acd265258d802369410d8fb366ec3cdc4",
+          "bytes": 31106
+        },
+        {
+          "filename": "20260902120000_sprint_withdrawal_and_result.sql",
+          "version": "20260902120000",
+          "sha256": "f291dfe412fde540da4322fd0eb2f775b455a0ee6fef5383de4604b443b10de5",
+          "bytes": 10193
+        },
+        {
+          "filename": "20260903120000_leaderboard_pagination.sql",
+          "version": "20260903120000",
+          "sha256": "12864799a8a672a7657e4655b662ac5fe49dda7562abd75e4d6a6408b32d17fd",
+          "bytes": 13816
+        },
+        {
+          "filename": "20260903130000_daily_seed_reveal.sql",
+          "version": "20260903130000",
+          "sha256": "81455cd04f5a11a31dc607e52cfa364fa8ef2e8327a3989be5a3c6fa1157d466",
+          "bytes": 21755
+        },
+        {
+          "filename": "20260903140000_server_owned_write_guards.sql",
+          "version": "20260903140000",
+          "sha256": "486c165beb75a1543535d353dda83db4f29ac72fe6ee88be281c3c6695996dcd",
+          "bytes": 3693
+        },
+        {
+          "filename": "20260904120000_least_privilege_and_entry_visibility.sql",
+          "version": "20260904120000",
+          "sha256": "9937b2b578fd5a987314b78f16bd791019b622969dad4c41780c0e4c8c8aa44c",
+          "bytes": 25275
+        },
+        {
+          "filename": "20260905120000_bounded_client_reads.sql",
+          "version": "20260905120000",
+          "sha256": "13d29b239e2dd53f8eb363077c30d732c92966e67b6f79320c44c0e45a8235a3",
+          "bytes": 24432
+        },
+        {
+          "filename": "20260906120000_seat_index_reuse.sql",
+          "version": "20260906120000",
+          "sha256": "e88ffe7c59cd1e75ceaf9132c5202fc6a35bcb52cf80bcbd9a5cb895f70c90c1",
+          "bytes": 2344
+        },
+        {
+          "filename": "20260907120000_leaving_clears_the_reservation.sql",
+          "version": "20260907120000",
+          "sha256": "446c04e81e4f86b3fbeba55e0fc712df11a34542781179f504b410ce2955390c",
+          "bytes": 9078
+        },
+        {
+          "filename": "20260908120000_a_room_must_not_close_under_a_newcomer.sql",
+          "version": "20260908120000",
+          "sha256": "2e6f9e7c22fad8d567c9f4076126d28b31bfd28b302a9df7329ab97c978f8516",
+          "bytes": 17887
+        },
+        {
+          "filename": "20260909120000_career_attempt_counts.sql",
+          "version": "20260909120000",
+          "sha256": "c0508bb676a46afdccfd65f6dc4f6c0f29373d2d39f7add62ea75c184484ea25",
+          "bytes": 2181
+        }
+      ],
+      "git": {
+        "commit": "58dcf39fc66a3d1fcb81a20c34beb77875ff929a",
+        "branch": "phase14-s2-security",
+        "dirty": true,
+        "uncommittedMigrations": [
+          "20260909120000_career_attempt_counts.sql"
+        ]
+      }
+    },
+    "readAs": {
+      "label": "inventory-reader",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "instance": "127.0.0.1:54322/postgres"
+  },
+  "counts": {
+    "resources": 40,
+    "controls": 397,
+    "observations": 49,
+    "anonReach": 122,
+    "anonReachApplication": 5,
+    "anonReachPlatform": 117,
+    "control.rls_enabled": 39,
+    "control.rls_forced": 39,
+    "control.table_grant": 40,
+    "control.column_grant": 28,
+    "control.policy": 50,
+    "control.security_definer_function": 88,
+    "control.function_execute_grant": 61,
+    "control.write_guard_trigger": 52,
+    "observation.deny_by_default": 5,
+    "observation.rls_enabled_not_forced": 39,
+    "observation.anon_reachable": 4,
+    "observation.anon_granted_but_no_policy_admits_it": 1
+  }
+}
