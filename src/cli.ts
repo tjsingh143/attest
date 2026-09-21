@@ -3,7 +3,8 @@
  *
  *   node src/cli.ts bringup      rebuild the instance from migrations and seed it
  *   node src/cli.ts inventory    read the control inventory from the catalogs
- *   node src/cli.ts run          both, in order  (the one command)
+ *   node src/cli.ts validate     WP1: deliberate-break validation of the harness
+ *   node src/cli.ts run          all of the above, in order  (the one command)
  *
  * The brief's standard is that one command reproduces every number in the
  * report from a fresh database. `run` is that command. As work packages land it
@@ -17,8 +18,17 @@ import { bringup } from "./bringup.ts";
 import { buildInventory, runProbes, type Inventory } from "./inventory.ts";
 import { renderInventoryMarkdown, type RunMeta } from "./report.ts";
 import { readAppliedState, readSchemaVersion, shortVersion } from "./schema-version.ts";
+import { validate } from "./validate.ts";
+import { readHarnessVersion } from "./harness-version.ts";
 
-/** Sortable, unique, and it says what it is: when, and against which schema. */
+/**
+ * Sortable, unique, and it says what it is: when, and against which schema.
+ *
+ * One `run` mints exactly one of these and every artefact it produces lands in
+ * that directory. The first version let the inventory and the validation each
+ * make their own, a second apart, and a single command produced two run
+ * directories holding half the evidence each.
+ */
 function makeRunId(startedAt: Date, schemaShort: string): string {
   const ts = startedAt.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
   return `${ts}-${schemaShort}`;
@@ -30,13 +40,14 @@ async function cmdBringup(): Promise<void> {
   console.log("  ready");
 }
 
-async function cmdInventory(): Promise<{ runDir: string; inv: Inventory }> {
+async function cmdInventory(fixedRunId?: string): Promise<{ runId: string; runDir: string; inv: Inventory }> {
   const startedAt = new Date();
   const schemaVersion = await readSchemaVersion();
-  const runId = makeRunId(startedAt, shortVersion(schemaVersion));
+  const runId = fixedRunId ?? makeRunId(startedAt, shortVersion(schemaVersion));
 
   console.log("inventory");
 
+  const harness = await readHarnessVersion();
   const { inv, meta } = await withSession(adminSession("inventory-reader"), async (admin) => {
     const applied = await readAppliedState(admin, schemaVersion);
     if (!applied.matches) {
@@ -54,19 +65,23 @@ async function cmdInventory(): Promise<{ runDir: string; inv: Inventory }> {
       schemaVersion,
       readAs: admin.identity,
       instance: `${DB.host}:${DB.port}/${DB.database}`,
+      harness,
     };
     return { inv, meta, raw };
   });
 
   const runDir = join(RUNS_ROOT, runId);
   await mkdir(runDir, { recursive: true });
-  await writeFile(join(runDir, "run.json"), JSON.stringify({ meta, counts: inv.counts }, null, 2) + "\n");
+  await writeFile(
+    join(runDir, "run.json"),
+    JSON.stringify({ meta, counts: inv.counts }, null, 2) + "\n",
+  );
   await writeFile(join(runDir, "inventory.json"), JSON.stringify(inv, null, 2) + "\n");
   await writeFile(join(runDir, "inventory.md"), renderInventoryMarkdown(inv, meta));
 
   console.log(`  ${inv.counts.resources} resources, ${inv.counts.controls} (resource, control) pairs, ${inv.counts.observations} observations`);
   console.log(`  written to evidence/runs/${runId}/`);
-  return { runDir, inv };
+  return { runId, runDir, inv };
 }
 
 async function main(): Promise<void> {
@@ -78,12 +93,39 @@ async function main(): Promise<void> {
     case "inventory":
       await cmdInventory();
       break;
-    case "run":
-      await cmdBringup();
-      await cmdInventory();
+    case "validate": {
+      console.log("validate (WP1)");
+      const v = await validate((s) => console.log(s));
+      if (!v.allDetected || !v.allRestored || !v.inventoryUnchanged) {
+        // "If the harness cannot detect a deliberately broken control, nothing
+        // downstream is worth anything."
+        console.error(
+          `\nattest: validation FAILED — detected=${v.allDetected} restored=${v.allRestored} ` +
+            `inventory unchanged=${v.inventoryUnchanged}`,
+        );
+        process.exitCode = 1;
+      }
       break;
+    }
+    case "run": {
+      // One run id for the whole command, so the inventory and the validation
+      // it was performed against land in the same directory.
+      const runId = makeRunId(new Date(), shortVersion(await readSchemaVersion()));
+      await cmdBringup();
+      await cmdInventory(runId);
+      console.log("validate (WP1)");
+      const v = await validate((s) => console.log(s), runId);
+      if (!v.allDetected || !v.allRestored || !v.inventoryUnchanged) {
+        console.error(
+          `\nattest: validation FAILED — detected=${v.allDetected} restored=${v.allRestored} ` +
+            `inventory unchanged=${v.inventoryUnchanged}`,
+        );
+        process.exitCode = 1;
+      }
+      break;
+    }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|run]`);
       process.exitCode = 2;
   }
 }

@@ -1,7 +1,7 @@
 {
   "meta": {
-    "runId": "20260921T184756Z-5695a4c3df2d",
-    "startedAt": "2026-09-21T18:47:56.071Z",
+    "runId": "20260921T191022Z-5695a4c3df2d",
+    "startedAt": "2026-09-21T19:10:53.846Z",
     "schemaVersion": {
       "migrationSetSha256": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
       "migrationCount": 59,
@@ -380,7 +380,12 @@
       "authRole": null,
       "claims": null
     },
-    "instance": "127.0.0.1:54322/postgres"
+    "instance": "127.0.0.1:54322/postgres",
+    "harness": {
+      "version": "0.1.0",
+      "sourcesSha256": "d0d57e327639cef9d5283b69e821c9caf8b0c305f83ee92da5224698369bd245",
+      "fileCount": 25
+    }
   },
   "counts": {
     "resources": 40,

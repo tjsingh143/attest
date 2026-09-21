@@ -84,6 +84,7 @@ async function countSeeded(session: Session): Promise<Record<string, number>> {
     union all select 'game_session_seats',    count(*)::text from public.game_session_seats
     union all select 'friendships',           count(*)::text from public.friendships
     union all select 'blocks',                count(*)::text from public.blocks
+    union all select 'private.game_state_private', count(*)::text from private.game_state_private
     order by 1
   `);
   return Object.fromEntries(rows.map((r) => [r.label, Number(r.n)]));

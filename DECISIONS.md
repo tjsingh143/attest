@@ -331,3 +331,206 @@ from a timestamp maintainer without reading 52 function bodies. Trusting the fla
 would mean the inventory asserts something it cannot know. Labelling it as a heuristic
 everywhere it is reported is the only version of this that survives someone asking "how do
 you know?".
+
+---
+
+## WP1 — Harness validation
+
+### D1.1 — "Detected" means the recorded outcome changed, not that an assertion failed
+
+**Decided.** A scenario counts as detected when the probe's recorded outcome against the
+weakened control **differs** from its outcome against the intact one.
+
+**Alternative.** Define detection as "the check that passed now fails", which is what a test
+runner would naturally report.
+
+**Why this one.** The two come apart, and where they come apart is exactly where a harness
+fools itself. A probe can fail against both the intact and the broken control — for a reason
+that has nothing to do with the control, such as a missing privilege stopping the statement
+before any policy is consulted. Under the alternative that reads as "the test caught it".
+Under this definition it reads as what it is: a probe that cannot see the control at all.
+
+This is not hypothetical. S2's first draft failed identically in both states, and the
+definition above is what surfaced it rather than hiding it behind a red check mark.
+
+**What would change.** Nothing about the reported results; every scenario here satisfies both
+definitions now. The difference is that this one is falsifiable and the other is not.
+
+### D1.2 — The over-privileged demonstration is framed as discrimination, not as passing
+
+**Decided.** The brief asks for a demonstration that an admin connection "does not catch the
+violation". That is measured here by running the identical statement on the over-privileged
+connection against both the intact and the broken control and comparing the two answers.
+
+**Why.** "The test passes vacuously" is the usual phrasing and it is too loose to check. A
+negative test run as an admin frequently *fails* — the admin performs the forbidden action, so
+the assertion trips. Reporting that as "did not catch it" would be wrong.
+
+The sharp and checkable version is: **the over-privileged connection returns the same answer
+whether the control is intact or broken.** No assertion built on it can discriminate, whatever
+the assertion says. That is true in all five scenarios for both over-privileged identities, and
+it is measurable rather than rhetorical.
+
+**An unexpected result worth keeping.** The two are blind for opposite reasons.
+`admin(postgres)` succeeds in both states — it is exempt, so the control is never consulted.
+`service_role` is *refused* in both states in four of five scenarios, because Arc21 grants it
+no privilege on `wallets`, `push_tokens`, `profiles` or `private` at all. One connection is
+over-privileged past the control; the other is under-privileged short of it. Neither is
+standing where a client stands. The report says this rather than collapsing both into "blind".
+
+### D1.3 — Five scenarios across five mechanisms, not five policies
+
+**Decided.** S1 a SELECT policy's USING half; S2 an INSERT policy's WITH CHECK half; S3 a
+column grant and a write-guard trigger together; S4 a Realtime channel policy; S5 the schema
+grant surface and RLS deny-by-default.
+
+**Why.** The brief asks for at least three control *families*. Breaking three SELECT policies
+on three tables would satisfy the letter of that and demonstrate one thing three times. These
+five exercise five structurally different refusal paths, and two of them refuse by returning
+no rows while three refuse by raising — which is precisely the distinction the evidence model
+has to get right.
+
+Two scenarios are deliberately multi-stage, because a single-stage break cannot show
+defence in depth:
+
+- **S3** removes the column grant first. The write is *still* refused, by the trigger. Only
+  when the trigger is also disabled does it succeed. Arc21's documentation calls the trigger
+  "the second lock"; this is the claim executed.
+- **S5** grants `USAGE` on `private` and `SELECT` on the table. The read *still* returns
+  nothing, because row-level security is enabled with no policy. Only when a permissive policy
+  is added does the state leak. This is the CP1 deny-by-default reasoning executed rather than
+  argued — and it is the one that matters most, because five tables in the inventory rest on it.
+
+### D1.4 — Controls are weakened in place, never dropped
+
+**Decided.** A policy's `USING` or `WITH CHECK` expression is replaced with `true` via `ALTER
+POLICY`, after the original expression is read out of the catalog. Triggers are disabled, not
+dropped. Grants are added and revoked.
+
+**Alternative.** `DROP POLICY`, then re-create it from a stored `CREATE POLICY` statement.
+
+**Why this one.** Restoration has to be exact, and reconstructing a `CREATE POLICY` statement
+means reassembling the command, the roles, the permissive flag and both expressions from
+separate catalog columns and hoping the rendering round-trips. `ALTER POLICY ... USING
+(<original>)` puts back the expression the catalog just handed over. The whole control
+inventory is re-read at the end and compared to the one taken at the start to confirm it.
+
+### D1.5 — `INSERT ... RETURNING` makes a probe test two controls, so the probes do not use it
+
+**Decided.** No probe uses a `RETURNING` clause. Rows affected are read from the driver's
+`rowCount` instead.
+
+**Why.** This is the most useful thing WP1 found, and it is about test construction rather
+than about Arc21. PostgreSQL applies `SELECT` policies as an additional `WITH CHECK` on the row
+an `INSERT ... RETURNING` hands back. S2 was written the obvious way — insert a row attributed
+to another user, `returning id` — and it therefore exercised `push_tokens_insert_own` **and**
+`push_tokens_select_own` at once. Weakening only the first left the second refusing, the
+outcome did not change, and the scenario reported that the harness could not detect a break it
+had just made.
+
+The failure mode this points at is the dangerous one. Had the scenario been written to weaken
+both halves, it would have "passed" while being unable to distinguish which control was doing
+the work. A probe named for one control has to exercise that control alone, or its result
+means nothing.
+
+**What would change.** Nothing about coverage; the same statements are issued. What changes is
+that the result is attributable to the control the test is named after.
+
+### D1.6 — Rows affected, not rows returned
+
+**Decided.** `Outcome.rowCount` reads the driver's `rowCount`.
+
+**Why.** Follows from D1.5. With `RETURNING` removed, a successful `INSERT` returns no rows,
+and measuring `rows.length` would have scored it as `0 rows` — indistinguishable from a read
+that was filtered to nothing. Two opposite outcomes collapsing to the same recorded value is
+the same class of defect as D0.9.
+
+### D1.7 — Every probe cleans up after itself, not at the end of the scenario
+
+**Decided.** A scenario's cleanup statements run after **every** probe.
+
+**Why.** Another self-inflicted false result. Cleanup originally ran once per scenario. In S2
+the `admin(postgres)` probe inserted a row while the control was intact, and the same probe
+against the broken control then failed on a duplicate key — so the scenario reported that the
+admin connection *could* tell intact from broken. It could not. It was reading its own earlier
+write. The reported conclusion was the opposite of the truth, and nothing about the output
+looked wrong.
+
+### D1.8 — The FORCE demonstration uses a scratch role and a scratch schema, and draws no conclusion
+
+**Decided.** The effect of `FORCE ROW LEVEL SECURITY` is demonstrated on a table created for
+the purpose, owned by a role holding no `BYPASSRLS`, in a schema created and dropped inside the
+run. Nothing in Arc21 is altered.
+
+**Why the scratch role.** `postgres` owns every Arc21 table *and* holds `BYPASSRLS`. Watching
+it ignore a policy proves nothing about which of the two rules did it, and `FORCE` only
+addresses one of them. A role with ownership and nothing else isolates the variable: two rows
+in the table, a policy admitting one, owner sees two unforced and one forced. The same
+sequence then shows `postgres` still seeing both **with FORCE on**, because `BYPASSRLS` is a
+separate door that `FORCE` does not touch.
+
+**Why the scratch schema.** Changing a table's owner requires the incoming owner to hold
+`CREATE` on the containing schema. The first version granted `CREATE` on `public` to the demo
+role for the length of the demonstration. That is a harness modifying the access control
+surface of the system it is measuring, for its own convenience, and it is not acceptable even
+briefly. The demo gets its own schema instead.
+
+**Why it stops short of a verdict.** The section establishes the mechanism and answers the
+reachability question by executing it — no client login can reach the table owner; a holder of
+the `authenticator` credential *can* reach `service_role`, which bypasses row security. Whether
+that is acceptable is a risk judgment. It belongs to the rubric in WP2 and it is the author's.
+
+### D1.9 — The guard against testing on a bypassing role is code, and the report says so
+
+**Decided.** `roleSession()` refuses to return a session holding `BYPASSRLS`, and the
+validation report presents that refusal as a property of the harness rather than of the
+database.
+
+**Why.** The executed escalation probes show that `authenticator` — the login every control
+test uses — **can** `SET ROLE service_role`, which holds `BYPASSRLS`. The database permits it.
+What prevents a control test from silently running on a bypassing role is a thrown exception in
+`src/db.ts` and nothing else.
+
+Presenting that as "the harness cannot escalate" would be false. It is load-bearing precisely
+because the database *would* allow the mistake, and the report is written that way.
+
+### D1.10 — WP1's evidence records carry no intent statement
+
+**Decided.** Every WP1 evidence record has `intent: null` and a mechanical `description`
+instead.
+
+**Why.** Brief §1.1 reserves "the intent statement for each negative test — one sentence naming
+the attack it simulates" for the author, in WP3. WP1's probes exist to validate the harness
+rather than to assess Arc21, so they describe what the statement does and leave the field
+empty. The WP3 suite will not, and the field is already in the record shape so that it is
+visibly missing rather than quietly absent.
+
+### D1.11 — Every artefact carries a hash of the harness that produced it
+
+**Decided.** `run.json` and the validation output record a content hash over the harness's own
+sources (`src/**/*.ts`, `sql/**/*.sql`, `seed/seed.sql`) alongside the schema version.
+
+**Why.** WP4 compares one run's output to another's, and a difference between two runs can come
+from the schema changing or from the harness changing. Without this field the two are
+indistinguishable, and a refactoring of the inventory would be reported as Arc21 gaining or
+losing controls. That is not hypothetical here: D0.14 reclassified triggers, which changed the
+shape of every inventory produced before it.
+
+A content hash rather than a version number, because a version number is a thing somebody has
+to remember to bump and this one cannot be forgotten.
+
+**Consequence, applied now.** The evidence store was regenerated from scratch at the end of
+WP1. The runs in it before that point were produced by a harness of a different shape, and a
+store mixing versions would have handed WP4 a first diff full of differences that were not
+about Arc21 at all.
+
+### D1.12 — One command, one run id
+
+**Decided.** `attest run` mints one run id and every artefact it produces lands in that
+directory.
+
+**Why.** The first version let the inventory step and the validation step each generate their
+own from the clock. They ran a second apart, so a single command produced two run directories
+holding half the evidence each — an inventory with no validation beside it, and a validation
+with no inventory. Evidence that a control was tested is worth much less when the description
+of the control it was tested against is filed somewhere else.

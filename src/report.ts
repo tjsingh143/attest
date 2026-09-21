@@ -17,6 +17,7 @@ export interface RunMeta {
   readonly schemaVersion: SchemaVersion;
   readonly readAs: SessionIdentity;
   readonly instance: string;
+  readonly harness: { readonly version: string; readonly sourcesSha256: string };
 }
 
 const yn = (v: boolean) => (v ? "yes" : "no");

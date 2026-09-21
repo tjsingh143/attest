@@ -120,6 +120,24 @@ values
    1, '00000000-0000-4000-8000-00000000000b', 'Bob',   1000, 1000, 'active');
 
 -- -----------------------------------------------------------------------------
+-- Server-only state
+--
+-- `private.game_state_private` holds the authoritative engine state, including
+-- the undealt shoe and the unrevealed dealer hole card. No client role holds any
+-- privilege on it or on the schema containing it.
+--
+-- One row is seeded because a table with no rows cannot demonstrate isolation:
+-- a SELECT that returns nothing proves nothing when there was nothing to return.
+-- The control tests need something here that a leak would expose.
+-- -----------------------------------------------------------------------------
+insert into private.game_state_private (game_session_id, engine_state, version)
+values (
+  'e0000000-0000-4000-8000-000000000001',
+  '{"attest_synthetic": true, "note": "Fabricated engine state. If a client can read this row, an isolation control has failed."}'::jsonb,
+  1
+);
+
+-- -----------------------------------------------------------------------------
 -- Social graph
 -- -----------------------------------------------------------------------------
 insert into public.friendships (id, user_id_a, user_id_b) values

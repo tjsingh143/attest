@@ -1,6 +1,6 @@
 # Attest — access control assurance harness
 
-**Status: work in progress. WP0 of eight is complete.** Numbers below are from a real run and
+**Status: work in progress. WP0 and WP1 of eight are complete.** Numbers below are from a real run and
 are reproducible; the project is not finished and nothing here should be read as a completed
 audit.
 
@@ -44,6 +44,7 @@ deterministic seed, and writes a control inventory to `evidence/runs/<run-id>/`.
 | `npm run attest run` | everything below, in order |
 | `npm run attest bringup` | rebuild from migrations, verify the version, seed |
 | `npm run attest inventory` | read the control inventory from the catalogs |
+| `npm run attest validate` | break five controls on purpose, confirm the harness notices, put them back |
 
 **This is destructive.** `bringup` drops and rebuilds the database. The harness refuses to
 run against anything but a loopback address, and deliberately attempts unauthorized reads and
@@ -51,7 +52,7 @@ writes, so it may only ever be pointed at an instance that can be thrown away.
 
 ## What it found
 
-From run `20260921T183732Z-5695a4c3df2d`, against 59 migrations:
+Against 59 migrations:
 
 | | |
 |---|---:|
@@ -59,7 +60,7 @@ From run `20260921T183732Z-5695a4c3df2d`, against 59 migrations:
 | (resource, control) pairs | 397 |
 | Row-level security policies | 50 |
 | `SECURITY DEFINER` functions | 88 (55 callable by a client role) |
-| Write-guard triggers | 52 |
+| Triggers (39 of which can refuse a write) | 52 |
 | Column-level grants | 28 |
 | Tables with row-level security **enabled** | 39 of 39 |
 | Tables with row-level security **forced** | **0 of 39** |
@@ -71,6 +72,23 @@ for the risk rubric, which is not written yet.
 
 Full inventory: `evidence/runs/<run-id>/inventory.md`, with the machine-readable form beside
 it in `inventory.json`.
+
+## How you know the tests are real
+
+Before any result is worth reading, the harness has to show it can tell a working control from
+a broken one. `attest validate` weakens five controls in the disposable instance — one at a
+time, across five different refusal mechanisms — reruns the identical statement, and confirms
+the recorded outcome **changes**. Then it puts each control back and confirms the whole control
+inventory is identical to the one read beforehand.
+
+It also runs each of those statements on two over-privileged connections. In all five
+scenarios, both returned the **same answer** whether the control was intact or broken — so no
+assertion built on either could have detected the break. That is the sense in which connecting
+as an unprivileged, role-scoped session is load-bearing rather than decorative.
+
+The run exits non-zero if any control is broken without being noticed.
+
+Full transcript: `evidence/runs/<run-id>/wp1-validation.md`.
 
 ## Layout
 
@@ -95,10 +113,19 @@ These are not caveats added at the end. They bound what the output means.
   It is not a GxP system, not a Part 11 system, and not compliant with anything.
 - **This harness is not a product.** It is one person's tool for one system. It has not been
   validated, is not used by anyone, and has not been qualified as a testing tool.
-- **The harness has had at least one bug that silently produced wrong numbers.** It was found
-  by cross-checking output against the database by hand, and is written up in `DECISIONS.md`
-  under D0.9. It is recorded rather than quietly fixed because it bears directly on how much
-  weight any single run deserves.
+- **The harness has produced wrong output more than once, and it is written up rather than
+  quietly fixed.** Three times in WP0 (`DECISIONS.md` D0.9, D0.13, D0.14) and three times in
+  WP1 (D1.5, D1.6, D1.7). Two of the WP1 cases were the harness misreading its own earlier
+  writes and reporting a conclusion that was the opposite of the truth, with nothing about the
+  output looking wrong. That bears directly on how much weight any single run deserves.
+- **The validation shows the probes detect *those* breaks.** It does not show they would catch
+  every possible weakening of the same control, and it says nothing about controls no scenario
+  touches. Each break is deliberately obvious — an expression replaced with `true`, a trigger
+  disabled. A subtler regression is a harder thing to catch and is not tested.
+- **The harness's refusal to test on a role that bypasses row security is code, not a property
+  of the database.** The login the control tests use *can* switch into `service_role`, which
+  holds `BYPASSRLS`; the database permits it and a thrown exception in `src/db.ts` is what
+  stops it.
 - **`realtime.messages` partitions are created by the Realtime service at runtime**, so
   immediately after a rebuild the realtime publication is empty. Broadcast authorization is
   enforced by row policies on `realtime.messages`, which are present and inventoried; the
@@ -121,5 +148,5 @@ borrowed from those tools is cited where it is used.
 
 ## Not yet done
 
-WP1 harness validation (deliberate-break negative controls), WP2 risk rubric, WP3 control
-testing, WP4 drift detection, WP5 remediation cycle, WP6 framework mapping, WP7 reporting.
+WP2 risk rubric, WP3 control testing, WP4 drift detection, WP5 remediation cycle, WP6 framework
+mapping, WP7 reporting.

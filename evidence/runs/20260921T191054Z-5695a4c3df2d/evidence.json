@@ -1,0 +1,1425 @@
+[
+  {
+    "recordId": "S1.read-isolation.wallets:authenticated:alice:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.556Z",
+    "family": "read isolation",
+    "controlId": "public.wallets#policy:wallets_select_own",
+    "testId": "S1.read-isolation.wallets",
+    "intent": null,
+    "description": "alice selects the wallet row belonging to bob",
+    "statement": "select balance from public.wallets where user_id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "0 row(s)",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 0,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S1.read-isolation.wallets:service_role:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.566Z",
+    "family": "read isolation",
+    "controlId": "public.wallets#policy:wallets_select_own",
+    "testId": "S1.read-isolation.wallets",
+    "intent": null,
+    "description": "alice selects the wallet row belonging to bob",
+    "statement": "select balance from public.wallets where user_id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table wallets",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S1.read-isolation.wallets:admin(postgres):intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.576Z",
+    "family": "read isolation",
+    "controlId": "public.wallets#policy:wallets_select_own",
+    "testId": "S1.read-isolation.wallets",
+    "intent": null,
+    "description": "alice selects the wallet row belonging to bob",
+    "statement": "select balance from public.wallets where user_id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": [
+        {
+          "balance": "25000"
+        }
+      ]
+    }
+  },
+  {
+    "recordId": "S1.read-isolation.wallets:authenticated:alice:broken-1",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.594Z",
+    "family": "read isolation",
+    "controlId": "public.wallets#policy:wallets_select_own",
+    "testId": "S1.read-isolation.wallets",
+    "intent": null,
+    "description": "alice selects the wallet row belonging to bob",
+    "statement": "select balance from public.wallets where user_id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": [
+        {
+          "balance": "25000"
+        }
+      ]
+    }
+  },
+  {
+    "recordId": "S1.read-isolation.wallets:service_role:broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.604Z",
+    "family": "read isolation",
+    "controlId": "public.wallets#policy:wallets_select_own",
+    "testId": "S1.read-isolation.wallets",
+    "intent": null,
+    "description": "alice selects the wallet row belonging to bob",
+    "statement": "select balance from public.wallets where user_id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table wallets",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S1.read-isolation.wallets:admin(postgres):broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.612Z",
+    "family": "read isolation",
+    "controlId": "public.wallets#policy:wallets_select_own",
+    "testId": "S1.read-isolation.wallets",
+    "intent": null,
+    "description": "alice selects the wallet row belonging to bob",
+    "statement": "select balance from public.wallets where user_id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": [
+        {
+          "balance": "25000"
+        }
+      ]
+    }
+  },
+  {
+    "recordId": "S1.read-isolation.wallets:authenticated:alice:restored",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.623Z",
+    "family": "read isolation",
+    "controlId": "public.wallets#policy:wallets_select_own",
+    "testId": "S1.read-isolation.wallets",
+    "intent": null,
+    "description": "alice selects the wallet row belonging to bob",
+    "statement": "select balance from public.wallets where user_id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "0 row(s)",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 0,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S2.with-check.push_tokens:authenticated:alice:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.633Z",
+    "family": "WITH CHECK enforcement",
+    "controlId": "public.push_tokens#policy:push_tokens_insert_own",
+    "testId": "S2.with-check.push_tokens",
+    "intent": null,
+    "description": "alice inserts a push token attributed to bob",
+    "statement": "insert into public.push_tokens (user_id, token, platform) values ($1, $2, 'ios')",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b",
+      "ExponentPushToken[attest-wp1-probe]"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "new row violates row-level security policy for table \"push_tokens\"",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S2.with-check.push_tokens:service_role:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.642Z",
+    "family": "WITH CHECK enforcement",
+    "controlId": "public.push_tokens#policy:push_tokens_insert_own",
+    "testId": "S2.with-check.push_tokens",
+    "intent": null,
+    "description": "alice inserts a push token attributed to bob",
+    "statement": "insert into public.push_tokens (user_id, token, platform) values ($1, $2, 'ios')",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b",
+      "ExponentPushToken[attest-wp1-probe]"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table push_tokens",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S2.with-check.push_tokens:admin(postgres):intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.652Z",
+    "family": "WITH CHECK enforcement",
+    "controlId": "public.push_tokens#policy:push_tokens_insert_own",
+    "testId": "S2.with-check.push_tokens",
+    "intent": null,
+    "description": "alice inserts a push token attributed to bob",
+    "statement": "insert into public.push_tokens (user_id, token, platform) values ($1, $2, 'ios')",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b",
+      "ExponentPushToken[attest-wp1-probe]"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S2.with-check.push_tokens:authenticated:alice:broken-1",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.664Z",
+    "family": "WITH CHECK enforcement",
+    "controlId": "public.push_tokens#policy:push_tokens_insert_own",
+    "testId": "S2.with-check.push_tokens",
+    "intent": null,
+    "description": "alice inserts a push token attributed to bob",
+    "statement": "insert into public.push_tokens (user_id, token, platform) values ($1, $2, 'ios')",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b",
+      "ExponentPushToken[attest-wp1-probe]"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S2.with-check.push_tokens:service_role:broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.673Z",
+    "family": "WITH CHECK enforcement",
+    "controlId": "public.push_tokens#policy:push_tokens_insert_own",
+    "testId": "S2.with-check.push_tokens",
+    "intent": null,
+    "description": "alice inserts a push token attributed to bob",
+    "statement": "insert into public.push_tokens (user_id, token, platform) values ($1, $2, 'ios')",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b",
+      "ExponentPushToken[attest-wp1-probe]"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table push_tokens",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S2.with-check.push_tokens:admin(postgres):broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.683Z",
+    "family": "WITH CHECK enforcement",
+    "controlId": "public.push_tokens#policy:push_tokens_insert_own",
+    "testId": "S2.with-check.push_tokens",
+    "intent": null,
+    "description": "alice inserts a push token attributed to bob",
+    "statement": "insert into public.push_tokens (user_id, token, platform) values ($1, $2, 'ios')",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b",
+      "ExponentPushToken[attest-wp1-probe]"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S2.with-check.push_tokens:authenticated:alice:restored",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.695Z",
+    "family": "WITH CHECK enforcement",
+    "controlId": "public.push_tokens#policy:push_tokens_insert_own",
+    "testId": "S2.with-check.push_tokens",
+    "intent": null,
+    "description": "alice inserts a push token attributed to bob",
+    "statement": "insert into public.push_tokens (user_id, token, platform) values ($1, $2, 'ios')",
+    "params": [
+      "00000000-0000-4000-8000-00000000000b",
+      "ExponentPushToken[attest-wp1-probe]"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "new row violates row-level security policy for table \"push_tokens\"",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:authenticated:alice:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.707Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table profiles",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:service_role:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.718Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table profiles",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:admin(postgres):intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.729Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:authenticated:alice:broken-1",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.741Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "profiles.level is server-owned and not client-writable",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:authenticated:alice:broken-2",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.753Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:service_role:broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.764Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table profiles",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:admin(postgres):broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.774Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S3.server-column.profiles:authenticated:alice:restored",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.786Z",
+    "family": "column grant + write-guard trigger",
+    "controlId": "public.profiles#trigger:profiles_guard_server_columns",
+    "testId": "S3.server-column.profiles",
+    "intent": null,
+    "description": "alice raises her own profile level to 99",
+    "statement": "update public.profiles set level = 99 where id = $1",
+    "params": [
+      "00000000-0000-4000-8000-00000000000a"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for table profiles",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S4.realtime.game-topic-write:authenticated:carol:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.803Z",
+    "family": "realtime channel authorization",
+    "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+    "testId": "S4.realtime.game-topic-write",
+    "intent": null,
+    "description": "carol, who holds no seat at the game, publishes a state message onto that game's topic",
+    "statement": "insert into realtime.messages (topic, extension, event, private, payload) values ($1, 'broadcast', 'state', true, '{\"attest_wp1\":true}'::jsonb)",
+    "params": [
+      "game:e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "authenticated:carol",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000c",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000c",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "new row violates row-level security policy for table \"messages\"",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S4.realtime.game-topic-write:service_role:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.815Z",
+    "family": "realtime channel authorization",
+    "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+    "testId": "S4.realtime.game-topic-write",
+    "intent": null,
+    "description": "carol, who holds no seat at the game, publishes a state message onto that game's topic",
+    "statement": "insert into realtime.messages (topic, extension, event, private, payload) values ($1, 'broadcast', 'state', true, '{\"attest_wp1\":true}'::jsonb)",
+    "params": [
+      "game:e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S4.realtime.game-topic-write:admin(postgres):intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.826Z",
+    "family": "realtime channel authorization",
+    "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+    "testId": "S4.realtime.game-topic-write",
+    "intent": null,
+    "description": "carol, who holds no seat at the game, publishes a state message onto that game's topic",
+    "statement": "insert into realtime.messages (topic, extension, event, private, payload) values ($1, 'broadcast', 'state', true, '{\"attest_wp1\":true}'::jsonb)",
+    "params": [
+      "game:e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S4.realtime.game-topic-write:authenticated:carol:broken-1",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.839Z",
+    "family": "realtime channel authorization",
+    "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+    "testId": "S4.realtime.game-topic-write",
+    "intent": null,
+    "description": "carol, who holds no seat at the game, publishes a state message onto that game's topic",
+    "statement": "insert into realtime.messages (topic, extension, event, private, payload) values ($1, 'broadcast', 'state', true, '{\"attest_wp1\":true}'::jsonb)",
+    "params": [
+      "game:e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "authenticated:carol",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000c",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000c",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S4.realtime.game-topic-write:service_role:broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.850Z",
+    "family": "realtime channel authorization",
+    "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+    "testId": "S4.realtime.game-topic-write",
+    "intent": null,
+    "description": "carol, who holds no seat at the game, publishes a state message onto that game's topic",
+    "statement": "insert into realtime.messages (topic, extension, event, private, payload) values ($1, 'broadcast', 'state', true, '{\"attest_wp1\":true}'::jsonb)",
+    "params": [
+      "game:e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S4.realtime.game-topic-write:admin(postgres):broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.860Z",
+    "family": "realtime channel authorization",
+    "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+    "testId": "S4.realtime.game-topic-write",
+    "intent": null,
+    "description": "carol, who holds no seat at the game, publishes a state message onto that game's topic",
+    "statement": "insert into realtime.messages (topic, extension, event, private, payload) values ($1, 'broadcast', 'state', true, '{\"attest_wp1\":true}'::jsonb)",
+    "params": [
+      "game:e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "error 42501",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S4.realtime.game-topic-write:authenticated:carol:restored",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.871Z",
+    "family": "realtime channel authorization",
+    "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+    "testId": "S4.realtime.game-topic-write",
+    "intent": null,
+    "description": "carol, who holds no seat at the game, publishes a state message onto that game's topic",
+    "statement": "insert into realtime.messages (topic, extension, event, private, payload) values ($1, 'broadcast', 'state', true, '{\"attest_wp1\":true}'::jsonb)",
+    "params": [
+      "game:e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "authenticated:carol",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000c",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000c",
+        "role": "authenticated"
+      }
+    },
+    "expected": "error 42501",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "new row violates row-level security policy for table \"messages\"",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:authenticated:alice:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.882Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for schema private",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:service_role:intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.892Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for schema private",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:admin(postgres):intact",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.900Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": [
+        {
+          "engine_state": {
+            "note": "Fabricated engine state. If a client can read this row, an isolation control has failed.",
+            "attest_synthetic": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:authenticated:alice:broken-1",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.910Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "0 row(s)",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 0,
+      "sqlstate": null,
+      "message": null,
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:authenticated:alice:broken-2",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.920Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": [
+        {
+          "engine_state": {
+            "note": "Fabricated engine state. If a client can read this row, an isolation control has failed.",
+            "attest_synthetic": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:service_role:broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.931Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "service_role",
+      "currentUser": "service_role",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for schema private",
+      "sample": []
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:admin(postgres):broken",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.940Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "admin(postgres)",
+      "currentUser": "postgres",
+      "sessionUser": "postgres",
+      "isSuperuser": false,
+      "bypassesRls": true,
+      "authUid": null,
+      "authRole": null,
+      "claims": null
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "1 row(s)",
+    "outcome": "fail",
+    "detail": {
+      "executed": true,
+      "raised": false,
+      "rowCount": 1,
+      "sqlstate": null,
+      "message": null,
+      "sample": [
+        {
+          "engine_state": {
+            "note": "Fabricated engine state. If a client can read this row, an isolation control has failed.",
+            "attest_synthetic": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "recordId": "S5.private-schema.game_state:authenticated:alice:restored",
+    "runId": "20260921T191054Z-5695a4c3df2d",
+    "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+    "timestampUtc": "2026-09-21T19:11:27.951Z",
+    "family": "server-only schema isolation",
+    "controlId": "private.game_state_private#rls_enabled",
+    "testId": "S5.private-schema.game_state",
+    "intent": null,
+    "description": "alice reads the authoritative engine state for the game she is seated at",
+    "statement": "select engine_state from private.game_state_private where game_session_id = $1",
+    "params": [
+      "e0000000-0000-4000-8000-000000000001"
+    ],
+    "identity": {
+      "label": "authenticated:alice",
+      "currentUser": "authenticated",
+      "sessionUser": "authenticator",
+      "isSuperuser": false,
+      "bypassesRls": false,
+      "authUid": "00000000-0000-4000-8000-00000000000a",
+      "authRole": "authenticated",
+      "claims": {
+        "sub": "00000000-0000-4000-8000-00000000000a",
+        "role": "authenticated"
+      }
+    },
+    "expected": "no data (error or 0 rows)",
+    "actual": "error 42501",
+    "outcome": "pass",
+    "detail": {
+      "executed": true,
+      "raised": true,
+      "rowCount": null,
+      "sqlstate": "42501",
+      "message": "permission denied for schema private",
+      "sample": []
+    }
+  }
+]
