@@ -100,9 +100,12 @@ are worth relative to each other, or which resource belongs in which.
     relation, and the full path is recorded — e.g.
     `public.wallets.user_id -> public.profiles -> auth.users`. The inference is that a relation
     whose *primary key* is a foreign key to an identity relation is itself an identity relation.
-    You may treat a two-hop linkage exactly like a direct one; that is a reasonable reading. It
-    is your call to make rather than the scaffold's, so the two are reported separately and each
-    path is printed so the reasoning can be checked rather than trusted.
+    **This split is evidence provenance, not a risk property.** It records how confidently the
+    scaffold knows who owns a row — measured, or derived through one hop — so that a claim can
+    be checked rather than trusted. It is *not* a sixth dimension and carries no implication
+    that inferred ownership is riskier or safer than direct ownership. If you want provenance to
+    affect a score, you have to say so explicitly inside one of the five dimensions; otherwise
+    it stays what it is, which is a note about how the fact was obtained.
   - **Neither** (12 resources): no identity linkage at all — catalogues, `realtime.messages`,
     `tournament_matches`, the `private` engine-state tables.
 - **How many relations depend on this one.** `public.profiles` is depended on by 24. Most
@@ -415,55 +418,70 @@ One row per resource in the control inventory. The four `*(fact)*` columns are f
 the catalogs and are not yours to change; the five on the right are.
 
 Write the **level label** you defined in Part 1 into each cell, replacing `?`. `*` on an owner
-column marks an **inferred** identity linkage rather than a direct foreign key to `auth.users`;
-the full path is in each resource's dossier.
+column marks an **inferred** identity linkage rather than a direct foreign key to `auth.users` —
+that is provenance, recorded so the claim can be checked, and it carries no risk implication of
+its own.
 
 Full dossiers — every column, every dependency, every guard, every server function that touches
 each resource — are in `evidence/runs/<run-id>/risk-inputs.md`. Score from those, not from this
 summary; the summary exists to keep the table readable, not to be sufficient.
 
-| Resource | *(fact)* Reachable by | *(fact)* Anon grant | *(fact)* Owner col | *(fact)* Dep by | Data | Blast | Integrity | Revers | Exposure |
-|---|---|:---:|---|---:|:---:|:---:|:---:|:---:|:---:|
-| `public.rulesets` | anonymous | yes | — | 6 | ? | ? | ? | ? | ? |
-| `public.cosmetics` | anonymous | yes | — | 5 | ? | ? | ? | ? | ? |
-| `public.career_nodes` | anonymous | yes | — | 3 | ? | ? | ? | ? | ? |
-| `public.tournaments` | anonymous | yes | — | 3 | ? | ? | ? | ? | ? |
-| `public.profiles` | authenticated | no | `id` | 24 | ? | ? | ? | ? | ? |
-| `public.game_sessions` | authenticated | no | `host_user_id`* | 11 | ? | ? | ? | ? | ? |
-| `public.wallet_ledger` | authenticated | no | `user_id`* | 4 | ? | ? | ? | ? | ? |
-| `public.tournament_entries` | authenticated | no | `user_id`* | 3 | ? | ? | ? | ? | ? |
-| `public.hand_records` | authenticated | no | — | 2 | ? | ? | ? | ? | ? |
-| `public.rooms` | authenticated | no | `host_user_id` | 2 | ? | ? | ? | ? | ? |
-| `public.career_attempts` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
-| `public.game_session_seats` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
-| `public.hand_players` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
-| `public.wallets` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? |
-| `public.blocks` | authenticated | no | `blocked_id`*, `blocker_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.career_progress` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.daily_challenges_public` | authenticated | no | — | 0 | ? | ? | ? | ? | ? |
-| `public.daily_entries` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.friend_requests` | authenticated | no | `receiver_id`*, `sender_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.friendships` | authenticated | no | `user_id_a`*, `user_id_b`* | 0 | ? | ? | ? | ? | ? |
-| `public.game_events` | authenticated | no | `recipient_user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.loadouts` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.matchmaking_queue` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
-| `public.notifications` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.player_actions` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.player_daily_xp` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
-| `public.player_decision_periods` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
-| `public.player_mode_stats` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.player_stats` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.push_tokens` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `public.room_members` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? |
-| `public.tournament_matches` | authenticated | no | — | 0 | ? | ? | ? | ? | ? |
-| `public.user_cosmetics` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `realtime.messages` | authenticated | yes, **no policy** | — | 0 | ? | ? | ? | ? | ? |
-| `public.daily_challenges` | server-only | no | — | 2 | ? | ? | ? | ? | ? |
-| `private.career_drill_seeds` | server-only | no | — | 0 | ? | ? | ? | ? | ? |
-| `private.game_commands` | server-only | no | `user_id`* | 0 | ? | ? | ? | ? | ? |
-| `private.game_state_private` | server-only | no | — | 0 | ? | ? | ? | ? | ? |
-| `public.rate_limit_events` | server-only | no | `user_id` | 0 | ? | ? | ? | ? | ? |
-| `public.rate_limit_policies` | server-only | no | — | 0 | ? | ? | ? | ? | ? |
+**The `Evid` column** records how well the facts supported *your* rating of that resource:
+
+| Mark | Meaning |
+|---|---|
+| `E` | **Established** — the repository or database evidence settles what I needed to know. |
+| `P` | **Partially established** — evidence covers some of it; I filled a gap with an assumption, stated in the notes below. |
+| `U` | **Unknown / not established** — I rated this on something the evidence does not show. |
+
+This is a property of the *evidence*, not of the resource, and it is deliberately **not** a sixth
+dimension. **How an `Evid` mark of `P` or `U` should affect a tier is a methodology decision and
+it is yours** — it might raise a tier on precautionary grounds, lower confidence without moving
+the tier, trigger a note in the findings, or do nothing at all. The scaffold records the mark and
+takes no position.
+
+| Resource | *(fact)* Reachable by | *(fact)* Anon grant | *(fact)* Owner col | *(fact)* Dep by | Data | Blast | Integrity | Revers | Exposure | Evid |
+|---|---|:---:|---|---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `public.rulesets` | anonymous | yes | — | 6 | ? | ? | ? | ? | ? | ? |
+| `public.cosmetics` | anonymous | yes | — | 5 | ? | ? | ? | ? | ? | ? |
+| `public.career_nodes` | anonymous | yes | — | 3 | ? | ? | ? | ? | ? | ? |
+| `public.tournaments` | anonymous | yes | — | 3 | ? | ? | ? | ? | ? | ? |
+| `public.profiles` | authenticated | no | `id` | 24 | ? | ? | ? | ? | ? | ? |
+| `public.game_sessions` | authenticated | no | `host_user_id`* | 11 | ? | ? | ? | ? | ? | ? |
+| `public.wallet_ledger` | authenticated | no | `user_id`* | 4 | ? | ? | ? | ? | ? | ? |
+| `public.tournament_entries` | authenticated | no | `user_id`* | 3 | ? | ? | ? | ? | ? | ? |
+| `public.hand_records` | authenticated | no | — | 2 | ? | ? | ? | ? | ? | ? |
+| `public.rooms` | authenticated | no | `host_user_id` | 2 | ? | ? | ? | ? | ? | ? |
+| `public.career_attempts` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? | ? |
+| `public.game_session_seats` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? | ? |
+| `public.hand_players` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? | ? |
+| `public.wallets` | authenticated | no | `user_id`* | 1 | ? | ? | ? | ? | ? | ? |
+| `public.blocks` | authenticated | no | `blocked_id`*, `blocker_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.career_progress` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.daily_challenges_public` | authenticated | no | — | 0 | ? | ? | ? | ? | ? | ? |
+| `public.daily_entries` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.friend_requests` | authenticated | no | `receiver_id`*, `sender_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.friendships` | authenticated | no | `user_id_a`*, `user_id_b`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.game_events` | authenticated | no | `recipient_user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.loadouts` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.matchmaking_queue` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? | ? |
+| `public.notifications` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.player_actions` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.player_daily_xp` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? | ? |
+| `public.player_decision_periods` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? | ? |
+| `public.player_mode_stats` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.player_stats` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.push_tokens` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `public.room_members` | authenticated | no | `user_id` | 0 | ? | ? | ? | ? | ? | ? |
+| `public.tournament_matches` | authenticated | no | — | 0 | ? | ? | ? | ? | ? | ? |
+| `public.user_cosmetics` | authenticated | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `realtime.messages` | authenticated | yes, **no policy** | — | 0 | ? | ? | ? | ? | ? | ? |
+| `public.daily_challenges` | server-only | no | — | 2 | ? | ? | ? | ? | ? | ? |
+| `private.career_drill_seeds` | server-only | no | — | 0 | ? | ? | ? | ? | ? | ? |
+| `private.game_commands` | server-only | no | `user_id`* | 0 | ? | ? | ? | ? | ? | ? |
+| `private.game_state_private` | server-only | no | — | 0 | ? | ? | ? | ? | ? | ? |
+| `public.rate_limit_events` | server-only | no | `user_id` | 0 | ? | ? | ? | ? | ? | ? |
+| `public.rate_limit_policies` | server-only | no | — | 0 | ? | ? | ? | ? | ? | ? |
 
 ### Tier assignments that were not obvious
 
@@ -503,6 +521,9 @@ can reach, and would not close the one that is reachable. Whether that changes a
 yours to decide.
 
 **Your assessment:** _____
+
+**Evidence sufficiency for that assessment** (`E` established / `P` partial / `U` unknown), and
+what is missing if not `E`: _____
 
 ## 4.2 The control-test login can assume `service_role`
 
@@ -560,6 +581,10 @@ inform a floor, a tier, or nothing):*
 
 _____
 
+**Evidence sufficiency for that assessment** (`E` / `P` / `U`). Note that questions 1 and 2 are
+answered from the repository for the *local* case and marked **unknown** for the deployed one,
+so an honest mark here is very likely `P`: _____
+
 ---
 
 # Part 5 — Tier to assurance activity
@@ -585,6 +610,8 @@ everything equally, and why these three levels)*:
 
 _____
 
+**Evidence sufficiency for this mapping** (`E` / `P` / `U`): _____
+
 > **A warning the brief makes explicitly, repeated here because it is the easiest rule to break
 > without noticing:** *"Do not let tier assignment drift toward 'whatever is easy to test.' If a
 > high-tier resource is hard to test, that is a finding, not a reason to downgrade it."*
@@ -593,25 +620,52 @@ _____
 
 # Part 6 — Sensitivity
 
-Written after scoring, not before. The mechanical half is computed by
-`npm run attest rubric` once Parts 1–3 are complete: it re-runs your scores under alternative
-weightings and reports which resources change tier and what that does to the test count.
+The brief asks for one thing here: **which resources would change tier under a reasonable
+alternative rubric, and what that would cost in test count.** That is the whole requirement.
 
-The half that is yours: **which alternative rubric is the reasonable one to compare against?**
-A sensitivity analysis against a strawman proves nothing. The useful comparison is against the
-rubric a competent person who disagreed with you would have written.
+## What the minimum sufficient form is
 
-**The alternative rubric I am testing against, and why it is a fair one:**
+It is a *comparison*, not a second risk programme. Sufficient means:
 
-_____
+1. **One alternative**, stated in a few lines — not a second full rubric document. It must differ
+   from yours in **one identifiable way**, so that any tier change is attributable to that
+   difference rather than to a dozen at once.
+2. **A table of the resources that move**, with the tier under each rubric. If none move, that is
+   a result and it is worth reporting, because it means the tiering is insensitive to the thing
+   you varied.
+3. **The test-count delta**, computed from your Part 5 activity definitions: how many more or
+   fewer tests the alternative implies.
+4. **A sentence on what you conclude.** Typically one of: the tiering is robust to this
+   disagreement; or it hinges on one choice, which is therefore the thing to defend.
 
-**Resources that change tier under it:** *(computed)*
+That is four short items. Anything beyond it is scope the brief did not ask for.
 
-**What that costs in test count:** *(computed)*
+## What makes an alternative "reasonable"
 
-**What I conclude from that:** _____
+A sensitivity analysis against a strawman proves nothing. The useful comparison is the rubric a
+competent person who disagreed with you would actually have written. Concretely, the alternative
+has to be one you could argue *for* if you had to.
 
----
+The cheapest honest source of one is a decision you already had to make and could have made
+differently — the ambiguous cases in Part 1 and the architecture choice in Part 2 are exactly
+these. Varying one of those is a real disagreement; inventing a rubric nobody would defend is
+not.
+
+## 6.1 The alternative I am testing against
+
+**What it changes, in one or two lines:** _____
+
+**Why a competent person could hold this view:** _____
+
+**Evidence sufficiency for the comparison** (`E` / `P` / `U`): _____
+
+## 6.2 Results
+
+**Resources that change tier:** *(computed once Parts 1–3 are complete)*
+
+**Test-count delta:** *(computed)*
+
+**What I conclude:** _____
 
 # Part 7 — What this rubric is not
 

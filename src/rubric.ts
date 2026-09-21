@@ -47,7 +47,8 @@ const SECTIONS: readonly { readonly heading: RegExp; readonly label: string }[] 
   { heading: /^## 4\.1 /m, label: "Part 4.1 — FORCE ROW LEVEL SECURITY assessment" },
   { heading: /^## 4\.2 /m, label: "Part 4.2 — service_role reachability assessment" },
   { heading: /^# Part 5 —/m, label: "Part 5 — tier to assurance activity" },
-  { heading: /^# Part 6 —/m, label: "Part 6 — sensitivity" },
+  { heading: /^## 6\.1 The alternative/m, label: "Part 6.1 — the alternative rubric" },
+  { heading: /^## 6\.2 Results/m, label: "Part 6.2 — results (computed)" },
   { heading: /^# Part 7 —/m, label: "Part 7 — limitations" },
 ];
 

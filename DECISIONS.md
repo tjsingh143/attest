@@ -727,3 +727,62 @@ whichever gets made.
 **What would change.** Under the first draft the author would very likely have filled in the
 weights table, because it was there. The cost of this version is that Part 2 is longer and asks
 a question before it asks for input.
+
+### D2.9 — Identity provenance is recorded, and is not a risk property
+
+**Decided.** The direct/inferred split and the recorded path are **evidence provenance**: they
+say how confidently the scaffold knows who owns a row. They are not a sixth dimension and carry
+no implication that inferred ownership is riskier or safer than direct ownership.
+
+**Why it needed saying.** D2.7 split the two for a good reason and then listed "do you weigh a
+two-hop linkage the same as a direct FK?" among the rubric's open questions — which quietly
+promoted a provenance note into a risk input. Those are different things. Whether a column
+reaches `auth.users` in one hop or two is a fact about how the scaffold learned who the owner
+is; it says nothing about what happens if the control over that row fails.
+
+If provenance is to affect a score it has to be written into one of the five dimensions
+explicitly. Otherwise it stays a note about how the fact was obtained.
+
+### D2.10 — Evidence sufficiency is recorded per judgment, and its effect on risk is not decided
+
+**Decided.** Every written assessment and every scored resource carries an evidence mark:
+`E` established, `P` partially established, `U` unknown. The scaffold records the mark and takes
+no position on what it should do to a tier.
+
+**Why.** Several judgments in this rubric rest on evidence of visibly different strength. The
+exposure classification is read from the catalogs. The reversibility of a wallet corruption
+depends on backups and detection that Arc21 does not have and this repository cannot show. The
+`service_role` reachability question is answered from source for the local case and is
+**unknown** for the deployed one. A rubric that presents all three as equally grounded is
+overstating two of them.
+
+**Why it is not a sixth dimension.** Because "how well do I know this" is not a kind of risk, and
+combining it with the five as though it were would mean a well-understood low-risk resource and a
+poorly-understood one become arithmetically comparable. What an unknown *should* do — raise a
+tier on precautionary grounds, lower stated confidence without moving the tier, trigger a note in
+the findings, or nothing — is a methodology decision and belongs to the author.
+
+**Cost.** One more column in the scoring table, 40 marks. Proportionate: the alternative of
+marking evidence per dimension per resource would have been 200 more cells for a distinction that
+rarely varies within a single resource.
+
+### D2.11 — The sensitivity requirement is scoped to four items
+
+**Decided.** `RUBRIC.md` Part 6 states the minimum sufficient form explicitly: one alternative
+differing in **one identifiable way**, the table of resources that move, the test-count delta
+computed from the Part 5 activity definitions, and a sentence of conclusion.
+
+**Why.** The brief asks which resources would change tier under a reasonable alternative rubric
+and what that costs in test count. Read expansively that becomes a second risk programme, which
+is scope the brief did not ask for and which brief §8 warns against. Read too narrowly it becomes
+a comparison against a strawman, which proves nothing.
+
+The constraint that does the work is **one identifiable difference**: it makes any tier change
+attributable to that difference rather than to a dozen at once. The scaffold also names the
+cheapest honest source of an alternative — one of the ambiguous cases the author had to decide
+anyway, or the architecture choice — because a disagreement the author genuinely had is a
+disagreement a competent reader could also have.
+
+**What is left to the author.** Which alternative. A sensitivity analysis is only meaningful
+against a rubric somebody would actually defend, and the author is the one who knows which of
+their own choices was closest to going the other way.
