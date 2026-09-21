@@ -305,3 +305,29 @@ it is a different test from "can anon read this today".
 **What would change.** Under the collapsed version the anon surface reads as five application
 resources. Under this one it reads as four reachable plus one latent — and the four are all
 read-only catalogue tables whose policies name `anon` on purpose.
+
+### D0.14 — Triggers are inventoried in full, and "can refuse" is a labelled heuristic
+
+**Decided.** All 52 triggers on in-scope relations are captured. A `can_refuse` flag marks
+those whose function body contains a `RAISE` that aborts — 39 of the 52, on 32 tables. The
+remaining 13 are housekeeping (`set_updated_at` accounts for 9 of them).
+
+**Why.** The first version of this probe called the control kind `write_guard_trigger` and
+counted all 52 as controls. That was wrong in a way worth recording: `set_updated_at`
+maintains a column and refuses nothing, and reporting "52 write guards" would have inflated
+the control surface by a quarter in a document whose whole purpose is to state the surface
+accurately.
+
+**The heuristic is known to be wrong in at least one direction, and the case is real.**
+`guard_profile_display_name_rate` refuses a write by calling `enforce_rate_limit()`, which
+raises one level down. The body-text test does not see it, so the inventory classifies a
+genuine control as housekeeping. The pattern was deliberately **not** widened to catch it,
+for two reasons: chasing raises through call graphs by text matching gets less reliable the
+further it goes, and the honest fix is not a better regex. It is WP3, which settles whether a
+trigger refuses anything by issuing the statement and recording what came back.
+
+**What would change.** Dropping the flag entirely would mean the reader cannot tell a control
+from a timestamp maintainer without reading 52 function bodies. Trusting the flag as truth
+would mean the inventory asserts something it cannot know. Labelling it as a heuristic
+everywhere it is reported is the only version of this that survives someone asking "how do
+you know?".

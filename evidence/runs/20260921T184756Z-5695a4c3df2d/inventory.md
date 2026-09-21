@@ -5,8 +5,8 @@ disposable local instance rebuilt from migrations. Nothing in this document is h
 
 | | |
 |---|---|
-| Run | `20260921T184450Z-5695a4c3df2d` |
-| Started | 2026-09-21T18:44:50.496Z |
+| Run | `20260921T184756Z-5695a4c3df2d` |
+| Started | 2026-09-21T18:47:56.071Z |
 | Instance | 127.0.0.1:54322/postgres |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
 | Migrations | 59 files |
@@ -31,7 +31,7 @@ disposable local instance rebuilt from migrations. Nothing in this document is h
 | — rls forced | 39 |
 | — security definer function | 88 |
 | — table grant | 40 |
-| — write guard trigger | 52 |
+| — trigger | 52 |
 | Structural observations | 49 |
 
 ## Roles on the instance
@@ -67,35 +67,42 @@ to whoever owns it.
 `Reachable by` lists only grantees that also hold USAGE on the containing schema — a grant
 inside a schema nobody may enter is not reachable.
 
-| Resource | Kind | Owner | RLS enabled | RLS forced | Policies | Reachable by | Write guards |
+`Refusing triggers` lists triggers whose function can raise, which is how this system
+refuses writes that the privilege system and the policies would otherwise allow — and the
+only way to refuse `TRUNCATE`, which row-level security does not cover at all. The
+classification is a **heuristic** on the function body; housekeeping triggers such as
+`set_updated_at` are excluded by it. Whether a trigger actually refuses anything is settled
+by executing a statement, not by reading its source.
+
+| Resource | Kind | Owner | RLS enabled | RLS forced | Policies | Reachable by | Refusing triggers |
 |---|---|---|---|---|---:|---|---|
 | `private.career_drill_seeds` | table | `postgres` | yes | no | 0 | — | — |
 | `private.game_commands` | table | `postgres` | yes | no | 0 | — | — |
-| `private.game_state_private` | table | `postgres` | yes | no | 0 | — | `game_state_private_set_updated_at` |
-| `public.blocks` | table | `postgres` | yes | no | 3 | authenticated: DELETE, INSERT, SELECT | `blocks_apply_side_effects` |
-| `public.career_attempts` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `career_attempts_deny_client_write`<br>`career_attempts_set_updated_at` |
+| `private.game_state_private` | table | `postgres` | yes | no | 0 | — | — |
+| `public.blocks` | table | `postgres` | yes | no | 3 | authenticated: DELETE, INSERT, SELECT | — |
+| `public.career_attempts` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `career_attempts_deny_client_write` |
 | `public.career_nodes` | table | `postgres` | yes | no | 1 | anon: SELECT<br>authenticated: SELECT | `career_nodes_deny_client_write` |
-| `public.career_progress` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `career_progress_deny_client_write`<br>`career_progress_set_updated_at` |
+| `public.career_progress` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `career_progress_deny_client_write` |
 | `public.cosmetics` | table | `postgres` | yes | no | 1 | anon: SELECT<br>authenticated: SELECT | `cosmetics_deny_client_write` |
 | `public.daily_challenges` | table | `postgres` | yes | no | 1 | — | `daily_challenges_deny_client_write`<br>`daily_challenges_guard_seed` |
 | `public.daily_challenges_public` | view | `postgres` | n/a | n/a | 0 | authenticated: SELECT | — |
 | `public.daily_entries` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `daily_entries_deny_client_write` |
-| `public.friend_requests` | table | `postgres` | yes | no | 3 | authenticated: INSERT, SELECT | `friend_requests_create_friendship`<br>`friend_requests_guard_transition` |
+| `public.friend_requests` | table | `postgres` | yes | no | 3 | authenticated: INSERT, SELECT | `friend_requests_guard_transition` |
 | `public.friendships` | table | `postgres` | yes | no | 2 | authenticated: DELETE, SELECT | — |
 | `public.game_events` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `game_events_deny_client_write` |
 | `public.game_session_seats` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `game_session_seats_deny_client_write` |
 | `public.game_sessions` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `game_sessions_deny_client_write`<br>`game_sessions_guard_escrow` |
 | `public.hand_players` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `hand_players_deny_client_write` |
 | `public.hand_records` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `hand_records_deny_client_write` |
-| `public.loadouts` | table | `postgres` | yes | no | 3 | authenticated: INSERT, SELECT | `loadouts_guard_slots`<br>`loadouts_set_updated_at` |
+| `public.loadouts` | table | `postgres` | yes | no | 3 | authenticated: INSERT, SELECT | `loadouts_guard_slots` |
 | `public.matchmaking_queue` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `matchmaking_queue_deny_client_write` |
 | `public.notifications` | table | `postgres` | yes | no | 3 | authenticated: DELETE, SELECT | `notifications_guard_client_update` |
 | `public.player_actions` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `player_actions_deny_client_write` |
 | `public.player_daily_xp` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `player_daily_xp_deny_client_write` |
 | `public.player_decision_periods` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `player_decision_periods_deny_client_write` |
-| `public.player_mode_stats` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `player_mode_stats_deny_client_write`<br>`player_mode_stats_set_updated_at` |
-| `public.player_stats` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `player_stats_deny_client_write`<br>`player_stats_set_updated_at` |
-| `public.profiles` | table | `postgres` | yes | no | 3 | authenticated: SELECT | `profiles_guard_server_columns`<br>`profiles_guard_username`<br>`profiles_normalise_display_name`<br>`profiles_rate_limit_display_name`<br>`profiles_set_updated_at`<br>`profiles_sync_level` |
+| `public.player_mode_stats` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `player_mode_stats_deny_client_write` |
+| `public.player_stats` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `player_stats_deny_client_write` |
+| `public.profiles` | table | `postgres` | yes | no | 3 | authenticated: SELECT | `profiles_guard_server_columns`<br>`profiles_guard_username`<br>`profiles_normalise_display_name` |
 | `public.push_tokens` | table | `postgres` | yes | no | 4 | authenticated: DELETE, INSERT, SELECT | — |
 | `public.rate_limit_events` | table | `postgres` | yes | no | 0 | — | `rate_limit_events_deny_client_write` |
 | `public.rate_limit_policies` | table | `postgres` | yes | no | 0 | — | `rate_limit_policies_deny_client_write` |
@@ -104,10 +111,10 @@ inside a schema nobody may enter is not reachable.
 | `public.rulesets` | table | `postgres` | yes | no | 1 | anon: SELECT<br>authenticated: SELECT | `rulesets_deny_client_write` |
 | `public.tournament_entries` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `tournament_entries_deny_client_write` |
 | `public.tournament_matches` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `tournament_matches_deny_client_write` |
-| `public.tournaments` | table | `postgres` | yes | no | 1 | anon: SELECT<br>authenticated: SELECT | `tournaments_deny_client_write`<br>`tournaments_set_updated_at` |
+| `public.tournaments` | table | `postgres` | yes | no | 1 | anon: SELECT<br>authenticated: SELECT | `tournaments_deny_client_write` |
 | `public.user_cosmetics` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `user_cosmetics_deny_client_write` |
 | `public.wallet_ledger` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `wallet_ledger_append_only`<br>`wallet_ledger_deny_client_write`<br>`wallet_ledger_deny_truncate` |
-| `public.wallets` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `wallets_deny_client_write`<br>`wallets_deny_truncate`<br>`wallets_set_updated_at` |
+| `public.wallets` | table | `postgres` | yes | no | 1 | authenticated: SELECT | `wallets_deny_client_write`<br>`wallets_deny_truncate` |
 | `realtime.messages` | partitioned_table | `supabase_realtime_admin` | yes | no | 3 | anon: INSERT, SELECT, UPDATE<br>authenticated: INSERT, SELECT, UPDATE<br>service_role: INSERT, SELECT, UPDATE | — |
 
 ## Column-level grants

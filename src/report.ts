@@ -110,7 +110,14 @@ export function renderInventoryMarkdown(inv: Inventory, meta: RunMeta): string {
   p(`\`Reachable by\` lists only grantees that also hold USAGE on the containing schema — a grant`);
   p(`inside a schema nobody may enter is not reachable.`);
   p();
-  p(`| Resource | Kind | Owner | RLS enabled | RLS forced | Policies | Reachable by | Write guards |`);
+  p(`\`Refusing triggers\` lists triggers whose function can raise, which is how this system`);
+  p(`refuses writes that the privilege system and the policies would otherwise allow — and the`);
+  p(`only way to refuse \`TRUNCATE\`, which row-level security does not cover at all. The`);
+  p(`classification is a **heuristic** on the function body; housekeeping triggers such as`);
+  p(`\`set_updated_at\` are excluded by it. Whether a trigger actually refuses anything is settled`);
+  p(`by executing a statement, not by reading its source.`);
+  p();
+  p(`| Resource | Kind | Owner | RLS enabled | RLS forced | Policies | Reachable by | Refusing triggers |`);
   p(`|---|---|---|---|---|---:|---|---|`);
   for (const r of inv.resources) {
     const reach = Object.entries(r.reachableBy)

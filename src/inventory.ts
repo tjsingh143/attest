@@ -47,7 +47,7 @@ const PROBES = {
   schemaPrivileges:   { file: "05_schema_privileges.sql",   params: [GRANTEES] },
   roles:              { file: "06_roles.sql",               params: [] },
   routines:           { file: "07_routines.sql",            params: [APP_SCHEMAS, GRANTEES] },
-  writeGuards:        { file: "08_write_guards.sql",        params: [APP_SCHEMAS, EXTRA_RELS] },
+  triggers:           { file: "08_triggers.sql",             params: [APP_SCHEMAS, EXTRA_RELS] },
   publications:       { file: "09_publications.sql",        params: [] },
   defaultPrivileges:  { file: "10_default_privileges.sql",  params: [GRANTEES] },
   anonymousReach:     { file: "11_anonymous_reach.sql",     params: [APP_SCHEMAS] },
@@ -81,7 +81,7 @@ export type ControlKind =
   | "schema_grant"
   | "security_definer_function"
   | "function_execute_grant"
-  | "write_guard_trigger"
+  | "trigger"
   | "realtime_publication";
 
 export interface ControlRow {
@@ -112,6 +112,7 @@ export interface ResourceRow {
   readonly reachableBy: Readonly<Record<string, readonly string[]>>;
   /** Column-level privileges, grouped by "grantee:column". */
   readonly columnReachableBy: Readonly<Record<string, readonly string[]>>;
+  /** Triggers on this resource whose function can raise. See the probe's heuristic note. */
   readonly writeGuards: readonly string[];
   readonly declaredIntent: string | null;
 }
@@ -210,7 +211,8 @@ export function buildInventory(raw: RawProbes): Inventory {
   }
 
   const guards = new Map<string, string[]>();
-  for (const t of raw.writeGuards) {
+  for (const t of raw.triggers) {
+    if (t.can_refuse !== true) continue;
     const res = s(t.resource);
     guards.set(res, [...(guards.get(res) ?? []), s(t.trigger_name)]);
   }
@@ -451,16 +453,17 @@ export function buildInventory(raw: RawProbes): Inventory {
     }
   }
 
-  // --- write guards as controls -------------------------------------------
-  for (const t of raw.writeGuards) {
+  // --- triggers as controls ------------------------------------------------
+  for (const t of raw.triggers) {
     controls.push({
-      resource: s(t.resource), resourceKind: "table", controlKind: "write_guard_trigger",
+      resource: s(t.resource), resourceKind: "table", controlKind: "trigger",
       controlId: `${s(t.resource)}#trigger:${s(t.trigger_name)}`,
       present: s(t.enabled) === "O",
       detail: {
         trigger: s(t.trigger_name), function: s(t.trigger_function),
-        timing: s(t.timing), level: s(t.level), events: arr(t.events, "write_guards.events"),
+        timing: s(t.timing), level: s(t.level), events: arr(t.events, "triggers.events"),
         enabled: s(t.enabled),
+        can_refuse: t.can_refuse === true,
       },
       declaredIntent: t.declared_intent === null ? null : s(t.declared_intent),
     });

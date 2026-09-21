@@ -42,9 +42,7 @@
       "viewSecurityInvoker": null,
       "reachableBy": {},
       "columnReachableBy": {},
-      "writeGuards": [
-        "game_state_private_set_updated_at"
-      ],
+      "writeGuards": [],
       "declaredIntent": "Authoritative BlackjackGameState including future shoe order and the dealer hole card. No API role has any privilege on this table or on the schema that contains it."
     },
     {
@@ -65,9 +63,7 @@
         ]
       },
       "columnReachableBy": {},
-      "writeGuards": [
-        "blocks_apply_side_effects"
-      ],
+      "writeGuards": [],
       "declaredIntent": "Directed block. Readable only by the blocker: a blocked user is never told."
     },
     {
@@ -87,8 +83,7 @@
       },
       "columnReachableBy": {},
       "writeGuards": [
-        "career_attempts_deny_client_write",
-        "career_attempts_set_updated_at"
+        "career_attempts_deny_client_write"
       ],
       "declaredIntent": "One reward-bearing attempt at one career node. Every counter is written by the server from its own authoritative state; the client reports nothing. career_progress is the aggregate computed from these."
     },
@@ -133,8 +128,7 @@
       },
       "columnReachableBy": {},
       "writeGuards": [
-        "career_progress_deny_client_write",
-        "career_progress_set_updated_at"
+        "career_progress_deny_client_write"
       ],
       "declaredIntent": "Per-user career progress. Readable by its owner; every write, including reward payment, is server-controlled."
     },
@@ -285,7 +279,6 @@
         ]
       },
       "writeGuards": [
-        "friend_requests_create_friendship",
         "friend_requests_guard_transition"
       ],
       "declaredIntent": "Readable only by the sender and the receiver."
@@ -444,8 +437,7 @@
         ]
       },
       "writeGuards": [
-        "loadouts_guard_slots",
-        "loadouts_set_updated_at"
+        "loadouts_guard_slots"
       ],
       "declaredIntent": "Equipped cosmetics. Client-writable, but every slot is validated against ownership and kind by trigger."
     },
@@ -576,8 +568,7 @@
       },
       "columnReachableBy": {},
       "writeGuards": [
-        "player_mode_stats_deny_client_write",
-        "player_mode_stats_set_updated_at"
+        "player_mode_stats_deny_client_write"
       ],
       "declaredIntent": "Server-written statistics bucketed by mode and ruleset version. Private to the owning user."
     },
@@ -598,8 +589,7 @@
       },
       "columnReachableBy": {},
       "writeGuards": [
-        "player_stats_deny_client_write",
-        "player_stats_set_updated_at"
+        "player_stats_deny_client_write"
       ],
       "declaredIntent": "Server-written lifetime statistics. Private to the owning user."
     },
@@ -641,10 +631,7 @@
       "writeGuards": [
         "profiles_guard_server_columns",
         "profiles_guard_username",
-        "profiles_normalise_display_name",
-        "profiles_rate_limit_display_name",
-        "profiles_set_updated_at",
-        "profiles_sync_level"
+        "profiles_normalise_display_name"
       ],
       "declaredIntent": "Public-facing player identity. level and xp are server-owned and are not client-writable."
     },
@@ -841,8 +828,7 @@
       },
       "columnReachableBy": {},
       "writeGuards": [
-        "tournaments_deny_client_write",
-        "tournaments_set_updated_at"
+        "tournaments_deny_client_write"
       ],
       "declaredIntent": "Public tournament catalogue. Server-written."
     },
@@ -908,8 +894,7 @@
       "columnReachableBy": {},
       "writeGuards": [
         "wallets_deny_client_write",
-        "wallets_deny_truncate",
-        "wallets_set_updated_at"
+        "wallets_deny_truncate"
       ],
       "declaredIntent": "Global virtual-chip balance. Server-authoritative: readable by its owner, writable by no client role."
     },
@@ -1018,7 +1003,7 @@
     {
       "resource": "private.game_state_private",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "private.game_state_private#trigger:game_state_private_set_updated_at",
       "present": true,
       "detail": {
@@ -1029,7 +1014,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -1289,7 +1275,7 @@
     {
       "resource": "public.blocks",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.blocks#trigger:blocks_apply_side_effects",
       "present": true,
       "detail": {
@@ -1300,7 +1286,8 @@
         "events": [
           "INSERT"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -1394,7 +1381,7 @@
     {
       "resource": "public.career_attempts",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.career_attempts#trigger:career_attempts_deny_client_write",
       "present": true,
       "detail": {
@@ -1407,14 +1394,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.career_attempts",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.career_attempts#trigger:career_attempts_set_updated_at",
       "present": true,
       "detail": {
@@ -1425,7 +1413,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -1502,7 +1491,7 @@
     {
       "resource": "public.career_nodes",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.career_nodes#trigger:career_nodes_deny_client_write",
       "present": true,
       "detail": {
@@ -1515,7 +1504,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -1577,7 +1567,7 @@
     {
       "resource": "public.career_progress",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.career_progress#trigger:career_progress_deny_client_write",
       "present": true,
       "detail": {
@@ -1590,14 +1580,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.career_progress",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.career_progress#trigger:career_progress_set_updated_at",
       "present": true,
       "detail": {
@@ -1608,7 +1599,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -1749,7 +1741,7 @@
     {
       "resource": "public.cosmetics",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.cosmetics#trigger:cosmetics_deny_client_write",
       "present": true,
       "detail": {
@@ -1762,7 +1754,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -2084,7 +2077,7 @@
     {
       "resource": "public.daily_challenges",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.daily_challenges#trigger:daily_challenges_deny_client_write",
       "present": true,
       "detail": {
@@ -2097,14 +2090,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.daily_challenges",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.daily_challenges#trigger:daily_challenges_guard_seed",
       "present": true,
       "detail": {
@@ -2116,7 +2110,8 @@
           "INSERT",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -2178,7 +2173,7 @@
     {
       "resource": "public.daily_entries",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.daily_entries#trigger:daily_entries_deny_client_write",
       "present": true,
       "detail": {
@@ -2191,7 +2186,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -2528,7 +2524,7 @@
     {
       "resource": "public.friend_requests",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.friend_requests#trigger:friend_requests_create_friendship",
       "present": true,
       "detail": {
@@ -2539,14 +2535,15 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
     {
       "resource": "public.friend_requests",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.friend_requests#trigger:friend_requests_guard_transition",
       "present": true,
       "detail": {
@@ -2557,7 +2554,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -2693,7 +2691,7 @@
     {
       "resource": "public.game_events",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.game_events#trigger:game_events_deny_client_write",
       "present": true,
       "detail": {
@@ -2706,7 +2704,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -2768,7 +2767,7 @@
     {
       "resource": "public.game_session_seats",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.game_session_seats#trigger:game_session_seats_deny_client_write",
       "present": true,
       "detail": {
@@ -2781,7 +2780,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -2843,7 +2843,7 @@
     {
       "resource": "public.game_sessions",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.game_sessions#trigger:game_sessions_deny_client_write",
       "present": true,
       "detail": {
@@ -2856,14 +2856,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.game_sessions",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.game_sessions#trigger:game_sessions_guard_escrow",
       "present": true,
       "detail": {
@@ -2874,7 +2875,8 @@
         "events": [
           "DELETE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -3032,7 +3034,7 @@
     {
       "resource": "public.hand_players",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.hand_players#trigger:hand_players_deny_client_write",
       "present": true,
       "detail": {
@@ -3045,7 +3047,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -3107,7 +3110,7 @@
     {
       "resource": "public.hand_records",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.hand_records#trigger:hand_records_deny_client_write",
       "present": true,
       "detail": {
@@ -3120,7 +3123,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -3786,7 +3790,7 @@
     {
       "resource": "public.loadouts",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.loadouts#trigger:loadouts_guard_slots",
       "present": true,
       "detail": {
@@ -3798,14 +3802,15 @@
           "INSERT",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.loadouts",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.loadouts#trigger:loadouts_set_updated_at",
       "present": true,
       "detail": {
@@ -3816,7 +3821,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -3910,7 +3916,7 @@
     {
       "resource": "public.matchmaking_queue",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.matchmaking_queue#trigger:matchmaking_queue_deny_client_write",
       "present": true,
       "detail": {
@@ -3923,7 +3929,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -4402,7 +4409,7 @@
     {
       "resource": "public.notifications",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.notifications#trigger:notifications_guard_client_update",
       "present": true,
       "detail": {
@@ -4413,7 +4420,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -4523,7 +4531,7 @@
     {
       "resource": "public.player_actions",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.player_actions#trigger:player_actions_deny_client_write",
       "present": true,
       "detail": {
@@ -4536,7 +4544,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -4598,7 +4607,7 @@
     {
       "resource": "public.player_daily_xp",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.player_daily_xp#trigger:player_daily_xp_deny_client_write",
       "present": true,
       "detail": {
@@ -4611,7 +4620,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -4673,7 +4683,7 @@
     {
       "resource": "public.player_decision_periods",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.player_decision_periods#trigger:player_decision_periods_deny_client_write",
       "present": true,
       "detail": {
@@ -4686,7 +4696,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -4748,7 +4759,7 @@
     {
       "resource": "public.player_mode_stats",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.player_mode_stats#trigger:player_mode_stats_deny_client_write",
       "present": true,
       "detail": {
@@ -4761,14 +4772,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.player_mode_stats",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.player_mode_stats#trigger:player_mode_stats_set_updated_at",
       "present": true,
       "detail": {
@@ -4779,7 +4791,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -4873,7 +4886,7 @@
     {
       "resource": "public.player_stats",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.player_stats#trigger:player_stats_deny_client_write",
       "present": true,
       "detail": {
@@ -4886,14 +4899,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.player_stats",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.player_stats#trigger:player_stats_set_updated_at",
       "present": true,
       "detail": {
@@ -4904,7 +4918,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -5118,7 +5133,7 @@
     {
       "resource": "public.profiles",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "present": true,
       "detail": {
@@ -5129,14 +5144,15 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.profiles",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.profiles#trigger:profiles_guard_username",
       "present": true,
       "detail": {
@@ -5148,14 +5164,15 @@
           "INSERT",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.profiles",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.profiles#trigger:profiles_normalise_display_name",
       "present": true,
       "detail": {
@@ -5167,14 +5184,15 @@
           "INSERT",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.profiles",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.profiles#trigger:profiles_rate_limit_display_name",
       "present": true,
       "detail": {
@@ -5185,14 +5203,15 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
     {
       "resource": "public.profiles",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.profiles#trigger:profiles_set_updated_at",
       "present": true,
       "detail": {
@@ -5203,14 +5222,15 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
     {
       "resource": "public.profiles",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.profiles#trigger:profiles_sync_level",
       "present": true,
       "detail": {
@@ -5222,7 +5242,8 @@
           "INSERT",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -5421,7 +5442,7 @@
     {
       "resource": "public.rate_limit_events",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.rate_limit_events#trigger:rate_limit_events_deny_client_write",
       "present": true,
       "detail": {
@@ -5434,7 +5455,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -5480,7 +5502,7 @@
     {
       "resource": "public.rate_limit_policies",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.rate_limit_policies#trigger:rate_limit_policies_deny_client_write",
       "present": true,
       "detail": {
@@ -5493,7 +5515,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -5827,7 +5850,7 @@
     {
       "resource": "public.room_members",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.room_members#trigger:room_members_deny_client_write",
       "present": true,
       "detail": {
@@ -5840,7 +5863,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -5902,7 +5926,7 @@
     {
       "resource": "public.rooms",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.rooms#trigger:rooms_deny_client_write",
       "present": true,
       "detail": {
@@ -5915,7 +5939,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -5992,7 +6017,7 @@
     {
       "resource": "public.rulesets",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.rulesets#trigger:rulesets_deny_client_write",
       "present": true,
       "detail": {
@@ -6005,7 +6030,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -6255,7 +6281,7 @@
     {
       "resource": "public.tournament_entries",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.tournament_entries#trigger:tournament_entries_deny_client_write",
       "present": true,
       "detail": {
@@ -6268,7 +6294,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -6330,7 +6357,7 @@
     {
       "resource": "public.tournament_matches",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.tournament_matches#trigger:tournament_matches_deny_client_write",
       "present": true,
       "detail": {
@@ -6343,7 +6370,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -6420,7 +6448,7 @@
     {
       "resource": "public.tournaments",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.tournaments#trigger:tournaments_deny_client_write",
       "present": true,
       "detail": {
@@ -6433,14 +6461,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.tournaments",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.tournaments#trigger:tournaments_set_updated_at",
       "present": true,
       "detail": {
@@ -6451,7 +6480,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -6577,7 +6607,7 @@
     {
       "resource": "public.user_cosmetics",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.user_cosmetics#trigger:user_cosmetics_deny_client_write",
       "present": true,
       "detail": {
@@ -6590,7 +6620,8 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -6794,7 +6825,7 @@
     {
       "resource": "public.wallet_ledger",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.wallet_ledger#trigger:wallet_ledger_append_only",
       "present": true,
       "detail": {
@@ -6807,14 +6838,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.wallet_ledger",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.wallet_ledger#trigger:wallet_ledger_deny_client_write",
       "present": true,
       "detail": {
@@ -6827,14 +6859,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.wallet_ledger",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.wallet_ledger#trigger:wallet_ledger_deny_truncate",
       "present": true,
       "detail": {
@@ -6845,7 +6878,8 @@
         "events": [
           "TRUNCATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
@@ -6907,7 +6941,7 @@
     {
       "resource": "public.wallets",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.wallets#trigger:wallets_deny_client_write",
       "present": true,
       "detail": {
@@ -6920,14 +6954,15 @@
           "DELETE",
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.wallets",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.wallets#trigger:wallets_deny_truncate",
       "present": true,
       "detail": {
@@ -6938,14 +6973,15 @@
         "events": [
           "TRUNCATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": true
       },
       "declaredIntent": null
     },
     {
       "resource": "public.wallets",
       "resourceKind": "table",
-      "controlKind": "write_guard_trigger",
+      "controlKind": "trigger",
       "controlId": "public.wallets#trigger:wallets_set_updated_at",
       "present": true,
       "detail": {
@@ -6956,7 +6992,8 @@
         "events": [
           "UPDATE"
         ],
-        "enabled": "O"
+        "enabled": "O",
+        "can_refuse": false
       },
       "declaredIntent": null
     },
@@ -10068,7 +10105,7 @@
     "control.policy": 50,
     "control.security_definer_function": 88,
     "control.function_execute_grant": 61,
-    "control.write_guard_trigger": 52,
+    "control.trigger": 52,
     "observation.deny_by_default": 5,
     "observation.rls_enabled_not_forced": 39,
     "observation.anon_reachable": 4,
