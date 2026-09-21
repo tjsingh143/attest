@@ -84,6 +84,19 @@ async function cmdInventory(fixedRunId?: string): Promise<{ runId: string; runDi
   return { runId, runDir, inv };
 }
 
+/** "If the harness cannot detect a deliberately broken control, nothing
+ *  downstream is worth anything." So a failure here stops the run. */
+function reportValidation(v: Awaited<ReturnType<typeof validate>>): void {
+  for (const e of v.harnessErrors) console.error(`  !! harness error — ${e}`);
+  if (!v.allDetected || !v.allRestored || !v.inventoryUnchanged || v.harnessErrors.length > 0) {
+    console.error(
+      `\nattest: validation FAILED — detected=${v.allDetected} restored=${v.allRestored} ` +
+        `inventory unchanged=${v.inventoryUnchanged} harness errors=${v.harnessErrors.length}`,
+    );
+    process.exitCode = 1;
+  }
+}
+
 async function main(): Promise<void> {
   const cmd = process.argv[2] ?? "run";
   switch (cmd) {
@@ -96,15 +109,7 @@ async function main(): Promise<void> {
     case "validate": {
       console.log("validate (WP1)");
       const v = await validate((s) => console.log(s));
-      if (!v.allDetected || !v.allRestored || !v.inventoryUnchanged) {
-        // "If the harness cannot detect a deliberately broken control, nothing
-        // downstream is worth anything."
-        console.error(
-          `\nattest: validation FAILED — detected=${v.allDetected} restored=${v.allRestored} ` +
-            `inventory unchanged=${v.inventoryUnchanged}`,
-        );
-        process.exitCode = 1;
-      }
+      reportValidation(v);
       break;
     }
     case "run": {
@@ -115,13 +120,7 @@ async function main(): Promise<void> {
       await cmdInventory(runId);
       console.log("validate (WP1)");
       const v = await validate((s) => console.log(s), runId);
-      if (!v.allDetected || !v.allRestored || !v.inventoryUnchanged) {
-        console.error(
-          `\nattest: validation FAILED — detected=${v.allDetected} restored=${v.allRestored} ` +
-            `inventory unchanged=${v.inventoryUnchanged}`,
-        );
-        process.exitCode = 1;
-      }
+      reportValidation(v);
       break;
     }
     default:

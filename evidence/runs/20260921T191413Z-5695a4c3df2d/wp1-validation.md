@@ -5,15 +5,16 @@ were deliberately broken in a disposable instance and put back.
 
 | | |
 |---|---|
-| Run | `20260921T191022Z-5695a4c3df2d` |
-| Started | 2026-09-21T19:10:54.029Z |
+| Run | `20260921T191413Z-5695a4c3df2d` |
+| Started | 2026-09-21T19:14:45.590Z |
 | Instance | 127.0.0.1:54322/postgres |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0` sources `d0d57e327639` |
+| Harness version | `0.1.0` sources `c4c75ac55c3b` |
 | Evidence records | 37 |
 
 | Claim | Result |
 |---|---|
+| No probe ended in a harness error | **yes** |
 | Every weakened control was detected | **yes** |
 | Every weakening was reverted | **yes** |
 | Control inventory identical before and after | **yes** |
@@ -39,11 +40,11 @@ Executed on the same login every control test uses.
 
 | Statement | Permitted | Outcome |
 |---|---|---|
-| `reset role; set role postgres` | **no** | error 42501: permission denied to set role "postgres" |
-| `reset role; set role service_role` | **no** | error ?: Cannot read properties of undefined (reading 'length') |
+| `set role postgres` | **no** | error 42501: permission denied to set role "postgres" |
+| `set role service_role` | **yes** | succeeded |
 
-- `reset role; set role postgres` — postgres owns every application table and holds BYPASSRLS. If this were permitted, the login used for control testing could exempt itself from every policy.
-- `reset role; set role service_role` — service_role holds BYPASSRLS. This IS permitted: the same login the control tests use can switch into a role exempt from row-level security.
+- `set role postgres` — postgres owns every application table and holds BYPASSRLS. If this were permitted, the login used for control testing could exempt itself from every policy.
+- `set role service_role` — service_role holds BYPASSRLS. This IS permitted: the same login the control tests use can switch into a role exempt from row-level security.
 
 The second result is the honest one and it is not comfortable: the login the control tests
 use **can** switch into `service_role`, which holds BYPASSRLS. Nothing in the database
@@ -58,8 +59,9 @@ It is load-bearing precisely because the database would allow the mistake.
 
 ## 2. What "enabled but not forced" actually does
 
-Arc21 has row-level security enabled on 38 tables and forced on
-0. That is a fact. Whether it is a problem is a different question, and
+Across the application schemas (`public` and `private`) Arc21 has row-level security enabled
+on 38 tables and forced on 0. (The inventory counts 39 tables because it also
+includes `realtime.messages`, which Arc21 writes policies on but does not own.) That is a fact. Whether it is a problem is a different question, and
 this section separates the two by demonstrating the mechanism before drawing any conclusion.
 
 On this instance `postgres` both owns the tables **and** holds BYPASSRLS, so
@@ -85,7 +87,7 @@ That is a reachability question and it has an executed answer:
 |---|---|
 | Does the table owner (`postgres`) bypass RLS anyway? | **yes** |
 | Can the client login reach the table owner? | **no** |
-| Can the client login reach a role that bypasses RLS? | **no** |
+| Can the client login reach a role that bypasses RLS? | **yes** |
 
 Read together: turning FORCE on would close the owner door, and would **not** close the other
 one, because the owner holds BYPASSRLS as well. No client can reach the owner. A holder of the

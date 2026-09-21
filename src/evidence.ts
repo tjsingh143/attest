@@ -56,6 +56,18 @@ export interface Outcome {
   readonly rowCount: number | null;
   readonly sqlstate: string | null;
   readonly message: string | null;
+  /**
+   * True when the statement did not fail in the DATABASE -- the harness itself
+   * threw.
+   *
+   * These are not results and must never be scored as one. A probe expecting a
+   * refusal would otherwise be satisfied by the harness crashing, and the
+   * report would state that a control held when in fact nothing was measured.
+   * That happened: a multi-statement probe returned an array of results, a
+   * property read threw a TypeError, and it was recorded as a database refusal
+   * with no SQLSTATE. The report then contradicted itself two paragraphs apart.
+   */
+  readonly harnessError: boolean;
   /** A small sample of returned rows, for a reader. Never used for pass/fail. */
   readonly sample: readonly unknown[];
 }
@@ -91,6 +103,7 @@ export interface EvidenceRecord {
 /** Canonical one-line form of an outcome. Two runs that produce the same string
  *  are indistinguishable to any assertion built on this statement. */
 export function summarize(o: Outcome): string {
+  if (o.harnessError) return `HARNESS ERROR`;
   return o.raised ? `error ${o.sqlstate ?? "?"}` : `${o.rowCount ?? 0} row(s)`;
 }
 
@@ -101,6 +114,8 @@ export function describeExpectation(e: Expectation): string {
 }
 
 function matches(e: Expectation, o: Outcome): boolean {
+  // The harness breaking is never evidence that a control worked.
+  if (o.harnessError) return false;
   if (e.kind === "rows") return !o.raised && o.rowCount === e.count;
   if (e.kind === "no_data") return o.raised || o.rowCount === 0;
   if (!o.raised) return false;
@@ -116,22 +131,33 @@ export async function execute(
 ): Promise<Outcome> {
   try {
     const res = await session.query(statement, params);
+    // A statement string containing more than one command comes back as an
+    // array of results rather than a single one.
+    const last = (Array.isArray(res) ? res[res.length - 1] : res) as
+      | { rows?: unknown[]; rowCount?: number | null }
+      | undefined;
+    const rows = last?.rows ?? [];
     return {
       executed: true,
       raised: false,
-      rowCount: res.rowCount ?? res.rows.length,
+      rowCount: last?.rowCount ?? rows.length,
       sqlstate: null,
       message: null,
-      sample: res.rows.slice(0, 3),
+      harnessError: false,
+      sample: rows.slice(0, 3),
     };
   } catch (err) {
     const e = err as { code?: string; message?: string };
+    // A PostgreSQL error carries a five-character SQLSTATE. Anything else came
+    // from this process, not from the database.
+    const isSqlState = typeof e.code === "string" && /^[0-9A-Za-z]{5}$/.test(e.code);
     return {
       executed: true,
       raised: true,
       rowCount: null,
-      sqlstate: e.code ?? null,
+      sqlstate: isSqlState ? (e.code as string) : null,
       message: (e.message ?? String(err)).split("\n")[0] ?? null,
+      harnessError: !isSqlState,
       sample: [],
     };
   }

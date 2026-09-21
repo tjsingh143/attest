@@ -1,10 +1,10 @@
 {
-  "runId": "20260921T191054Z-5695a4c3df2d",
-  "startedAt": "2026-09-21T19:11:27.245Z",
+  "runId": "20260921T191446Z-5695a4c3df2d",
+  "startedAt": "2026-09-21T19:15:19.283Z",
   "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
   "harness": {
     "version": "0.1.0",
-    "sourcesSha256": "d0d57e327639cef9d5283b69e821c9caf8b0c305f83ee92da5224698369bd245",
+    "sourcesSha256": "c4c75ac55c3b83a9a0c9d928ee5561d0b96e7ef774a79fb73d25457961c7d5a4",
     "fileCount": 25
   },
   "instance": "127.0.0.1:54322/postgres",
@@ -50,16 +50,18 @@
     "escalation": [
       {
         "from": "authenticator (the login every control test uses)",
-        "statement": "reset role; set role postgres",
+        "statement": "set role postgres",
         "outcome": "error 42501: permission denied to set role \"postgres\"",
         "permitted": false,
+        "harnessError": false,
         "consequence": "postgres owns every application table and holds BYPASSRLS. If this were permitted, the login used for control testing could exempt itself from every policy."
       },
       {
         "from": "authenticator (the login every control test uses)",
-        "statement": "reset role; set role service_role",
-        "outcome": "error ?: Cannot read properties of undefined (reading 'length')",
-        "permitted": false,
+        "statement": "set role service_role",
+        "outcome": "0 row(s)",
+        "permitted": true,
+        "harnessError": false,
         "consequence": "service_role holds BYPASSRLS. This IS permitted: the same login the control tests use can switch into a role exempt from row-level security."
       }
     ],
@@ -99,7 +101,7 @@
       "owner": "postgres",
       "ownerBypassesRls": true,
       "ownerReachableFromClientLogin": false,
-      "bypassRoleReachableFromClientLogin": false
+      "bypassRoleReachableFromClientLogin": true
     }
   },
   "scenarios": [
@@ -116,9 +118,9 @@
       "records": [
         {
           "recordId": "S1.read-isolation.wallets:authenticated:alice:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.556Z",
+          "timestampUtc": "2026-09-21T19:15:19.579Z",
           "family": "read isolation",
           "controlId": "public.wallets#policy:wallets_select_own",
           "testId": "S1.read-isolation.wallets",
@@ -150,14 +152,15 @@
             "rowCount": 0,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S1.read-isolation.wallets:service_role:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.566Z",
+          "timestampUtc": "2026-09-21T19:15:19.591Z",
           "family": "read isolation",
           "controlId": "public.wallets#policy:wallets_select_own",
           "testId": "S1.read-isolation.wallets",
@@ -186,14 +189,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table wallets",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S1.read-isolation.wallets:admin(postgres):intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.576Z",
+          "timestampUtc": "2026-09-21T19:15:19.601Z",
           "family": "read isolation",
           "controlId": "public.wallets#policy:wallets_select_own",
           "testId": "S1.read-isolation.wallets",
@@ -222,6 +226,7 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": [
               {
                 "balance": "25000"
@@ -231,9 +236,9 @@
         },
         {
           "recordId": "S1.read-isolation.wallets:authenticated:alice:broken-1",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.594Z",
+          "timestampUtc": "2026-09-21T19:15:19.613Z",
           "family": "read isolation",
           "controlId": "public.wallets#policy:wallets_select_own",
           "testId": "S1.read-isolation.wallets",
@@ -265,6 +270,7 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": [
               {
                 "balance": "25000"
@@ -274,9 +280,9 @@
         },
         {
           "recordId": "S1.read-isolation.wallets:service_role:broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.604Z",
+          "timestampUtc": "2026-09-21T19:15:19.623Z",
           "family": "read isolation",
           "controlId": "public.wallets#policy:wallets_select_own",
           "testId": "S1.read-isolation.wallets",
@@ -305,14 +311,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table wallets",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S1.read-isolation.wallets:admin(postgres):broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.612Z",
+          "timestampUtc": "2026-09-21T19:15:19.631Z",
           "family": "read isolation",
           "controlId": "public.wallets#policy:wallets_select_own",
           "testId": "S1.read-isolation.wallets",
@@ -341,6 +348,7 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": [
               {
                 "balance": "25000"
@@ -350,9 +358,9 @@
         },
         {
           "recordId": "S1.read-isolation.wallets:authenticated:alice:restored",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.623Z",
+          "timestampUtc": "2026-09-21T19:15:19.641Z",
           "family": "read isolation",
           "controlId": "public.wallets#policy:wallets_select_own",
           "testId": "S1.read-isolation.wallets",
@@ -384,6 +392,7 @@
             "rowCount": 0,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         }
@@ -444,9 +453,9 @@
       "records": [
         {
           "recordId": "S2.with-check.push_tokens:authenticated:alice:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.633Z",
+          "timestampUtc": "2026-09-21T19:15:19.651Z",
           "family": "WITH CHECK enforcement",
           "controlId": "public.push_tokens#policy:push_tokens_insert_own",
           "testId": "S2.with-check.push_tokens",
@@ -479,14 +488,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "new row violates row-level security policy for table \"push_tokens\"",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S2.with-check.push_tokens:service_role:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.642Z",
+          "timestampUtc": "2026-09-21T19:15:19.663Z",
           "family": "WITH CHECK enforcement",
           "controlId": "public.push_tokens#policy:push_tokens_insert_own",
           "testId": "S2.with-check.push_tokens",
@@ -516,14 +526,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table push_tokens",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S2.with-check.push_tokens:admin(postgres):intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.652Z",
+          "timestampUtc": "2026-09-21T19:15:19.673Z",
           "family": "WITH CHECK enforcement",
           "controlId": "public.push_tokens#policy:push_tokens_insert_own",
           "testId": "S2.with-check.push_tokens",
@@ -553,14 +564,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S2.with-check.push_tokens:authenticated:alice:broken-1",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.664Z",
+          "timestampUtc": "2026-09-21T19:15:19.685Z",
           "family": "WITH CHECK enforcement",
           "controlId": "public.push_tokens#policy:push_tokens_insert_own",
           "testId": "S2.with-check.push_tokens",
@@ -593,14 +605,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S2.with-check.push_tokens:service_role:broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.673Z",
+          "timestampUtc": "2026-09-21T19:15:19.695Z",
           "family": "WITH CHECK enforcement",
           "controlId": "public.push_tokens#policy:push_tokens_insert_own",
           "testId": "S2.with-check.push_tokens",
@@ -630,14 +643,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table push_tokens",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S2.with-check.push_tokens:admin(postgres):broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.683Z",
+          "timestampUtc": "2026-09-21T19:15:19.705Z",
           "family": "WITH CHECK enforcement",
           "controlId": "public.push_tokens#policy:push_tokens_insert_own",
           "testId": "S2.with-check.push_tokens",
@@ -667,14 +681,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S2.with-check.push_tokens:authenticated:alice:restored",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.695Z",
+          "timestampUtc": "2026-09-21T19:15:19.717Z",
           "family": "WITH CHECK enforcement",
           "controlId": "public.push_tokens#policy:push_tokens_insert_own",
           "testId": "S2.with-check.push_tokens",
@@ -707,6 +722,7 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "new row violates row-level security policy for table \"push_tokens\"",
+            "harnessError": false,
             "sample": []
           }
         }
@@ -768,9 +784,9 @@
       "records": [
         {
           "recordId": "S3.server-column.profiles:authenticated:alice:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.707Z",
+          "timestampUtc": "2026-09-21T19:15:19.728Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -802,14 +818,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table profiles",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S3.server-column.profiles:service_role:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.718Z",
+          "timestampUtc": "2026-09-21T19:15:19.739Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -838,14 +855,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table profiles",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S3.server-column.profiles:admin(postgres):intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.729Z",
+          "timestampUtc": "2026-09-21T19:15:19.751Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -874,14 +892,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S3.server-column.profiles:authenticated:alice:broken-1",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.741Z",
+          "timestampUtc": "2026-09-21T19:15:19.771Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -913,14 +932,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "profiles.level is server-owned and not client-writable",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S3.server-column.profiles:authenticated:alice:broken-2",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.753Z",
+          "timestampUtc": "2026-09-21T19:15:19.784Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -952,14 +972,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S3.server-column.profiles:service_role:broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.764Z",
+          "timestampUtc": "2026-09-21T19:15:19.795Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -988,14 +1009,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table profiles",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S3.server-column.profiles:admin(postgres):broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.774Z",
+          "timestampUtc": "2026-09-21T19:15:19.806Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -1024,14 +1046,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S3.server-column.profiles:authenticated:alice:restored",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.786Z",
+          "timestampUtc": "2026-09-21T19:15:19.819Z",
           "family": "column grant + write-guard trigger",
           "controlId": "public.profiles#trigger:profiles_guard_server_columns",
           "testId": "S3.server-column.profiles",
@@ -1063,6 +1086,7 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for table profiles",
+            "harnessError": false,
             "sample": []
           }
         }
@@ -1129,9 +1153,9 @@
       "records": [
         {
           "recordId": "S4.realtime.game-topic-write:authenticated:carol:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.803Z",
+          "timestampUtc": "2026-09-21T19:15:19.830Z",
           "family": "realtime channel authorization",
           "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
           "testId": "S4.realtime.game-topic-write",
@@ -1163,14 +1187,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "new row violates row-level security policy for table \"messages\"",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S4.realtime.game-topic-write:service_role:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.815Z",
+          "timestampUtc": "2026-09-21T19:15:19.842Z",
           "family": "realtime channel authorization",
           "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
           "testId": "S4.realtime.game-topic-write",
@@ -1199,14 +1224,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S4.realtime.game-topic-write:admin(postgres):intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.826Z",
+          "timestampUtc": "2026-09-21T19:15:19.852Z",
           "family": "realtime channel authorization",
           "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
           "testId": "S4.realtime.game-topic-write",
@@ -1235,14 +1261,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S4.realtime.game-topic-write:authenticated:carol:broken-1",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.839Z",
+          "timestampUtc": "2026-09-21T19:15:19.867Z",
           "family": "realtime channel authorization",
           "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
           "testId": "S4.realtime.game-topic-write",
@@ -1274,14 +1301,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S4.realtime.game-topic-write:service_role:broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.850Z",
+          "timestampUtc": "2026-09-21T19:15:19.880Z",
           "family": "realtime channel authorization",
           "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
           "testId": "S4.realtime.game-topic-write",
@@ -1310,14 +1338,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S4.realtime.game-topic-write:admin(postgres):broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.860Z",
+          "timestampUtc": "2026-09-21T19:15:19.890Z",
           "family": "realtime channel authorization",
           "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
           "testId": "S4.realtime.game-topic-write",
@@ -1346,14 +1375,15 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S4.realtime.game-topic-write:authenticated:carol:restored",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.871Z",
+          "timestampUtc": "2026-09-21T19:15:19.901Z",
           "family": "realtime channel authorization",
           "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
           "testId": "S4.realtime.game-topic-write",
@@ -1385,6 +1415,7 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "new row violates row-level security policy for table \"messages\"",
+            "harnessError": false,
             "sample": []
           }
         }
@@ -1446,9 +1477,9 @@
       "records": [
         {
           "recordId": "S5.private-schema.game_state:authenticated:alice:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.882Z",
+          "timestampUtc": "2026-09-21T19:15:19.912Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1480,14 +1511,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for schema private",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S5.private-schema.game_state:service_role:intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.892Z",
+          "timestampUtc": "2026-09-21T19:15:19.924Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1516,14 +1548,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for schema private",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S5.private-schema.game_state:admin(postgres):intact",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.900Z",
+          "timestampUtc": "2026-09-21T19:15:19.932Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1552,6 +1585,7 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": [
               {
                 "engine_state": {
@@ -1564,9 +1598,9 @@
         },
         {
           "recordId": "S5.private-schema.game_state:authenticated:alice:broken-1",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.910Z",
+          "timestampUtc": "2026-09-21T19:15:19.941Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1598,14 +1632,15 @@
             "rowCount": 0,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S5.private-schema.game_state:authenticated:alice:broken-2",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.920Z",
+          "timestampUtc": "2026-09-21T19:15:19.952Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1637,6 +1672,7 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": [
               {
                 "engine_state": {
@@ -1649,9 +1685,9 @@
         },
         {
           "recordId": "S5.private-schema.game_state:service_role:broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.931Z",
+          "timestampUtc": "2026-09-21T19:15:19.962Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1680,14 +1716,15 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for schema private",
+            "harnessError": false,
             "sample": []
           }
         },
         {
           "recordId": "S5.private-schema.game_state:admin(postgres):broken",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.940Z",
+          "timestampUtc": "2026-09-21T19:15:19.970Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1716,6 +1753,7 @@
             "rowCount": 1,
             "sqlstate": null,
             "message": null,
+            "harnessError": false,
             "sample": [
               {
                 "engine_state": {
@@ -1728,9 +1766,9 @@
         },
         {
           "recordId": "S5.private-schema.game_state:authenticated:alice:restored",
-          "runId": "20260921T191054Z-5695a4c3df2d",
+          "runId": "20260921T191446Z-5695a4c3df2d",
           "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-          "timestampUtc": "2026-09-21T19:11:27.951Z",
+          "timestampUtc": "2026-09-21T19:15:19.981Z",
           "family": "server-only schema isolation",
           "controlId": "private.game_state_private#rls_enabled",
           "testId": "S5.private-schema.game_state",
@@ -1762,6 +1800,7 @@
             "rowCount": null,
             "sqlstate": "42501",
             "message": "permission denied for schema private",
+            "harnessError": false,
             "sample": []
           }
         }
@@ -1819,9 +1858,9 @@
   "records": [
     {
       "recordId": "S1.read-isolation.wallets:authenticated:alice:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.556Z",
+      "timestampUtc": "2026-09-21T19:15:19.579Z",
       "family": "read isolation",
       "controlId": "public.wallets#policy:wallets_select_own",
       "testId": "S1.read-isolation.wallets",
@@ -1853,14 +1892,15 @@
         "rowCount": 0,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S1.read-isolation.wallets:service_role:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.566Z",
+      "timestampUtc": "2026-09-21T19:15:19.591Z",
       "family": "read isolation",
       "controlId": "public.wallets#policy:wallets_select_own",
       "testId": "S1.read-isolation.wallets",
@@ -1889,14 +1929,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table wallets",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S1.read-isolation.wallets:admin(postgres):intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.576Z",
+      "timestampUtc": "2026-09-21T19:15:19.601Z",
       "family": "read isolation",
       "controlId": "public.wallets#policy:wallets_select_own",
       "testId": "S1.read-isolation.wallets",
@@ -1925,6 +1966,7 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": [
           {
             "balance": "25000"
@@ -1934,9 +1976,9 @@
     },
     {
       "recordId": "S1.read-isolation.wallets:authenticated:alice:broken-1",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.594Z",
+      "timestampUtc": "2026-09-21T19:15:19.613Z",
       "family": "read isolation",
       "controlId": "public.wallets#policy:wallets_select_own",
       "testId": "S1.read-isolation.wallets",
@@ -1968,6 +2010,7 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": [
           {
             "balance": "25000"
@@ -1977,9 +2020,9 @@
     },
     {
       "recordId": "S1.read-isolation.wallets:service_role:broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.604Z",
+      "timestampUtc": "2026-09-21T19:15:19.623Z",
       "family": "read isolation",
       "controlId": "public.wallets#policy:wallets_select_own",
       "testId": "S1.read-isolation.wallets",
@@ -2008,14 +2051,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table wallets",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S1.read-isolation.wallets:admin(postgres):broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.612Z",
+      "timestampUtc": "2026-09-21T19:15:19.631Z",
       "family": "read isolation",
       "controlId": "public.wallets#policy:wallets_select_own",
       "testId": "S1.read-isolation.wallets",
@@ -2044,6 +2088,7 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": [
           {
             "balance": "25000"
@@ -2053,9 +2098,9 @@
     },
     {
       "recordId": "S1.read-isolation.wallets:authenticated:alice:restored",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.623Z",
+      "timestampUtc": "2026-09-21T19:15:19.641Z",
       "family": "read isolation",
       "controlId": "public.wallets#policy:wallets_select_own",
       "testId": "S1.read-isolation.wallets",
@@ -2087,14 +2132,15 @@
         "rowCount": 0,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S2.with-check.push_tokens:authenticated:alice:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.633Z",
+      "timestampUtc": "2026-09-21T19:15:19.651Z",
       "family": "WITH CHECK enforcement",
       "controlId": "public.push_tokens#policy:push_tokens_insert_own",
       "testId": "S2.with-check.push_tokens",
@@ -2127,14 +2173,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "new row violates row-level security policy for table \"push_tokens\"",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S2.with-check.push_tokens:service_role:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.642Z",
+      "timestampUtc": "2026-09-21T19:15:19.663Z",
       "family": "WITH CHECK enforcement",
       "controlId": "public.push_tokens#policy:push_tokens_insert_own",
       "testId": "S2.with-check.push_tokens",
@@ -2164,14 +2211,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table push_tokens",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S2.with-check.push_tokens:admin(postgres):intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.652Z",
+      "timestampUtc": "2026-09-21T19:15:19.673Z",
       "family": "WITH CHECK enforcement",
       "controlId": "public.push_tokens#policy:push_tokens_insert_own",
       "testId": "S2.with-check.push_tokens",
@@ -2201,14 +2249,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S2.with-check.push_tokens:authenticated:alice:broken-1",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.664Z",
+      "timestampUtc": "2026-09-21T19:15:19.685Z",
       "family": "WITH CHECK enforcement",
       "controlId": "public.push_tokens#policy:push_tokens_insert_own",
       "testId": "S2.with-check.push_tokens",
@@ -2241,14 +2290,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S2.with-check.push_tokens:service_role:broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.673Z",
+      "timestampUtc": "2026-09-21T19:15:19.695Z",
       "family": "WITH CHECK enforcement",
       "controlId": "public.push_tokens#policy:push_tokens_insert_own",
       "testId": "S2.with-check.push_tokens",
@@ -2278,14 +2328,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table push_tokens",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S2.with-check.push_tokens:admin(postgres):broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.683Z",
+      "timestampUtc": "2026-09-21T19:15:19.705Z",
       "family": "WITH CHECK enforcement",
       "controlId": "public.push_tokens#policy:push_tokens_insert_own",
       "testId": "S2.with-check.push_tokens",
@@ -2315,14 +2366,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S2.with-check.push_tokens:authenticated:alice:restored",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.695Z",
+      "timestampUtc": "2026-09-21T19:15:19.717Z",
       "family": "WITH CHECK enforcement",
       "controlId": "public.push_tokens#policy:push_tokens_insert_own",
       "testId": "S2.with-check.push_tokens",
@@ -2355,14 +2407,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "new row violates row-level security policy for table \"push_tokens\"",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:authenticated:alice:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.707Z",
+      "timestampUtc": "2026-09-21T19:15:19.728Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2394,14 +2447,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table profiles",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:service_role:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.718Z",
+      "timestampUtc": "2026-09-21T19:15:19.739Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2430,14 +2484,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table profiles",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:admin(postgres):intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.729Z",
+      "timestampUtc": "2026-09-21T19:15:19.751Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2466,14 +2521,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:authenticated:alice:broken-1",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.741Z",
+      "timestampUtc": "2026-09-21T19:15:19.771Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2505,14 +2561,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "profiles.level is server-owned and not client-writable",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:authenticated:alice:broken-2",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.753Z",
+      "timestampUtc": "2026-09-21T19:15:19.784Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2544,14 +2601,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:service_role:broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.764Z",
+      "timestampUtc": "2026-09-21T19:15:19.795Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2580,14 +2638,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table profiles",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:admin(postgres):broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.774Z",
+      "timestampUtc": "2026-09-21T19:15:19.806Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2616,14 +2675,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S3.server-column.profiles:authenticated:alice:restored",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.786Z",
+      "timestampUtc": "2026-09-21T19:15:19.819Z",
       "family": "column grant + write-guard trigger",
       "controlId": "public.profiles#trigger:profiles_guard_server_columns",
       "testId": "S3.server-column.profiles",
@@ -2655,14 +2715,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for table profiles",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S4.realtime.game-topic-write:authenticated:carol:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.803Z",
+      "timestampUtc": "2026-09-21T19:15:19.830Z",
       "family": "realtime channel authorization",
       "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
       "testId": "S4.realtime.game-topic-write",
@@ -2694,14 +2755,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "new row violates row-level security policy for table \"messages\"",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S4.realtime.game-topic-write:service_role:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.815Z",
+      "timestampUtc": "2026-09-21T19:15:19.842Z",
       "family": "realtime channel authorization",
       "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
       "testId": "S4.realtime.game-topic-write",
@@ -2730,14 +2792,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S4.realtime.game-topic-write:admin(postgres):intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.826Z",
+      "timestampUtc": "2026-09-21T19:15:19.852Z",
       "family": "realtime channel authorization",
       "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
       "testId": "S4.realtime.game-topic-write",
@@ -2766,14 +2829,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S4.realtime.game-topic-write:authenticated:carol:broken-1",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.839Z",
+      "timestampUtc": "2026-09-21T19:15:19.867Z",
       "family": "realtime channel authorization",
       "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
       "testId": "S4.realtime.game-topic-write",
@@ -2805,14 +2869,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S4.realtime.game-topic-write:service_role:broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.850Z",
+      "timestampUtc": "2026-09-21T19:15:19.880Z",
       "family": "realtime channel authorization",
       "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
       "testId": "S4.realtime.game-topic-write",
@@ -2841,14 +2906,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S4.realtime.game-topic-write:admin(postgres):broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.860Z",
+      "timestampUtc": "2026-09-21T19:15:19.890Z",
       "family": "realtime channel authorization",
       "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
       "testId": "S4.realtime.game-topic-write",
@@ -2877,14 +2943,15 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S4.realtime.game-topic-write:authenticated:carol:restored",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.871Z",
+      "timestampUtc": "2026-09-21T19:15:19.901Z",
       "family": "realtime channel authorization",
       "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
       "testId": "S4.realtime.game-topic-write",
@@ -2916,14 +2983,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "new row violates row-level security policy for table \"messages\"",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S5.private-schema.game_state:authenticated:alice:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.882Z",
+      "timestampUtc": "2026-09-21T19:15:19.912Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -2955,14 +3023,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for schema private",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S5.private-schema.game_state:service_role:intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.892Z",
+      "timestampUtc": "2026-09-21T19:15:19.924Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -2991,14 +3060,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for schema private",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S5.private-schema.game_state:admin(postgres):intact",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.900Z",
+      "timestampUtc": "2026-09-21T19:15:19.932Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -3027,6 +3097,7 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": [
           {
             "engine_state": {
@@ -3039,9 +3110,9 @@
     },
     {
       "recordId": "S5.private-schema.game_state:authenticated:alice:broken-1",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.910Z",
+      "timestampUtc": "2026-09-21T19:15:19.941Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -3073,14 +3144,15 @@
         "rowCount": 0,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S5.private-schema.game_state:authenticated:alice:broken-2",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.920Z",
+      "timestampUtc": "2026-09-21T19:15:19.952Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -3112,6 +3184,7 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": [
           {
             "engine_state": {
@@ -3124,9 +3197,9 @@
     },
     {
       "recordId": "S5.private-schema.game_state:service_role:broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.931Z",
+      "timestampUtc": "2026-09-21T19:15:19.962Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -3155,14 +3228,15 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for schema private",
+        "harnessError": false,
         "sample": []
       }
     },
     {
       "recordId": "S5.private-schema.game_state:admin(postgres):broken",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.940Z",
+      "timestampUtc": "2026-09-21T19:15:19.970Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -3191,6 +3265,7 @@
         "rowCount": 1,
         "sqlstate": null,
         "message": null,
+        "harnessError": false,
         "sample": [
           {
             "engine_state": {
@@ -3203,9 +3278,9 @@
     },
     {
       "recordId": "S5.private-schema.game_state:authenticated:alice:restored",
-      "runId": "20260921T191054Z-5695a4c3df2d",
+      "runId": "20260921T191446Z-5695a4c3df2d",
       "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
-      "timestampUtc": "2026-09-21T19:11:27.951Z",
+      "timestampUtc": "2026-09-21T19:15:19.981Z",
       "family": "server-only schema isolation",
       "controlId": "private.game_state_private#rls_enabled",
       "testId": "S5.private-schema.game_state",
@@ -3237,6 +3312,7 @@
         "rowCount": null,
         "sqlstate": "42501",
         "message": "permission denied for schema private",
+        "harnessError": false,
         "sample": []
       }
     }
@@ -3244,5 +3320,6 @@
   "inventoryUnchanged": true,
   "inventoryDiff": null,
   "allDetected": true,
-  "allRestored": true
+  "allRestored": true,
+  "harnessErrors": []
 }

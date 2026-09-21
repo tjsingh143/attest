@@ -31,6 +31,7 @@ export function renderValidationMarkdown(r: ValidationResult): string {
   p();
   p(`| Claim | Result |`);
   p(`|---|---|`);
+  p(`| No probe ended in a harness error | **${r.harnessErrors.length === 0 ? "yes" : `NO (${r.harnessErrors.length})`}** |`);
   p(`| Every weakened control was detected | **${r.allDetected ? "yes" : "NO"}** |`);
   p(`| Every weakening was reverted | **${r.allRestored ? "yes" : "NO"}** |`);
   p(`| Control inventory identical before and after | **${r.inventoryUnchanged ? "yes" : "NO"}** |`);
@@ -61,7 +62,12 @@ export function renderValidationMarkdown(r: ValidationResult): string {
   p(`| Statement | Permitted | Outcome |`);
   p(`|---|---|---|`);
   for (const e of r.identities.escalation) {
-    p(`| \`${cell(e.statement)}\` | **${yn(e.permitted)}** | ${cell(e.outcome)} |`);
+    const outcome = e.harnessError
+      ? `harness error: ${cell(e.outcome)}`
+      : e.permitted
+        ? "succeeded"
+        : cell(e.outcome);
+    p(`| \`${cell(e.statement)}\` | **${e.harnessError ? "NOT MEASURED" : yn(e.permitted)}** | ${outcome} |`);
   }
   p();
   for (const e of r.identities.escalation) {
@@ -83,8 +89,9 @@ export function renderValidationMarkdown(r: ValidationResult): string {
   // --- force rls ---------------------------------------------------------
   p(`## 2. What "enabled but not forced" actually does`);
   p();
-  p(`Arc21 has row-level security enabled on ${r.forceRls.arc21.tablesEnabled} tables and forced on`);
-  p(`${r.forceRls.arc21.tablesForced}. That is a fact. Whether it is a problem is a different question, and`);
+  p(`Across the application schemas (\`public\` and \`private\`) Arc21 has row-level security enabled`);
+  p(`on ${r.forceRls.arc21.tablesEnabled} tables and forced on ${r.forceRls.arc21.tablesForced}. (The inventory counts ${r.forceRls.arc21.tablesEnabled + 1} tables because it also`);
+  p(`includes \`realtime.messages\`, which Arc21 writes policies on but does not own.) That is a fact. Whether it is a problem is a different question, and`);
   p(`this section separates the two by demonstrating the mechanism before drawing any conclusion.`);
   p();
   p(`On this instance \`${cell(r.forceRls.arc21.owner)}\` both owns the tables **and** holds BYPASSRLS, so`);

@@ -47,6 +47,8 @@ export interface EscalationProbe {
   readonly statement: string;
   readonly outcome: string;
   readonly permitted: boolean;
+  /** True if the harness broke rather than the database refusing. Not a result. */
+  readonly harnessError: boolean;
   readonly consequence: string;
 }
 
@@ -102,6 +104,7 @@ export async function proveIdentities(): Promise<IdentityEvidence> {
         statement: stmt,
         outcome: summarize(out) + (out.raised ? `: ${out.message}` : ""),
         permitted: !out.raised,
+        harnessError: out.harnessError,
         consequence,
       });
     } finally {
@@ -110,11 +113,11 @@ export async function proveIdentities(): Promise<IdentityEvidence> {
   };
 
   await probe(
-    "reset role; set role postgres",
+    "set role postgres",
     "postgres owns every application table and holds BYPASSRLS. If this were permitted, the login used for control testing could exempt itself from every policy.",
   );
   await probe(
-    "reset role; set role service_role",
+    "set role service_role",
     "service_role holds BYPASSRLS. This IS permitted: the same login the control tests use can switch into a role exempt from row-level security.",
   );
 
@@ -276,8 +279,8 @@ export async function demonstrateForceRls(admin: Session): Promise<ForceRlsEvide
   const canSetRole = async (role: string): Promise<boolean> => {
     const s = await roleSession({ role: "authenticated", claims: null, label: "reachability" });
     try {
-      const out = await execute(s, `reset role; set role ${role}`);
-      return !out.raised;
+      const out = await execute(s, `set role ${role}`);
+      return !out.raised && !out.harnessError;
     } finally {
       await s.close();
     }

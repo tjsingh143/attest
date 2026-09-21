@@ -44,6 +44,11 @@ export interface ValidationResult {
   readonly inventoryDiff: string | null;
   readonly allDetected: boolean;
   readonly allRestored: boolean;
+  /**
+   * Records where the harness threw rather than the database answering. These
+   * are not results; any run producing one has measured less than it claims.
+   */
+  readonly harnessErrors: readonly string[];
 }
 
 export async function validate(
@@ -108,6 +113,14 @@ export async function validate(
       inventoryDiff: inventoryUnchanged ? null : "control inventory differs before and after the run",
       allDetected: scenarios.every((s) => s.detected),
       allRestored: scenarios.every((s) => s.restored),
+      harnessErrors: [
+        ...scenarios.flatMap((s) =>
+          s.records.filter((r) => r.detail.harnessError).map((r) => `${r.recordId}: ${r.detail.message}`),
+        ),
+        ...identities.escalation
+          .filter((e) => e.harnessError)
+          .map((e) => `escalation probe "${e.statement}": ${e.outcome}`),
+      ],
     } satisfies ValidationResult;
   });
 

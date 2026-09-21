@@ -534,3 +534,37 @@ own from the clock. They ran a second apart, so a single command produced two ru
 holding half the evidence each — an inventory with no validation beside it, and a validation
 with no inventory. Evidence that a control was tested is worth much less when the description
 of the control it was tested against is filed somewhere else.
+
+### D1.13 — A harness error is never a result, and the run stops when one happens
+
+**Decided.** `Outcome` carries a `harnessError` flag. It is set when the thrown error has no
+five-character SQLSTATE, which means it came from this process rather than from PostgreSQL. An
+expectation never matches a harness error, and any run containing one exits non-zero.
+
+**Why.** The fourth defect this harness has shipped, and the most dangerous of them.
+
+The escalation probe issued `reset role; set role service_role` as one string. node-postgres
+returns an **array** of results for a multi-statement query, so `res.rows` was `undefined`, and
+reading `.slice()` off it threw a `TypeError`. `execute()` caught it the way it catches a SQL
+error and recorded `raised: true` with `sqlstate: null`.
+
+The consequence was not a crash. It was a confident, wrong answer. The report stated that the
+client login **cannot** reach a role holding BYPASSRLS — in a table two paragraphs above prose
+that said it can. The true answer, verified separately, is that it **can**: `authenticator` is
+a member of `service_role`, and nothing in the database prevents the switch.
+
+The general shape is what matters. A probe that expects a refusal is satisfied by *anything*
+that fails. If the harness itself is what failed, the probe reports that the control held while
+nothing whatsoever was measured. Every security check written as "this should be denied" has
+this failure mode, and it is silent by construction.
+
+Two fixes, because one would not have been enough:
+
+1. Multi-statement results are unpacked correctly, and the probes that caused it now issue
+   single statements — `SET ROLE` is authorised against the session user, so the `RESET ROLE`
+   was never needed.
+2. Errors without a SQLSTATE are classified as harness errors, never match an expectation, are
+   rendered as `HARNESS ERROR` rather than as a refusal, and fail the run.
+
+**What would change.** Without the second fix the first would have closed this instance of the
+bug and left the class open. The class is the part worth having caught.

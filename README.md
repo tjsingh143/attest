@@ -113,11 +113,12 @@ These are not caveats added at the end. They bound what the output means.
   It is not a GxP system, not a Part 11 system, and not compliant with anything.
 - **This harness is not a product.** It is one person's tool for one system. It has not been
   validated, is not used by anyone, and has not been qualified as a testing tool.
-- **The harness has produced wrong output more than once, and it is written up rather than
-  quietly fixed.** Three times in WP0 (`DECISIONS.md` D0.9, D0.13, D0.14) and three times in
-  WP1 (D1.5, D1.6, D1.7). Two of the WP1 cases were the harness misreading its own earlier
-  writes and reporting a conclusion that was the opposite of the truth, with nothing about the
-  output looking wrong. That bears directly on how much weight any single run deserves.
+- **The harness has produced wrong output seven times, and each is written up rather than
+  quietly fixed** (`DECISIONS.md` D0.9, D0.13, D0.14, D1.5, D1.6, D1.7, D1.13). Several
+  produced confident, plausible, wrong answers with nothing about the output looking amiss —
+  including one that made the validation report contradict itself two paragraphs apart. That
+  bears directly on how much weight any single run deserves, and it is the reason a run now
+  fails rather than degrades when the harness itself throws.
 - **The validation shows the probes detect *those* breaks.** It does not show they would catch
   every possible weakening of the same control, and it says nothing about controls no scenario
   touches. Each break is deliberately obvious — an expression replaced with `true`, a trigger
