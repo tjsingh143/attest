@@ -137,7 +137,7 @@ export const RATINGS: readonly ResourceRating[] = [
     resource: "public.career_nodes",
     data: { level: "Low", evidence: "E", why: "Public catalogue of career objectives; readable by design." },
     blast: { level: "High", evidence: "E", why: "Global catalogue; every account's career path is defined by it." },
-    integrity: { level: "High", evidence: "E", why: "Carries reward_chips, reward_xp and starting_chips. Corrupting a node changes the chips paid out, which is authoritative economy configuration — the same reasoning the author applied to rulesets rather than to cosmetics." },
+    integrity: { level: "Medium", evidence: "E", why: "EVIDENCE CORRECTION (was High by analogy). Traced through the repository: the career reward is credited as `params.node.reward.chips` in supabase/functions/_shared/career-rewards.ts:57, a CODE-side CareerNode constant. create-session/index.ts:1838 does select reward_chips from this table, but `nodeRow` is thereafter used only for its `id` and the selected value is never referenced. What corruption here can still do is deactivate a node or break its `code` lookup — users observe incorrect behaviour and repair is needed, but no authoritative economy, authorization or game truth is overwritten." },
     reversibility: RESTORABLE_FROM_MIGRATION,
     exposure: {
       level: "Low", evidence: "E",
@@ -150,7 +150,7 @@ export const RATINGS: readonly ResourceRating[] = [
     resource: "public.tournaments",
     data: { level: "Low", evidence: "E", why: "Public tournament catalogue; readable by design." },
     blast: { level: "High", evidence: "E", why: "Global; a tournament row governs a competition many accounts enter." },
-    integrity: { level: "High", evidence: "E", why: "Carries entry_fee_chips, starting_chips and prize_structure. Corruption changes what entrants pay and are paid — authoritative economy configuration." },
+    integrity: { level: "Medium", evidence: "E", why: "EVIDENCE CORRECTION (was High by analogy). Traced: the entry fee is debited as `-SPRINT.entryFee` (create-session/index.ts:1611) and prizes credited as `placement.prizeChips` derived from `SPRINT.prizeChips` (tournament-format.ts:44,295) — both CODE-side constants. The tournaments row's entry_fee_chips, starting_chips and prize_structure are WRITTEN from those constants at creation (index.ts:1472-1480) and never read back to move chips. Independent validation: public.sprint_format() returns the figures as SQL literals and supabase/tests/16_sprint_and_daily.test.sql asserts it agrees field by field with the TypeScript constant, so neither money path reads this mutable row." },
     reversibility: UNRECOVERABLE_UNKNOWN,
     exposure: {
       level: "Low", evidence: "E",

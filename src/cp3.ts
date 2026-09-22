@@ -19,6 +19,13 @@ import {
 } from "./scorer.ts";
 import { renderCp3Markdown } from "./report-cp3.ts";
 
+/** A machine-checked arithmetic guarantee about the estimate. */
+export interface InvariantCheck {
+  readonly name: string;
+  readonly passed: boolean;
+  readonly detail: string;
+}
+
 export interface Cp3Result {
   readonly runId: string;
   readonly startedAt: string;
@@ -28,8 +35,13 @@ export interface Cp3Result {
   readonly scored: readonly Scored[];
   readonly distribution: Readonly<Record<Level, number>>;
   readonly sensitivity: readonly SensitivityRow[];
+  /** Sum of the per-tier rows. Must equal the sum of per-resource tests. */
+  readonly tierSubtotalPrimary: number;
+  readonly tierSubtotalAlternative: number;
+  /** Per-tier subtotal plus suite-level cases. The number to quote. */
   readonly totalTestsPrimary: number;
   readonly totalTestsAlternative: number;
+  readonly invariants: readonly InvariantCheck[];
   readonly issues: readonly ValidationIssue[];
   /** Resources present in the facts but not rated, or rated but absent. */
   readonly coverageGaps: readonly string[];
@@ -87,6 +99,48 @@ export async function runCp3(
   const distribution: Record<Level, number> = { High: 0, Medium: 0, Low: 0 };
   for (const s of scored) distribution[s.tier]++;
 
+  // --- estimator consistency, checked rather than asserted -----------------
+  const perTierPrimary: Record<Level, number> = { High: 0, Medium: 0, Low: 0 };
+  for (const s of scored) perTierPrimary[s.tier] += s.tests;
+  const tierSubtotalPrimary = perTierPrimary.High + perTierPrimary.Medium + perTierPrimary.Low;
+  const perResourcePrimary = scored.reduce((a, s) => a + s.tests, 0);
+
+  const altByTier: Record<Level, number> = { High: 0, Medium: 0, Low: 0 };
+  for (const row of sensitivity) altByTier[row.alternativeTier] += row.alternativeTests;
+  const tierSubtotalAlternative = altByTier.High + altByTier.Medium + altByTier.Low;
+  const perResourceAlternative = sensitivity.reduce((a, r) => a + r.alternativeTests, 0);
+
+  const totalTestsPrimary = tierSubtotalPrimary + ESTIMATOR.suiteLevelCases;
+  const totalTestsAlternative = tierSubtotalAlternative + ESTIMATOR.suiteLevelCases;
+
+  const invariants: InvariantCheck[] = [
+    {
+      name: "Primary: sum of per-tier tests equals sum of per-resource tests",
+      passed: tierSubtotalPrimary === perResourcePrimary,
+      detail: `per-tier ${tierSubtotalPrimary} vs per-resource ${perResourcePrimary}`,
+    },
+    {
+      name: "Primary: total equals per-tier subtotal plus suite-level cases",
+      passed: totalTestsPrimary === tierSubtotalPrimary + ESTIMATOR.suiteLevelCases,
+      detail: `${tierSubtotalPrimary} + ${ESTIMATOR.suiteLevelCases} = ${totalTestsPrimary}`,
+    },
+    {
+      name: "Alternative: sum of per-tier tests equals sum of per-resource tests",
+      passed: tierSubtotalAlternative === perResourceAlternative,
+      detail: `per-tier ${tierSubtotalAlternative} vs per-resource ${perResourceAlternative}`,
+    },
+    {
+      name: "Alternative: total equals per-tier subtotal plus suite-level cases",
+      passed: totalTestsAlternative === tierSubtotalAlternative + ESTIMATOR.suiteLevelCases,
+      detail: `${tierSubtotalAlternative} + ${ESTIMATOR.suiteLevelCases} = ${totalTestsAlternative}`,
+    },
+    {
+      name: "No tier subtotal exceeds the plan total",
+      passed: ([perTierPrimary.High, perTierPrimary.Medium, perTierPrimary.Low] as const).every((n) => n <= totalTestsPrimary),
+      detail: `High ${perTierPrimary.High}, Medium ${perTierPrimary.Medium}, Low ${perTierPrimary.Low}, total ${totalTestsPrimary}`,
+    },
+  ];
+
   const result: Cp3Result = {
     runId,
     startedAt: startedAt.toISOString(),
@@ -99,8 +153,11 @@ export async function runCp3(
     }),
     distribution,
     sensitivity,
-    totalTestsPrimary: sensitivity.reduce((a, r) => a + r.primaryTests, 0),
-    totalTestsAlternative: sensitivity.reduce((a, r) => a + r.alternativeTests, 0),
+    tierSubtotalPrimary,
+    tierSubtotalAlternative,
+    totalTestsPrimary,
+    totalTestsAlternative,
+    invariants,
     issues,
     coverageGaps,
     estimator: ESTIMATOR,
@@ -117,6 +174,8 @@ export async function runCp3(
 
   log(`  ${scored.length} resources scored — High ${distribution.High}, Medium ${distribution.Medium}, Low ${distribution.Low}`);
   log(`  estimated tests: ${result.totalTestsPrimary} primary, ${result.totalTestsAlternative} under the sensitivity alternative`);
+  const failed = invariants.filter((i) => !i.passed);
+  for (const f of failed) log(`  !! ESTIMATOR INVARIANT FAILED — ${f.name}: ${f.detail}`);
   if (coverageGaps.length) for (const g of coverageGaps) log(`  !! coverage gap — ${g}`);
   if (issues.length) for (const i of issues) log(`  !! ${i.resource}: ${i.problem}`);
   log(`  written to evidence/runs/${runId}/`);

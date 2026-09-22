@@ -85,6 +85,8 @@
       "policies": [],
       "policyCount": 0,
       "commandsWithPolicy": [],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -217,6 +219,8 @@
       "policies": [],
       "policyCount": 0,
       "commandsWithPolicy": [],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -295,6 +299,8 @@
       "policies": [],
       "policyCount": 0,
       "commandsWithPolicy": [],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -412,6 +418,7 @@
       "policies": [
         {
           "name": "blocks_delete_own",
+          "referencesAuthUid": true,
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -422,6 +429,7 @@
         },
         {
           "name": "blocks_insert_own",
+          "referencesAuthUid": true,
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -432,6 +440,7 @@
         },
         {
           "name": "blocks_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -447,6 +456,8 @@
         "INSERT",
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -701,6 +712,7 @@
       "policies": [
         {
           "name": "career_attempts_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -714,6 +726,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -980,6 +994,7 @@
       "policies": [
         {
           "name": "career_nodes_select_active",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -994,6 +1009,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -1182,6 +1199,7 @@
       "policies": [
         {
           "name": "career_progress_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -1195,6 +1213,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -1394,6 +1414,7 @@
       "policies": [
         {
           "name": "cosmetics_select_active",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -1408,6 +1429,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -1693,6 +1716,7 @@
       "policies": [
         {
           "name": "daily_challenges_select_open",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -1706,6 +1730,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -1862,6 +1888,8 @@
       "policies": [],
       "policyCount": 0,
       "commandsWithPolicy": [],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -2076,6 +2104,7 @@
       "policies": [
         {
           "name": "daily_entries_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2089,6 +2118,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -2233,6 +2264,7 @@
       "policies": [
         {
           "name": "friend_requests_insert_as_sender",
+          "referencesAuthUid": true,
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2243,6 +2275,7 @@
         },
         {
           "name": "friend_requests_select_participants",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2253,6 +2286,7 @@
         },
         {
           "name": "friend_requests_update_participants",
+          "referencesAuthUid": true,
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2268,6 +2302,8 @@
         "SELECT",
         "UPDATE"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -2385,6 +2421,7 @@
       "policies": [
         {
           "name": "friendships_delete_own",
+          "referencesAuthUid": true,
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2395,6 +2432,7 @@
         },
         {
           "name": "friendships_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2409,6 +2447,8 @@
         "DELETE",
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -2565,6 +2605,7 @@
       "policies": [
         {
           "name": "game_events_select_participant",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2578,6 +2619,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -2771,6 +2814,7 @@
       "policies": [
         {
           "name": "game_session_seats_select_participant",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2784,6 +2828,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -3191,6 +3237,7 @@
       "policies": [
         {
           "name": "game_sessions_select_participant",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3204,6 +3251,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -3502,6 +3551,7 @@
       "policies": [
         {
           "name": "hand_players_select_participant",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3515,6 +3565,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -3704,6 +3756,7 @@
       "policies": [
         {
           "name": "hand_records_select_participant",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3717,6 +3770,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -3885,6 +3940,7 @@
       "policies": [
         {
           "name": "loadouts_insert_own",
+          "referencesAuthUid": true,
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3895,6 +3951,7 @@
         },
         {
           "name": "loadouts_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3905,6 +3962,7 @@
         },
         {
           "name": "loadouts_update_own",
+          "referencesAuthUid": true,
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3920,6 +3978,8 @@
         "SELECT",
         "UPDATE"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -4057,6 +4117,7 @@
       "policies": [
         {
           "name": "matchmaking_queue_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4070,6 +4131,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -4253,6 +4316,7 @@
       "policies": [
         {
           "name": "notifications_delete_own",
+          "referencesAuthUid": true,
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4263,6 +4327,7 @@
         },
         {
           "name": "notifications_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4273,6 +4338,7 @@
         },
         {
           "name": "notifications_update_own",
+          "referencesAuthUid": true,
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4288,6 +4354,8 @@
         "SELECT",
         "UPDATE"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -4514,6 +4582,7 @@
       "policies": [
         {
           "name": "player_actions_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4527,6 +4596,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -4635,6 +4706,7 @@
       "policies": [
         {
           "name": "player_daily_xp_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4648,6 +4720,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -4756,6 +4830,7 @@
       "policies": [
         {
           "name": "player_decision_periods_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4769,6 +4844,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -5016,6 +5093,7 @@
       "policies": [
         {
           "name": "player_mode_stats_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5029,6 +5107,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -5290,6 +5370,7 @@
       "policies": [
         {
           "name": "player_stats_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5303,6 +5384,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -5880,6 +5963,7 @@
       "policies": [
         {
           "name": "profiles_select_self",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5890,6 +5974,7 @@
         },
         {
           "name": "profiles_select_visible",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5900,6 +5985,7 @@
         },
         {
           "name": "profiles_update_self",
+          "referencesAuthUid": true,
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5914,6 +6000,8 @@
         "SELECT",
         "UPDATE"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -6075,6 +6163,7 @@
       "policies": [
         {
           "name": "push_tokens_delete_own",
+          "referencesAuthUid": true,
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6085,6 +6174,7 @@
         },
         {
           "name": "push_tokens_insert_own",
+          "referencesAuthUid": true,
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6095,6 +6185,7 @@
         },
         {
           "name": "push_tokens_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6105,6 +6196,7 @@
         },
         {
           "name": "push_tokens_update_own",
+          "referencesAuthUid": true,
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6121,6 +6213,8 @@
         "SELECT",
         "UPDATE"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -6206,6 +6300,8 @@
       "policies": [],
       "policyCount": 0,
       "commandsWithPolicy": [],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -6289,6 +6385,8 @@
       "policies": [],
       "policyCount": 0,
       "commandsWithPolicy": [],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -6434,6 +6532,7 @@
       "policies": [
         {
           "name": "room_members_select_same_room",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6447,6 +6546,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -6661,6 +6762,7 @@
       "policies": [
         {
           "name": "rooms_select_member",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6674,6 +6776,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -6848,6 +6952,7 @@
       "policies": [
         {
           "name": "rulesets_select_active",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6862,6 +6967,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -7121,6 +7228,7 @@
       "policies": [
         {
           "name": "tournament_entries_select_visible",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7134,6 +7242,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -7322,6 +7432,7 @@
       "policies": [
         {
           "name": "tournament_matches_select_visible",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7335,6 +7446,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -7630,6 +7743,7 @@
       "policies": [
         {
           "name": "tournaments_select_all",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7644,6 +7758,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": false,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     },
     {
@@ -7768,6 +7884,7 @@
       "policies": [
         {
           "name": "user_cosmetics_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7781,6 +7898,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -7997,6 +8116,7 @@
       "policies": [
         {
           "name": "wallet_ledger_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8010,6 +8130,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -8165,6 +8287,7 @@
       "policies": [
         {
           "name": "wallets_select_own",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8178,6 +8301,8 @@
       "commandsWithPolicy": [
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": true,
       "realtimePublished": false
     },
     {
@@ -8308,6 +8433,7 @@
       "policies": [
         {
           "name": "arc21_game_topic_is_for_its_seated_players",
+          "referencesAuthUid": true,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8318,6 +8444,7 @@
         },
         {
           "name": "arc21_only_presence_may_be_written_by_a_client",
+          "referencesAuthUid": false,
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8328,6 +8455,7 @@
         },
         {
           "name": "arc21_presence_roster_needs_an_account",
+          "referencesAuthUid": false,
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8342,6 +8470,8 @@
         "INSERT",
         "SELECT"
       ],
+      "anyPolicyReferencesAuthUid": true,
+      "hasIdentityLinkage": false,
       "realtimePublished": false
     }
   ],

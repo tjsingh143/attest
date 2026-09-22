@@ -141,7 +141,11 @@ async function main(): Promise<void> {
     }
     case "score": {
       console.log("score (WP2)");
-      await runCp3((s) => console.log(s));
+      const c = await runCp3((s) => console.log(s));
+      if (c.invariants.some((i) => !i.passed) || c.coverageGaps.length || c.issues.length) {
+        console.error("\nattest: CP3 FAILED — the estimate is not internally consistent, or a resource is unrated.");
+        process.exitCode = 1;
+      }
       break;
     }
     case "validate": {
@@ -161,7 +165,11 @@ async function main(): Promise<void> {
       await cmdRiskInputs(runId);
       reportValidation(v);
       console.log("score (WP2)");
-      await runCp3((s) => console.log(s), runId);
+      const c = await runCp3((s) => console.log(s), runId);
+      if (c.invariants.some((i) => !i.passed) || c.coverageGaps.length || c.issues.length) {
+        console.error("\nattest: CP3 FAILED — the estimate is not internally consistent, or a resource is unrated.");
+        process.exitCode = 1;
+      }
       break;
     }
     default:

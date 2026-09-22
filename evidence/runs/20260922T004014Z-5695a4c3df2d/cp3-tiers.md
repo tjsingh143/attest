@@ -5,23 +5,23 @@ control inventory. The rules are the rubric's; this document is their output.
 
 | | |
 |---|---|
-| Run | `20260922T002225Z-5695a4c3df2d` |
+| Run | `20260922T004014Z-5695a4c3df2d` |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0` sources `b043c5775ab8` |
+| Harness version | `0.1.0` sources `3262b86aa67a` |
 | Instance | 127.0.0.1:54322/postgres |
 
 ## 1. Tier distribution
 
 | Tier | Resources | Share |
 |---|---:|---:|
-| **High** | 23 | 57% |
-| **Medium** | 17 | 43% |
+| **High** | 21 | 53% |
+| **Medium** | 19 | 48% |
 | **Low** | 0 | 0% |
 | | **40** | |
 
 ## 2. Every High resource, and why
 
-23 resources. The rule that fired is quoted from the rubric's Step 1; the deciding
+21 resources. The rule that fired is quoted from the rubric's Step 1; the deciding
 dimension's own rationale follows it.
 
 ### `private.career_drill_seeds`
@@ -55,14 +55,6 @@ Data High/E · Blast Medium/E · Integrity High/E · Reversibility Medium/U · E
 > blocks is read by viewer_is_blocked_by inside profiles_select_visible. Removing someone's block makes their profile visible to an account they blocked — an access-control decision.
 
 Data Medium/E · Blast Medium/E · Integrity High/E · Reversibility Medium/U · Exposure Medium/E
-
-### `public.career_nodes`
-
-**Impact High** — Integrity impact = High. Exposure scored as **server-only** (integrity drives).
-
-> Carries reward_chips, reward_xp and starting_chips. Corrupting a node changes the chips paid out, which is authoritative economy configuration — the same reasoning the author applied to rulesets rather than to cosmetics.
-
-Data Low/E · Blast High/E · Integrity High/E · Reversibility Low/E · Exposure Low/E
 
 ### `public.daily_challenges`
 
@@ -184,14 +176,6 @@ Data Medium/E · Blast Medium/E · Integrity High/E · Reversibility Medium/U ·
 
 Data Medium/E · Blast Medium/E · Integrity High/E · Reversibility Medium/U · Exposure Medium/E
 
-### `public.tournaments`
-
-**Impact High** — Integrity impact = High. Exposure scored as **server-only** (integrity drives).
-
-> Carries entry_fee_chips, starting_chips and prize_structure. Corruption changes what entrants pay and are paid — authoritative economy configuration.
-
-Data Low/E · Blast High/E · Integrity High/E · Reversibility Medium/U · Exposure Low/E
-
 ### `public.wallet_ledger`
 
 **Impact High** — Data criticality = High. Exposure scored as **authenticated** (both drives).
@@ -215,6 +199,7 @@ Resources that a reasonable reader might have expected to land elsewhere.
 | Resource | Tier | Why not higher | Dimensions |
 |---|---|---|---|
 | `public.career_attempts` | Medium | Not High; at least one consequence dimension is Medium or High (Data=Medium, Integrity=Medium, Reversibility=Medium) | Data Medium/E · Blast Low/E · Integrity Medium/E · Reversibility Medium/U · Exposure Medium/E |
+| `public.career_nodes` | Medium | Not High; at least one consequence dimension is Medium or High (Blast=High, Integrity=Medium) | Data Low/E · Blast High/E · Integrity Medium/E · Reversibility Low/E · Exposure Low/E |
 | `public.career_progress` | Medium | Not High; at least one consequence dimension is Medium or High (Data=Medium, Integrity=Medium, Reversibility=Medium) | Data Medium/E · Blast Low/E · Integrity Medium/E · Reversibility Medium/U · Exposure Medium/E |
 | `public.cosmetics` | Medium | Not High; at least one consequence dimension is Medium or High (Blast=High, Integrity=Medium) | Data Low/E · Blast High/E · Integrity Medium/E · Reversibility Low/E · Exposure Low/E |
 | `public.daily_challenges_public` | Medium | Not High; at least one consequence dimension is Medium or High (Blast=High) | Data Low/E · Blast High/E · Integrity Low/E · Reversibility Low/E · Exposure Medium/E |
@@ -229,6 +214,7 @@ Resources that a reasonable reader might have expected to land elsewhere.
 | `public.player_mode_stats` | Medium | Not High; at least one consequence dimension is Medium or High (Data=Medium, Integrity=Medium, Reversibility=Medium) | Data Medium/E · Blast Low/E · Integrity Medium/E · Reversibility Medium/U · Exposure Medium/E |
 | `public.player_stats` | Medium | Not High; at least one consequence dimension is Medium or High (Data=Medium, Integrity=Medium, Reversibility=Medium) | Data Medium/E · Blast Low/E · Integrity Medium/E · Reversibility Medium/U · Exposure Medium/E |
 | `public.push_tokens` | Medium | Not High; at least one consequence dimension is Medium or High (Data=Medium, Integrity=Medium, Reversibility=Medium) | Data Medium/E · Blast Low/E · Integrity Medium/E · Reversibility Medium/U · Exposure Medium/E |
+| `public.tournaments` | Medium | Not High; at least one consequence dimension is Medium or High (Blast=High, Integrity=Medium, Reversibility=Medium) | Data Low/E · Blast High/E · Integrity Medium/E · Reversibility Medium/U · Exposure Low/E |
 | `public.user_cosmetics` | Medium | Not High; at least one consequence dimension is Medium or High (Data=Medium, Integrity=Medium, Reversibility=Medium) | Data Medium/E · Blast Low/E · Integrity Medium/E · Reversibility Medium/U · Exposure Medium/E |
 | `realtime.messages` | Medium | Not High; at least one consequence dimension is Medium or High (Data=Medium, Blast=Medium, Integrity=Medium) | Data Medium/E · Blast Medium/E · Integrity Medium/E · Reversibility Low/E · Exposure Medium/E |
 
@@ -265,7 +251,6 @@ Across all dimensions, 31 of 40 resources carry at least one non-`E` mark:
 - `public.rooms` — Integrity:P, Reversibility:U
 - `public.tournament_entries` — Reversibility:U
 - `public.tournament_matches` — Reversibility:U
-- `public.tournaments` — Reversibility:U
 - `public.career_attempts` — Reversibility:U
 - `public.career_progress` — Reversibility:U
 - `public.daily_entries` — Reversibility:U
@@ -279,6 +264,7 @@ Across all dimensions, 31 of 40 resources carry at least one non-`E` mark:
 - `public.player_mode_stats` — Reversibility:U
 - `public.player_stats` — Reversibility:U
 - `public.push_tokens` — Reversibility:U
+- `public.tournaments` — Reversibility:U
 - `public.user_cosmetics` — Reversibility:U
 
 ## 5. Sensitivity — the single alternative exposure interpretation
@@ -292,17 +278,19 @@ re-interpretation: `public.rulesets`, `public.cosmetics`, `public.career_nodes`,
 
 | Resource | Primary tier | Alternative tier | Primary tests | Alternative tests | Δ |
 |---|---|---|---:|---:|---:|
-| `public.cosmetics` | Medium | **High** | 2 | 9 | +7 |
-| `realtime.messages` | Medium | **High** | 4 | 11 | +7 |
+| `public.cosmetics` | Medium | **High** | 2 | 6 | +4 |
+| `public.career_nodes` | Medium | **High** | 2 | 6 | +4 |
+| `public.tournaments` | Medium | **High** | 2 | 6 | +4 |
+| `realtime.messages` | Medium | **High** | 4 | 9 | +5 |
 
-**2 resource(s) change tier.** This exposure assumption is therefore a material
+**4 resource(s) change tier.** This exposure assumption is therefore a material
 driver of the assurance plan.
 
 | | Estimated tests |
 |---|---:|
-| Primary rubric | 239 |
-| Alternative | 253 |
-| **Delta** | **+14** |
+| Primary rubric | 185 |
+| Alternative | 202 |
+| **Delta** | **+17** |
 
 ## 6. Assurance allocation and test-count estimate
 
@@ -312,63 +300,88 @@ that can independently change an allow/deny outcome.
 **Estimator constants.** The rubric defines what each tier must cover; it does not fix these
 numbers, so they are named here rather than buried:
 
+**One estimated test = one statement executed under one identity, producing one evidence record.** It is a unit of execution, not a scenario
+or a test file.
+
 | Constant | Value | Meaning |
 |---|---:|---|
-| `highCasesPerBranch` | 2 | one positive and one negative per branch |
-| `highBoundaryCases` | 3 | null identity, deleted user, expired session |
+| `highCasesPerBranch` | 2 | one positive and one negative per policy branch |
+| `boundaryNullIdentity` | 1 | counted for a High resource **only where a policy on it reads `auth.uid()`** |
+| `boundaryDeletedUser` | 1 | counted for a High resource **only where it records an owner** |
+| `suiteLevelCases` | 1 | expired session — counted **once for the whole plan**, not per resource |
 | `mediumCasesPerCommand` | 2 | a representative positive and negative per important path |
 | `lowProbes` | 2 | recorded exploratory probing: one read, one write |
 
-| Tier | Resources | Branches | Estimated tests |
-|---|---:|---:|---:|
-| High | 23 | 60 | 189 |
-| Medium | 17 | 45 | 50 |
-| **Total** | **40** | **105** | **239** |
+**On the three brief-required boundary cases.** The brief requires null/absent identity, a
+deleted user and an expired session to appear *somewhere* in WP3. It does not require all
+three against every High resource. Null-identity and deleted-user are counted per resource
+where the catalogs make them applicable; expired session is counted once for the suite,
+because at the database layer an expired JWT never arrives — PostgREST rejects it before
+Postgres sees it — so there is no per-resource control to exercise.
+
+| Tier | Resources | Branches | Boundary cases | Formula | Estimated tests |
+|---|---:|---:|---:|---|---:|
+| High | 21 | 54 | 22 | (branches x 2) + applicable boundary cases = (54 x 2) + 22 | 130 |
+| Medium | 19 | 51 | 0 | important paths x 2 | 54 |
+| Low | 0 | 0 | 0 | *(unused — no resource reached this tier)* | 0 |
+| **Per-tier subtotal** | **40** | **105** | **22** | | **184** |
+| Suite-level | — | — | 1 | expired session, counted once | 1 |
+| **Total planned** | | | | | **185** |
+
+### Estimator consistency invariant
+
+| Check | Result |
+|---|---|
+| Primary: sum of per-tier tests equals sum of per-resource tests | **pass** — per-tier 184 vs per-resource 184 |
+| Primary: total equals per-tier subtotal plus suite-level cases | **pass** — 184 + 1 = 185 |
+| Alternative: sum of per-tier tests equals sum of per-resource tests | **pass** — per-tier 201 vs per-resource 201 |
+| Alternative: total equals per-tier subtotal plus suite-level cases | **pass** — 201 + 1 = 202 |
+| No tier subtotal exceeds the plan total | **pass** — High 130, Medium 54, Low 0, total 185 |
 
 Per resource:
 
-| Resource | Tier | Branches | How the branches were counted | Tests |
-|---|---|---:|---|---:|
-| `private.career_drill_seeds` | High | 1 | 1 for deny-by-default (RLS on, no policy) | 5 |
-| `private.game_commands` | High | 1 | 1 for deny-by-default (RLS on, no policy) | 5 |
-| `private.game_state_private` | High | 1 | 1 for deny-by-default (RLS on, no policy) | 5 |
-| `public.blocks` | High | 3 | 3 from 3 policy USING/WITH CHECK condition(s) | 9 |
-| `public.career_nodes` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 9 |
-| `public.daily_challenges` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s) | 9 |
-| `public.friend_requests` | High | 5 | 4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 13 |
-| `public.friendships` | High | 2 | 2 from 2 policy USING/WITH CHECK condition(s) | 7 |
-| `public.game_events` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 7 |
-| `public.game_session_seats` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 7 |
-| `public.game_sessions` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s) | 9 |
-| `public.hand_records` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 7 |
-| `public.profiles` | High | 7 | 4 from 3 policy USING/WITH CHECK condition(s); 3 refusing trigger(s) | 17 |
-| `public.rate_limit_events` | High | 2 | 1 for deny-by-default (RLS on, no policy); 1 refusing trigger(s) | 7 |
-| `public.rate_limit_policies` | High | 2 | 1 for deny-by-default (RLS on, no policy); 1 refusing trigger(s) | 7 |
-| `public.room_members` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 7 |
-| `public.rooms` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 7 |
-| `public.rulesets` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 9 |
-| `public.tournament_entries` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 7 |
-| `public.tournament_matches` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 7 |
-| `public.tournaments` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 9 |
-| `public.wallet_ledger` | High | 4 | 1 from 1 policy USING/WITH CHECK condition(s); 3 refusing trigger(s) | 11 |
-| `public.wallets` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s) | 9 |
-| `public.career_attempts` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.career_progress` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.cosmetics` | Medium | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 2 |
-| `public.daily_challenges_public` | Medium | 1 | 1 minimum | 2 |
-| `public.daily_entries` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.hand_players` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.loadouts` | Medium | 5 | 4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 6 |
-| `public.matchmaking_queue` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.notifications` | Medium | 5 | 4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 6 |
-| `public.player_actions` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.player_daily_xp` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.player_decision_periods` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.player_mode_stats` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.player_stats` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `public.push_tokens` | Medium | 5 | 5 from 4 policy USING/WITH CHECK condition(s) | 8 |
-| `public.user_cosmetics` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
-| `realtime.messages` | Medium | 4 | 3 from 3 policy USING/WITH CHECK condition(s); 1 for anonymous vs authenticated | 4 |
+| Resource | Tier | Branches | How the branches were counted | Boundary | Formula | Tests |
+|---|---|---:|---|---:|---|---:|
+| `private.career_drill_seeds` | High | 1 | 1 for deny-by-default (RLS on, no policy) | 0 | 1 branches x 2 (positive + negative) + 0 applicable boundary case(s) | 2 |
+| `private.game_commands` | High | 1 | 1 for deny-by-default (RLS on, no policy) | 1 | 1 branches x 2 (positive + negative) + 1 applicable boundary case(s) | 3 |
+| `private.game_state_private` | High | 1 | 1 for deny-by-default (RLS on, no policy) | 0 | 1 branches x 2 (positive + negative) + 0 applicable boundary case(s) | 2 |
+| `public.blocks` | High | 3 | 3 from 3 policy USING/WITH CHECK condition(s) | 2 | 3 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 8 |
+| `public.daily_challenges` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s) | 0 | 3 branches x 2 (positive + negative) + 0 applicable boundary case(s) | 6 |
+| `public.friend_requests` | High | 5 | 4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 | 5 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 12 |
+| `public.friendships` | High | 2 | 2 from 2 policy USING/WITH CHECK condition(s) | 2 | 2 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 6 |
+| `public.game_events` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 | 2 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 6 |
+| `public.game_session_seats` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 1 | 2 branches x 2 (positive + negative) + 1 applicable boundary case(s) | 5 |
+| `public.game_sessions` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s) | 1 | 3 branches x 2 (positive + negative) + 1 applicable boundary case(s) | 7 |
+| `public.hand_records` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 2 branches x 2 (positive + negative) + 0 applicable boundary case(s) | 4 |
+| `public.profiles` | High | 7 | 4 from 3 policy USING/WITH CHECK condition(s); 3 refusing trigger(s) | 2 | 7 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 16 |
+| `public.rate_limit_events` | High | 2 | 1 for deny-by-default (RLS on, no policy); 1 refusing trigger(s) | 1 | 2 branches x 2 (positive + negative) + 1 applicable boundary case(s) | 5 |
+| `public.rate_limit_policies` | High | 2 | 1 for deny-by-default (RLS on, no policy); 1 refusing trigger(s) | 0 | 2 branches x 2 (positive + negative) + 0 applicable boundary case(s) | 4 |
+| `public.room_members` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 1 | 2 branches x 2 (positive + negative) + 1 applicable boundary case(s) | 5 |
+| `public.rooms` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 1 | 2 branches x 2 (positive + negative) + 1 applicable boundary case(s) | 5 |
+| `public.rulesets` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 0 | 3 branches x 2 (positive + negative) + 0 applicable boundary case(s) | 6 |
+| `public.tournament_entries` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 | 2 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 6 |
+| `public.tournament_matches` | High | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 2 branches x 2 (positive + negative) + 0 applicable boundary case(s) | 4 |
+| `public.wallet_ledger` | High | 4 | 1 from 1 policy USING/WITH CHECK condition(s); 3 refusing trigger(s) | 2 | 4 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 10 |
+| `public.wallets` | High | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s) | 2 | 3 branches x 2 (positive + negative) + 2 applicable boundary case(s) | 8 |
+| `public.career_attempts` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.career_nodes` | Medium | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.career_progress` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.cosmetics` | Medium | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.daily_challenges_public` | Medium | 1 | 1 minimum | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.daily_entries` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.hand_players` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.loadouts` | Medium | 5 | 4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 3 important path(s) x 2 (representative positive + negative) | 6 |
+| `public.matchmaking_queue` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.notifications` | Medium | 5 | 4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 3 important path(s) x 2 (representative positive + negative) | 6 |
+| `public.player_actions` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.player_daily_xp` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.player_decision_periods` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.player_mode_stats` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.player_stats` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.push_tokens` | Medium | 5 | 5 from 4 policy USING/WITH CHECK condition(s) | 0 | 4 important path(s) x 2 (representative positive + negative) | 8 |
+| `public.tournaments` | Medium | 3 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `public.user_cosmetics` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 0 | 1 important path(s) x 2 (representative positive + negative) | 2 |
+| `realtime.messages` | Medium | 4 | 3 from 3 policy USING/WITH CHECK condition(s); 1 for anonymous vs authenticated | 0 | 2 important path(s) x 2 (representative positive + negative) | 4 |
 
 ## 7. Rule outcomes worth a second look
 
@@ -376,14 +389,14 @@ Reported, not adjusted. Each of these follows from the rubric as written.
 
 ### The exposure dimension did not change a single tier
 
-23 of 40 resources have High impact, and the rubric's floor fixes those at High
-whatever their exposure. The remaining 17 have Medium impact, where exposure *could* have
+21 of 40 resources have High impact, and the rubric's floor fixes those at High
+whatever their exposure. The remaining 19 have Medium impact, where exposure *could* have
 lifted a resource to High — but only anonymous exposure does that, and none of them is
 anonymous. **Every tier in this run was decided by impact alone.**
 
 That is not a defect. It is what the floor is for, and it is precisely why the sensitivity
 analysis is informative: re-interpreting exposure is the only thing that makes the dimension
-do any work at all, and it moves 2 resources when it does.
+do any work at all, and it moves 4 resources when it does.
 
 ### No resource reached Low tier
 

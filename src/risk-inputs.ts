@@ -84,6 +84,14 @@ export interface IdentityLinkage {
 
 export interface PolicyFact {
   readonly name: string;
+  /**
+   * Does this policy's expression read `auth.uid()`?
+   *
+   * Decides whether "the caller has no identity" is a distinct authorization
+   * outcome for this resource, which is what makes the null-identity boundary
+   * case APPLICABLE here rather than merely required somewhere in the suite.
+   */
+  readonly referencesAuthUid: boolean;
   readonly command: string;
   readonly permissive: string;
   readonly roles: readonly string[];
@@ -174,6 +182,10 @@ export interface RiskInput {
   readonly policies: readonly PolicyFact[];
   readonly policyCount: number;
   readonly commandsWithPolicy: readonly string[];
+  /** True when any policy here reads `auth.uid()`. See PolicyFact.referencesAuthUid. */
+  readonly anyPolicyReferencesAuthUid: boolean;
+  /** True when the resource records whose row it is, directly or transitively. */
+  readonly hasIdentityLinkage: boolean;
   readonly realtimePublished: boolean;
 }
 
@@ -236,6 +248,7 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
       ...(policiesByResource.get(key) ?? []),
       {
         name: s(p.policy_name),
+        referencesAuthUid: /auth\.uid\(\)/i.test(`${s(p.using_expr)} ${s(p.with_check_expr)}`),
         command: s(p.command),
         permissive: s(p.permissive),
         roles: Array.isArray(p.roles) ? p.roles.map(String) : [],
@@ -375,6 +388,10 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
       policies,
       policyCount: policies.length,
       commandsWithPolicy: [...new Set(policies.map((p) => p.command))].sort(),
+      anyPolicyReferencesAuthUid: policies.some((p) => p.referencesAuthUid),
+      hasIdentityLinkage:
+        links.some((l) => l.relation === "auth.users") ||
+        links.some((l) => l.relation !== "auth.users" && identityPaths.has(l.relation)),
       realtimePublished: publishedTables.has(r.resource),
     });
   }

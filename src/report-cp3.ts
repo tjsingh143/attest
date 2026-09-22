@@ -184,28 +184,59 @@ export function renderCp3Markdown(r: Cp3Result): string {
   p(`**Estimator constants.** The rubric defines what each tier must cover; it does not fix these`);
   p(`numbers, so they are named here rather than buried:`);
   p();
+  p(`**One estimated test = ${cell(r.estimator.unit)}.** It is a unit of execution, not a scenario`);
+  p(`or a test file.`);
+  p();
   p(`| Constant | Value | Meaning |`);
   p(`|---|---:|---|`);
-  p(`| \`highCasesPerBranch\` | ${r.estimator.highCasesPerBranch} | one positive and one negative per branch |`);
-  p(`| \`highBoundaryCases\` | ${r.estimator.highBoundaryCases} | null identity, deleted user, expired session |`);
+  p(`| \`highCasesPerBranch\` | ${r.estimator.highCasesPerBranch} | one positive and one negative per policy branch |`);
+  p(`| \`boundaryNullIdentity\` | ${r.estimator.boundaryNullIdentity} | counted for a High resource **only where a policy on it reads \`auth.uid()\`** |`);
+  p(`| \`boundaryDeletedUser\` | ${r.estimator.boundaryDeletedUser} | counted for a High resource **only where it records an owner** |`);
+  p(`| \`suiteLevelCases\` | ${r.estimator.suiteLevelCases} | expired session — counted **once for the whole plan**, not per resource |`);
   p(`| \`mediumCasesPerCommand\` | ${r.estimator.mediumCasesPerCommand} | a representative positive and negative per important path |`);
   p(`| \`lowProbes\` | ${r.estimator.lowProbes} | recorded exploratory probing: one read, one write |`);
   p();
-  p(`| Tier | Resources | Branches | Estimated tests |`);
-  p(`|---|---:|---:|---:|`);
+  p(`**On the three brief-required boundary cases.** The brief requires null/absent identity, a`);
+  p(`deleted user and an expired session to appear *somewhere* in WP3. It does not require all`);
+  p(`three against every High resource. Null-identity and deleted-user are counted per resource`);
+  p(`where the catalogs make them applicable; expired session is counted once for the suite,`);
+  p(`because at the database layer an expired JWT never arrives — PostgREST rejects it before`);
+  p(`Postgres sees it — so there is no per-resource control to exercise.`);
+  p();
+  p(`| Tier | Resources | Branches | Boundary cases | Formula | Estimated tests |`);
+  p(`|---|---:|---:|---:|---|---:|`);
   for (const t of ["High", "Medium", "Low"] as const) {
     const rows = r.scored.filter((s) => s.tier === t);
-    if (rows.length === 0) continue;
-    p(`| ${t} | ${rows.length} | ${rows.reduce((a, s) => a + s.branches, 0)} | ${rows.reduce((a, s) => a + s.tests, 0)} |`);
+    if (rows.length === 0) {
+      p(`| ${t} | 0 | 0 | 0 | *(unused — no resource reached this tier)* | 0 |`);
+      continue;
+    }
+    const br = rows.reduce((a, s) => a + s.branches, 0);
+    const bc = rows.reduce((a, s) => a + s.boundaryCases, 0);
+    const formula =
+      t === "High" ? `(branches x ${r.estimator.highCasesPerBranch}) + applicable boundary cases = (${br} x ${r.estimator.highCasesPerBranch}) + ${bc}`
+      : t === "Medium" ? `important paths x ${r.estimator.mediumCasesPerCommand}`
+      : `resources x ${r.estimator.lowProbes}`;
+    p(`| ${t} | ${rows.length} | ${br} | ${bc} | ${formula} | ${rows.reduce((a, s) => a + s.tests, 0)} |`);
   }
-  p(`| **Total** | **${r.scored.length}** | **${r.scored.reduce((a, s) => a + s.branches, 0)}** | **${r.totalTestsPrimary}** |`);
+  p(`| **Per-tier subtotal** | **${r.scored.length}** | **${r.scored.reduce((a, s) => a + s.branches, 0)}** | **${r.scored.reduce((a, s) => a + s.boundaryCases, 0)}** | | **${r.tierSubtotalPrimary}** |`);
+  p(`| Suite-level | — | — | ${r.estimator.suiteLevelCases} | expired session, counted once | ${r.estimator.suiteLevelCases} |`);
+  p(`| **Total planned** | | | | | **${r.totalTestsPrimary}** |`);
+  p();
+  p(`### Estimator consistency invariant`);
+  p();
+  p(`| Check | Result |`);
+  p(`|---|---|`);
+  for (const c of r.invariants) {
+    p(`| ${cell(c.name)} | ${c.passed ? "**pass**" : "**FAIL**"} — ${cell(c.detail)} |`);
+  }
   p();
   p(`Per resource:`);
   p();
-  p(`| Resource | Tier | Branches | How the branches were counted | Tests |`);
-  p(`|---|---|---:|---|---:|`);
+  p(`| Resource | Tier | Branches | How the branches were counted | Boundary | Formula | Tests |`);
+  p(`|---|---|---:|---|---:|---|---:|`);
   for (const s of r.scored) {
-    p(`| \`${cell(s.resource)}\` | ${s.tier} | ${s.branches} | ${cell(s.branchDetail)} | ${s.tests} |`);
+    p(`| \`${cell(s.resource)}\` | ${s.tier} | ${s.branches} | ${cell(s.branchDetail)} | ${s.boundaryCases} | ${cell(s.testFormula)} | ${s.tests} |`);
   }
   p();
 

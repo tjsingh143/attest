@@ -1,10 +1,10 @@
 {
-  "runId": "20260922T002225Z-5695a4c3df2d",
-  "startedAt": "2026-09-22T00:23:02.395Z",
+  "runId": "20260922T004014Z-5695a4c3df2d",
+  "startedAt": "2026-09-22T00:40:52.878Z",
   "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
   "harness": {
     "version": "0.1.0",
-    "sourcesSha256": "b043c5775ab854b8e7a7e9869d4d11e697ffe05964d4c0cfa4789e2cc94d3cad",
+    "sourcesSha256": "3262b86aa67a2504813ea94c860e7ee76b5e827742a41bb7c0d76b259d2df46a",
     "fileCount": 33
   },
   "instance": "127.0.0.1:54322/postgres",
@@ -50,7 +50,10 @@
       "tier": "High",
       "branches": 1,
       "branchDetail": "1 for deny-by-default (RLS on, no policy)",
-      "tests": 5,
+      "tests": 2,
+      "testFormula": "1 branches x 2 (positive + negative) + 0 applicable boundary case(s)",
+      "boundaryCases": 0,
+      "boundaryDetail": "none applicable",
       "weakEvidence": [
         "Integrity:P",
         "Reversibility:U"
@@ -97,7 +100,10 @@
       "tier": "High",
       "branches": 1,
       "branchDetail": "1 for deny-by-default (RLS on, no policy)",
-      "tests": 5,
+      "tests": 3,
+      "testFormula": "1 branches x 2 (positive + negative) + 1 applicable boundary case(s)",
+      "boundaryCases": 1,
+      "boundaryDetail": "deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -144,7 +150,10 @@
       "tier": "High",
       "branches": 1,
       "branchDetail": "1 for deny-by-default (RLS on, no policy)",
-      "tests": 5,
+      "tests": 2,
+      "testFormula": "1 branches x 2 (positive + negative) + 0 applicable boundary case(s)",
+      "boundaryCases": 0,
+      "boundaryDetail": "none applicable",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -190,54 +199,13 @@
       "tier": "High",
       "branches": 3,
       "branchDetail": "3 from 3 policy USING/WITH CHECK condition(s)",
-      "tests": 9,
+      "tests": 8,
+      "testFormula": "3 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
-    },
-    {
-      "resource": "public.career_nodes",
-      "rating": {
-        "resource": "public.career_nodes",
-        "data": {
-          "level": "Low",
-          "evidence": "E",
-          "why": "Public catalogue of career objectives; readable by design."
-        },
-        "blast": {
-          "level": "High",
-          "evidence": "E",
-          "why": "Global catalogue; every account's career path is defined by it."
-        },
-        "integrity": {
-          "level": "High",
-          "evidence": "E",
-          "why": "Carries reward_chips, reward_xp and starting_chips. Corrupting a node changes the chips paid out, which is authoritative economy configuration — the same reasoning the author applied to rulesets rather than to cosmetics."
-        },
-        "reversibility": {
-          "level": "Low",
-          "evidence": "E",
-          "why": "Rows are written by an Arc21 migration, which is an authoritative deterministic source that can restore them exactly."
-        },
-        "exposure": {
-          "level": "Low",
-          "evidence": "E",
-          "why": "Integrity drives; clients hold SELECT only, with a deny_client_write trigger.",
-          "readExposure": "anonymous",
-          "writeExposure": "server_only",
-          "drivingFailureMode": "integrity",
-          "anonymousGrantExists": true,
-          "anonymousPolicyPermits": true
-        }
-      },
-      "impact": "High",
-      "impactRule": "Integrity impact = High",
-      "scoredExposure": "server_only",
-      "tier": "High",
-      "branches": 3,
-      "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated",
-      "tests": 9,
-      "weakEvidence": []
     },
     {
       "resource": "public.daily_challenges",
@@ -280,7 +248,10 @@
       "tier": "High",
       "branches": 3,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s)",
-      "tests": 9,
+      "tests": 6,
+      "testFormula": "3 branches x 2 (positive + negative) + 0 applicable boundary case(s)",
+      "boundaryCases": 0,
+      "boundaryDetail": "none applicable",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -326,7 +297,10 @@
       "tier": "High",
       "branches": 5,
       "branchDetail": "4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 13,
+      "tests": 12,
+      "testFormula": "5 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -372,7 +346,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "2 from 2 policy USING/WITH CHECK condition(s)",
-      "tests": 7,
+      "tests": 6,
+      "testFormula": "2 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -418,7 +395,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 6,
+      "testFormula": "2 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": []
     },
     {
@@ -463,7 +443,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 5,
+      "testFormula": "2 branches x 2 (positive + negative) + 1 applicable boundary case(s)",
+      "boundaryCases": 1,
+      "boundaryDetail": "deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -509,7 +492,10 @@
       "tier": "High",
       "branches": 3,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s)",
-      "tests": 9,
+      "tests": 7,
+      "testFormula": "3 branches x 2 (positive + negative) + 1 applicable boundary case(s)",
+      "boundaryCases": 1,
+      "boundaryDetail": "deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -555,7 +541,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 4,
+      "testFormula": "2 branches x 2 (positive + negative) + 0 applicable boundary case(s)",
+      "boundaryCases": 0,
+      "boundaryDetail": "none applicable",
       "weakEvidence": [
         "Reversibility:P"
       ]
@@ -602,7 +591,10 @@
       "tier": "High",
       "branches": 7,
       "branchDetail": "4 from 3 policy USING/WITH CHECK condition(s); 3 refusing trigger(s)",
-      "tests": 17,
+      "tests": 16,
+      "testFormula": "7 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -648,7 +640,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 for deny-by-default (RLS on, no policy); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 5,
+      "testFormula": "2 branches x 2 (positive + negative) + 1 applicable boundary case(s)",
+      "boundaryCases": 1,
+      "boundaryDetail": "deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:P"
       ]
@@ -694,7 +689,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 for deny-by-default (RLS on, no policy); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 4,
+      "testFormula": "2 branches x 2 (positive + negative) + 0 applicable boundary case(s)",
+      "boundaryCases": 0,
+      "boundaryDetail": "none applicable",
       "weakEvidence": []
     },
     {
@@ -738,7 +736,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 5,
+      "testFormula": "2 branches x 2 (positive + negative) + 1 applicable boundary case(s)",
+      "boundaryCases": 1,
+      "boundaryDetail": "deleted user (the resource records an owner)",
       "weakEvidence": [
         "Data:P",
         "Integrity:P",
@@ -786,7 +787,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 5,
+      "testFormula": "2 branches x 2 (positive + negative) + 1 applicable boundary case(s)",
+      "boundaryCases": 1,
+      "boundaryDetail": "deleted user (the resource records an owner)",
       "weakEvidence": [
         "Integrity:P",
         "Reversibility:U"
@@ -834,7 +838,10 @@
       "tier": "High",
       "branches": 3,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated",
-      "tests": 9,
+      "tests": 6,
+      "testFormula": "3 branches x 2 (positive + negative) + 0 applicable boundary case(s)",
+      "boundaryCases": 0,
+      "boundaryDetail": "none applicable",
       "weakEvidence": []
     },
     {
@@ -878,7 +885,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 7,
+      "tests": 6,
+      "testFormula": "2 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -924,53 +934,10 @@
       "tier": "High",
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
-      "tests": 7,
-      "weakEvidence": [
-        "Reversibility:U"
-      ]
-    },
-    {
-      "resource": "public.tournaments",
-      "rating": {
-        "resource": "public.tournaments",
-        "data": {
-          "level": "Low",
-          "evidence": "E",
-          "why": "Public tournament catalogue; readable by design."
-        },
-        "blast": {
-          "level": "High",
-          "evidence": "E",
-          "why": "Global; a tournament row governs a competition many accounts enter."
-        },
-        "integrity": {
-          "level": "High",
-          "evidence": "E",
-          "why": "Carries entry_fee_chips, starting_chips and prize_structure. Corruption changes what entrants pay and are paid — authoritative economy configuration."
-        },
-        "reversibility": {
-          "level": "Medium",
-          "evidence": "U",
-          "why": "No backup, snapshot or reconstruction path is established anywhere in the repository; per the rubric's uncertainty rule this is Medium/U rather than Low/U."
-        },
-        "exposure": {
-          "level": "Low",
-          "evidence": "E",
-          "why": "Integrity drives; clients hold SELECT only, with a deny_client_write trigger.",
-          "readExposure": "anonymous",
-          "writeExposure": "server_only",
-          "drivingFailureMode": "integrity",
-          "anonymousGrantExists": true,
-          "anonymousPolicyPermits": true
-        }
-      },
-      "impact": "High",
-      "impactRule": "Integrity impact = High",
-      "scoredExposure": "server_only",
-      "tier": "High",
-      "branches": 3,
-      "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated",
-      "tests": 9,
+      "tests": 4,
+      "testFormula": "2 branches x 2 (positive + negative) + 0 applicable boundary case(s)",
+      "boundaryCases": 0,
+      "boundaryDetail": "none applicable",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1016,7 +983,10 @@
       "tier": "High",
       "branches": 4,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 3 refusing trigger(s)",
-      "tests": 11,
+      "tests": 10,
+      "testFormula": "4 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": []
     },
     {
@@ -1060,7 +1030,10 @@
       "tier": "High",
       "branches": 3,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 2 refusing trigger(s)",
-      "tests": 9,
+      "tests": 8,
+      "testFormula": "3 branches x 2 (positive + negative) + 2 applicable boundary case(s)",
+      "boundaryCases": 2,
+      "boundaryDetail": "null identity (a policy here reads auth.uid()); deleted user (the resource records an owner)",
       "weakEvidence": []
     },
     {
@@ -1105,9 +1078,59 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
+    },
+    {
+      "resource": "public.career_nodes",
+      "rating": {
+        "resource": "public.career_nodes",
+        "data": {
+          "level": "Low",
+          "evidence": "E",
+          "why": "Public catalogue of career objectives; readable by design."
+        },
+        "blast": {
+          "level": "High",
+          "evidence": "E",
+          "why": "Global catalogue; every account's career path is defined by it."
+        },
+        "integrity": {
+          "level": "Medium",
+          "evidence": "E",
+          "why": "EVIDENCE CORRECTION (was High by analogy). Traced through the repository: the career reward is credited as `params.node.reward.chips` in supabase/functions/_shared/career-rewards.ts:57, a CODE-side CareerNode constant. create-session/index.ts:1838 does select reward_chips from this table, but `nodeRow` is thereafter used only for its `id` and the selected value is never referenced. What corruption here can still do is deactivate a node or break its `code` lookup — users observe incorrect behaviour and repair is needed, but no authoritative economy, authorization or game truth is overwritten."
+        },
+        "reversibility": {
+          "level": "Low",
+          "evidence": "E",
+          "why": "Rows are written by an Arc21 migration, which is an authoritative deterministic source that can restore them exactly."
+        },
+        "exposure": {
+          "level": "Low",
+          "evidence": "E",
+          "why": "Integrity drives; clients hold SELECT only, with a deny_client_write trigger.",
+          "readExposure": "anonymous",
+          "writeExposure": "server_only",
+          "drivingFailureMode": "integrity",
+          "anonymousGrantExists": true,
+          "anonymousPolicyPermits": true
+        }
+      },
+      "impact": "Medium",
+      "impactRule": "Not High; at least one consequence dimension is Medium or High (Blast=High, Integrity=Medium)",
+      "scoredExposure": "server_only",
+      "tier": "Medium",
+      "branches": 3,
+      "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated",
+      "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
+      "weakEvidence": []
     },
     {
       "resource": "public.career_progress",
@@ -1151,6 +1174,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1198,6 +1224,9 @@
       "branches": 3,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": []
     },
     {
@@ -1242,6 +1271,9 @@
       "branches": 1,
       "branchDetail": "1 minimum",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": []
     },
     {
@@ -1286,6 +1318,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1332,6 +1367,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1378,6 +1416,9 @@
       "branches": 5,
       "branchDetail": "4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 6,
+      "testFormula": "3 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1424,6 +1465,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1470,6 +1514,9 @@
       "branches": 5,
       "branchDetail": "4 from 3 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 6,
+      "testFormula": "3 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1516,6 +1563,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1562,6 +1612,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1608,6 +1661,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1654,6 +1710,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1700,6 +1759,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1746,6 +1808,58 @@
       "branches": 5,
       "branchDetail": "5 from 4 policy USING/WITH CHECK condition(s)",
       "tests": 8,
+      "testFormula": "4 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
+      "weakEvidence": [
+        "Reversibility:U"
+      ]
+    },
+    {
+      "resource": "public.tournaments",
+      "rating": {
+        "resource": "public.tournaments",
+        "data": {
+          "level": "Low",
+          "evidence": "E",
+          "why": "Public tournament catalogue; readable by design."
+        },
+        "blast": {
+          "level": "High",
+          "evidence": "E",
+          "why": "Global; a tournament row governs a competition many accounts enter."
+        },
+        "integrity": {
+          "level": "Medium",
+          "evidence": "E",
+          "why": "EVIDENCE CORRECTION (was High by analogy). Traced: the entry fee is debited as `-SPRINT.entryFee` (create-session/index.ts:1611) and prizes credited as `placement.prizeChips` derived from `SPRINT.prizeChips` (tournament-format.ts:44,295) — both CODE-side constants. The tournaments row's entry_fee_chips, starting_chips and prize_structure are WRITTEN from those constants at creation (index.ts:1472-1480) and never read back to move chips. Independent validation: public.sprint_format() returns the figures as SQL literals and supabase/tests/16_sprint_and_daily.test.sql asserts it agrees field by field with the TypeScript constant, so neither money path reads this mutable row."
+        },
+        "reversibility": {
+          "level": "Medium",
+          "evidence": "U",
+          "why": "No backup, snapshot or reconstruction path is established anywhere in the repository; per the rubric's uncertainty rule this is Medium/U rather than Low/U."
+        },
+        "exposure": {
+          "level": "Low",
+          "evidence": "E",
+          "why": "Integrity drives; clients hold SELECT only, with a deny_client_write trigger.",
+          "readExposure": "anonymous",
+          "writeExposure": "server_only",
+          "drivingFailureMode": "integrity",
+          "anonymousGrantExists": true,
+          "anonymousPolicyPermits": true
+        }
+      },
+      "impact": "Medium",
+      "impactRule": "Not High; at least one consequence dimension is Medium or High (Blast=High, Integrity=Medium, Reversibility=Medium)",
+      "scoredExposure": "server_only",
+      "tier": "Medium",
+      "branches": 3,
+      "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s); 1 for anonymous vs authenticated",
+      "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1792,6 +1906,9 @@
       "branches": 2,
       "branchDetail": "1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s)",
       "tests": 2,
+      "testFormula": "1 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": [
         "Reversibility:U"
       ]
@@ -1839,12 +1956,15 @@
       "branches": 4,
       "branchDetail": "3 from 3 policy USING/WITH CHECK condition(s); 1 for anonymous vs authenticated",
       "tests": 4,
+      "testFormula": "2 important path(s) x 2 (representative positive + negative)",
+      "boundaryCases": 0,
+      "boundaryDetail": "n/a below High tier",
       "weakEvidence": []
     }
   ],
   "distribution": {
-    "High": 23,
-    "Medium": 17,
+    "High": 21,
+    "Medium": 19,
     "Low": 0
   },
   "sensitivity": [
@@ -1852,48 +1972,48 @@
       "resource": "private.career_drill_seeds",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 5,
-      "alternativeTests": 5,
+      "primaryTests": 2,
+      "alternativeTests": 2,
       "changed": false
     },
     {
       "resource": "private.game_commands",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 5,
-      "alternativeTests": 5,
+      "primaryTests": 3,
+      "alternativeTests": 3,
       "changed": false
     },
     {
       "resource": "private.game_state_private",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 5,
-      "alternativeTests": 5,
+      "primaryTests": 2,
+      "alternativeTests": 2,
       "changed": false
     },
     {
       "resource": "public.rate_limit_events",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 5,
+      "alternativeTests": 5,
       "changed": false
     },
     {
       "resource": "public.rate_limit_policies",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 4,
+      "alternativeTests": 4,
       "changed": false
     },
     {
       "resource": "public.rulesets",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 9,
-      "alternativeTests": 9,
+      "primaryTests": 6,
+      "alternativeTests": 6,
       "changed": false
     },
     {
@@ -1901,31 +2021,31 @@
       "primaryTier": "Medium",
       "alternativeTier": "High",
       "primaryTests": 2,
-      "alternativeTests": 9,
+      "alternativeTests": 6,
       "changed": true
     },
     {
       "resource": "public.career_nodes",
-      "primaryTier": "High",
+      "primaryTier": "Medium",
       "alternativeTier": "High",
-      "primaryTests": 9,
-      "alternativeTests": 9,
-      "changed": false
+      "primaryTests": 2,
+      "alternativeTests": 6,
+      "changed": true
     },
     {
       "resource": "public.tournaments",
-      "primaryTier": "High",
+      "primaryTier": "Medium",
       "alternativeTier": "High",
-      "primaryTests": 9,
-      "alternativeTests": 9,
-      "changed": false
+      "primaryTests": 2,
+      "alternativeTests": 6,
+      "changed": true
     },
     {
       "resource": "public.daily_challenges",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 9,
-      "alternativeTests": 9,
+      "primaryTests": 6,
+      "alternativeTests": 6,
       "changed": false
     },
     {
@@ -1940,48 +2060,48 @@
       "resource": "public.wallets",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 9,
-      "alternativeTests": 9,
+      "primaryTests": 8,
+      "alternativeTests": 8,
       "changed": false
     },
     {
       "resource": "public.wallet_ledger",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 11,
-      "alternativeTests": 11,
+      "primaryTests": 10,
+      "alternativeTests": 10,
       "changed": false
     },
     {
       "resource": "public.game_sessions",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 9,
-      "alternativeTests": 9,
+      "primaryTests": 7,
+      "alternativeTests": 7,
       "changed": false
     },
     {
       "resource": "public.game_session_seats",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 5,
+      "alternativeTests": 5,
       "changed": false
     },
     {
       "resource": "public.game_events",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 6,
+      "alternativeTests": 6,
       "changed": false
     },
     {
       "resource": "public.hand_records",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 4,
+      "alternativeTests": 4,
       "changed": false
     },
     {
@@ -1996,48 +2116,48 @@
       "resource": "public.profiles",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 17,
-      "alternativeTests": 17,
+      "primaryTests": 16,
+      "alternativeTests": 16,
       "changed": false
     },
     {
       "resource": "public.blocks",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 9,
-      "alternativeTests": 9,
+      "primaryTests": 8,
+      "alternativeTests": 8,
       "changed": false
     },
     {
       "resource": "public.friend_requests",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 13,
-      "alternativeTests": 13,
+      "primaryTests": 12,
+      "alternativeTests": 12,
       "changed": false
     },
     {
       "resource": "public.friendships",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 6,
+      "alternativeTests": 6,
       "changed": false
     },
     {
       "resource": "public.rooms",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 5,
+      "alternativeTests": 5,
       "changed": false
     },
     {
       "resource": "public.room_members",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 5,
+      "alternativeTests": 5,
       "changed": false
     },
     {
@@ -2124,16 +2244,16 @@
       "resource": "public.tournament_entries",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 6,
+      "alternativeTests": 6,
       "changed": false
     },
     {
       "resource": "public.tournament_matches",
       "primaryTier": "High",
       "alternativeTier": "High",
-      "primaryTests": 7,
-      "alternativeTests": 7,
+      "primaryTests": 4,
+      "alternativeTests": 4,
       "changed": false
     },
     {
@@ -2165,26 +2285,64 @@
       "primaryTier": "Medium",
       "alternativeTier": "High",
       "primaryTests": 4,
-      "alternativeTests": 11,
+      "alternativeTests": 9,
       "changed": true
     }
   ],
-  "totalTestsPrimary": 239,
-  "totalTestsAlternative": 253,
+  "tierSubtotalPrimary": 184,
+  "tierSubtotalAlternative": 201,
+  "totalTestsPrimary": 185,
+  "totalTestsAlternative": 202,
+  "invariants": [
+    {
+      "name": "Primary: sum of per-tier tests equals sum of per-resource tests",
+      "passed": true,
+      "detail": "per-tier 184 vs per-resource 184"
+    },
+    {
+      "name": "Primary: total equals per-tier subtotal plus suite-level cases",
+      "passed": true,
+      "detail": "184 + 1 = 185"
+    },
+    {
+      "name": "Alternative: sum of per-tier tests equals sum of per-resource tests",
+      "passed": true,
+      "detail": "per-tier 201 vs per-resource 201"
+    },
+    {
+      "name": "Alternative: total equals per-tier subtotal plus suite-level cases",
+      "passed": true,
+      "detail": "201 + 1 = 202"
+    },
+    {
+      "name": "No tier subtotal exceeds the plan total",
+      "passed": true,
+      "detail": "High 130, Medium 54, Low 0, total 185"
+    }
+  ],
   "issues": [],
   "coverageGaps": [],
   "estimator": {
+    "unit": "one statement executed under one identity, producing one evidence record",
     "highCasesPerBranch": 2,
-    "highBoundaryCases": 3,
+    "boundaryNullIdentity": 1,
+    "boundaryDeletedUser": 1,
+    "suiteLevelCases": 1,
     "mediumCasesPerCommand": 2,
     "lowProbes": 2
   },
-  "exposureInertCount": 23,
+  "exposureInertCount": 21,
   "exposureCouldHaveMattered": [
     {
       "resource": "public.career_attempts",
       "impact": "Medium",
       "exposure": "authenticated",
+      "tier": "Medium"
+    },
+    {
+      "resource": "public.career_nodes",
+      "impact": "Medium",
+      "exposure": "server_only",
       "tier": "Medium"
     },
     {
@@ -2269,6 +2427,12 @@
       "resource": "public.push_tokens",
       "impact": "Medium",
       "exposure": "authenticated",
+      "tier": "Medium"
+    },
+    {
+      "resource": "public.tournaments",
+      "impact": "Medium",
+      "exposure": "server_only",
       "tier": "Medium"
     },
     {

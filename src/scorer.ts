@@ -183,14 +183,49 @@ export function validate(r: ResourceRating): ValidationIssue[] {
  * can be argued with, and they are reported in CP3.
  */
 export const ESTIMATOR = {
-  /** High tier: one positive and one negative per branch. */
-  highCasesPerBranch: 2,
   /**
-   * High tier boundary cases. The brief requires three to appear somewhere:
-   * null or absent identity, an identity for a deleted user, an expired
-   * session.
+   * ONE ESTIMATED TEST = one statement or call executed against the instance
+   * under one identity, producing one evidence record. It is a unit of
+   * execution, not a scenario or a test file.
    */
-  highBoundaryCases: 3,
+  unit: "one statement executed under one identity, producing one evidence record",
+
+  /** High tier: one positive and one negative case per policy branch. */
+  highCasesPerBranch: 2,
+
+  /**
+   * High-tier boundary cases are counted per resource ONLY WHERE APPLICABLE,
+   * which is what RUBRIC.md Part 5 says ("applicable boundary cases").
+   *
+   * An earlier version added a flat 3 to every High resource, on the grounds
+   * that the brief requires three boundary conditions to appear. That
+   * conflated two different requirements and inflated the estimate: the brief
+   * says the three must appear SOMEWHERE in WP3, not that all three must be
+   * repeated against all 23 High resources. Repeating them 23 times would have
+   * counted 69 executions for what the brief asks to see once each.
+   *
+   * Applicability is decided from the catalogs, not by assertion:
+   *
+   *   null / absent identity   applicable when a policy on the resource reads
+   *                            `auth.uid()`, because then "no identity" is a
+   *                            distinct authorization outcome FOR THAT RESOURCE.
+   *   deleted user             applicable when the resource records whose row
+   *                            it is, so that the owner can be deleted.
+   *   expired session          NOT per-resource. At the database layer an
+   *                            expired JWT never arrives -- PostgREST rejects
+   *                            it before Postgres sees it -- so it is an
+   *                            auth-layer condition with no per-resource
+   *                            control to exercise. Counted once for the suite.
+   */
+  boundaryNullIdentity: 1,
+  boundaryDeletedUser: 1,
+
+  /**
+   * Suite-level cases, counted ONCE for the whole plan rather than per tier.
+   * Today: the expired-session boundary the brief requires to appear somewhere.
+   */
+  suiteLevelCases: 1,
+
   /** Medium tier: a representative positive and negative per important path. */
   mediumCasesPerCommand: 2,
   /** Low tier: recorded exploratory probing -- one read attempt, one write. */
@@ -243,14 +278,43 @@ export function countBranches(f: RiskInput): BranchCount {
   return { branches: Math.max(n, 1), detail: parts.join("; ") || "1 minimum" };
 }
 
-export function estimateTests(tier: Level, f: RiskInput): number {
+/** Boundary cases applicable to THIS resource at High tier. See ESTIMATOR. */
+export function applicableBoundaryCases(f: RiskInput): { count: number; detail: string } {
+  const parts: string[] = [];
+  let n = 0;
+  if (f.anyPolicyReferencesAuthUid) {
+    n += ESTIMATOR.boundaryNullIdentity;
+    parts.push("null identity (a policy here reads auth.uid())");
+  }
+  if (f.hasIdentityLinkage) {
+    n += ESTIMATOR.boundaryDeletedUser;
+    parts.push("deleted user (the resource records an owner)");
+  }
+  return { count: n, detail: parts.join("; ") || "none applicable" };
+}
+
+export interface TestEstimate {
+  readonly tests: number;
+  readonly formula: string;
+}
+
+export function estimateTests(tier: Level, f: RiskInput): TestEstimate {
   const { branches } = countBranches(f);
-  if (tier === "High") return branches * ESTIMATOR.highCasesPerBranch + ESTIMATOR.highBoundaryCases;
+  if (tier === "High") {
+    const b = applicableBoundaryCases(f);
+    return {
+      tests: branches * ESTIMATOR.highCasesPerBranch + b.count,
+      formula: `${branches} branches x ${ESTIMATOR.highCasesPerBranch} (positive + negative) + ${b.count} applicable boundary case(s)`,
+    };
+  }
   if (tier === "Medium") {
     const paths = Math.max(f.commandsWithPolicy.length, 1);
-    return paths * ESTIMATOR.mediumCasesPerCommand;
+    return {
+      tests: paths * ESTIMATOR.mediumCasesPerCommand,
+      formula: `${paths} important path(s) x ${ESTIMATOR.mediumCasesPerCommand} (representative positive + negative)`,
+    };
   }
-  return ESTIMATOR.lowProbes;
+  return { tests: ESTIMATOR.lowProbes, formula: `${ESTIMATOR.lowProbes} recorded exploratory probes` };
 }
 
 // ---------------------------------------------------------------------------
@@ -267,6 +331,9 @@ export interface Scored {
   readonly branches: number;
   readonly branchDetail: string;
   readonly tests: number;
+  readonly testFormula: string;
+  readonly boundaryCases: number;
+  readonly boundaryDetail: string;
   /** Dimensions whose evidence is not fully established. */
   readonly weakEvidence: readonly string[];
 }
@@ -276,6 +343,8 @@ export function score(rating: ResourceRating, facts: RiskInput): Scored {
   const exposure = scoredExposure(rating.exposure);
   const tier = MATRIX[impact][exposure];
   const { branches, detail } = countBranches(facts);
+  const estimate = estimateTests(tier, facts);
+  const boundary = tier === "High" ? applicableBoundaryCases(facts) : { count: 0, detail: "n/a below High tier" };
   const weak = [
     rating.data.evidence !== "E" ? `Data:${rating.data.evidence}` : null,
     rating.blast.evidence !== "E" ? `Blast:${rating.blast.evidence}` : null,
@@ -293,7 +362,10 @@ export function score(rating: ResourceRating, facts: RiskInput): Scored {
     tier,
     branches,
     branchDetail: detail,
-    tests: estimateTests(tier, facts),
+    tests: estimate.tests,
+    testFormula: estimate.formula,
+    boundaryCases: boundary.count,
+    boundaryDetail: boundary.detail,
     weakEvidence: weak,
   };
 }

@@ -845,3 +845,75 @@ mis-scored 27 resources.
 write exposure, even where one exists. Whether a trigger actually refuses is settled by executing
 a statement, which is WP3's job; WP1 proved it for exactly one of them. Where a rating relies on a
 trigger, it says so and carries the evidence mark.
+
+### D2.15 — Evidence correction: `career_nodes` and `tournaments` integrity is Medium, not High
+
+**Decided.** Both were rated High integrity by analogy to the author's `rulesets` decision, on the
+grounds that they carry economy-looking columns. Tracing those columns through the repository
+shows the analogy does not hold. **The rubric is unchanged; the evidence was wrong.**
+
+**`public.career_nodes`.** The career reward is credited as `params.node.reward.chips` —
+`supabase/functions/_shared/career-rewards.ts:57` — where `node` is a code-side `CareerNode`
+constant from `_shared/career/index.ts`. `create-session/index.ts:1838` does select
+`reward_chips` from the table, but the resulting `nodeRow` is thereafter used **only for its
+`id`** (lines 1866, 1876, 1893, 1902, 1982) and the selected value is never referenced.
+`starting_chips` for a drill attempt is inserted as a literal `0` (line 1902).
+
+**`public.tournaments`.** The entry fee is debited as `-SPRINT.entryFee`
+(`create-session/index.ts:1611`); prizes are credited as `placement.prizeChips`, derived from
+`SPRINT.prizeChips` (`_shared/tournament-format.ts:44`, `:295`). The table's
+`entry_fee_chips`, `starting_chips` and `prize_structure` are **written from those constants** at
+tournament creation (`index.ts:1472–1480`) and a repository-wide search finds no read of them on
+any money path.
+
+**Independent validation found.** `public.sprint_format()`
+(`20260817200000_daily_challenge_and_sprint.sql:377`) returns the figures as SQL literals, and its
+own comment records that `supabase/tests/16_sprint_and_daily.test.sql` asserts it agrees field by
+field with the TypeScript `SPRINT` constant. So the configuration a player is shown and the
+configuration that moves chips are two independent definitions cross-checked by a test — and the
+mutable `tournaments` row is neither of them.
+
+**What corruption can still do**, and why Medium is the level the evidence supports: deactivate a
+career node or break its `code` lookup; misrepresent a tournament's lifecycle fields. Users
+observe incorrect behaviour and repair is needed, but no authoritative economy, authorization or
+game truth is overwritten — which is the rubric's Medium integrity definition.
+
+**Effect.** Both fall from High tier to Medium. Distribution 23/17/0 → **21/19/0**. Both also
+carry anonymous grants, so both now *move* under the sensitivity alternative, taking it from two
+resources to four.
+
+### D2.16 — The three required boundary cases are not repeated per resource
+
+**Decided.** Null-identity and deleted-user are counted for a High resource **only where the
+catalogs make them applicable** — the first where a policy on that resource reads `auth.uid()`,
+the second where the resource records an owner. Expired session is counted **once for the whole
+plan**.
+
+**Why.** The first estimator added a flat 3 to every High resource. That conflated two different
+requirements. The brief says the three boundary conditions must appear *somewhere* in WP3;
+`RUBRIC.md` Part 5 says a High resource gets its *applicable* boundary cases. Repeating all three
+across 23 High resources counted 69 executions for what the brief asks to see once each.
+
+Expired session is suite-level for a reason that is architectural rather than a convenience: at
+the database layer an expired JWT never arrives, because PostgREST rejects it before Postgres sees
+it. There is no per-resource control to exercise, so counting it per resource would be counting a
+test that cannot be written.
+
+**Effect.** High-tier boundary cases fall from 69 to 22, and the plan total from 239 to 185.
+
+### D2.17 — The estimate is machine-checked and the run fails if it does not add up
+
+**Decided.** Five invariants run on every scoring pass: per-tier tests equal per-resource tests
+(primary and alternative), total equals the per-tier subtotal plus suite-level cases (primary and
+alternative), and no tier subtotal exceeds the plan total. `attest score` exits non-zero if any
+fails, or if any resource is unrated.
+
+**Why.** The first CP3 presentation contained a per-tier table that was arithmetically impossible
+— a High-tier figure larger than the whole plan. The generated report was correct; the table in
+the covering message was hand-transcribed and wrong. The lesson is not "transcribe more
+carefully": it is that a number a reader can check should be checked by the tool, so that the
+failure is loud rather than embarrassing.
+
+Verified by breaking it: with a deliberate `+7` injected into the total, the run printed
+`ESTIMATOR INVARIANT FAILED — Primary: total equals per-tier subtotal plus suite-level cases:
+184 + 1 = 192` and exited 1.
