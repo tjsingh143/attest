@@ -786,3 +786,62 @@ disagreement a competent reader could also have.
 **What is left to the author.** Which alternative. A sensitivity analysis is only meaningful
 against a rubric somebody would actually defend, and the author is the one who knows which of
 their own choices was closest to going the other way.
+
+---
+
+## WP2 — applying the author's rubric
+
+The rubric itself — dimensions, levels, architecture, combination rules, the five pre-decided
+cases, the assurance mapping and the sensitivity alternative — is the author's and is recorded in
+`RUBRIC.md`. The entries below cover only its **application**: where the levels were not obvious
+from the dossiers, and where the implementation had to choose something the rubric did not fix.
+
+### D2.12 — Tier assignments that were not obvious
+
+One line each, per the rubric's requirement. The five cases the author pre-decided are not
+repeated here.
+
+| Resource | Tier | Why it is not the obvious answer |
+|---|---|---|
+| `public.rate_limit_events` | High | A pruned, transient counter table reaches High because deleting rows resets a user's rate-limit window, which the rubric classes as corrupting a security control. |
+| `public.rate_limit_policies` | High | Configuration rather than data, but it is *the* rate limit for every action in the product, so corruption weakens a security control globally. |
+| `public.career_nodes` | High | Rated with `rulesets` rather than with `cosmetics` because it carries `reward_chips` and `starting_chips`: corrupting a node changes the economy, which the author's Part 4.4 distinction treats as High integrity. |
+| `public.tournaments` | High | Same reasoning: `entry_fee_chips` and `prize_structure` are economy configuration. |
+| `public.game_events` | High | Reached High through reversibility rather than through data or integrity — it is explicitly append-only and is the durable record a client falls back to, so nothing reconstructs it. |
+| `public.hand_records` | High | Same route as `game_events`: an archive is its own history. |
+| `public.blocks`, `friend_requests`, `friendships` | High | Social tables reach High because all three feed `viewer_is_blocked_by` / `viewer_is_friend_of` inside `profiles_select_visible` — changing them alters who may read a profile, which is an access-control decision. |
+| `public.room_members` | High | Rated High on membership-as-authorization, with evidence `P`: this table carries no `COMMENT`, so its purpose is established from the helper function that reads it rather than from a declared intent. |
+| `public.daily_challenges_public` | Medium | A view holds no state, so its integrity is Low; it reaches Medium purely on blast radius, being a global object every account reads. |
+| `public.loadouts` | Medium | Data, blast and integrity are all Low. It is kept out of Low tier by reversibility alone — a user's chosen loadout is recorded nowhere else, so Low reversibility cannot be positively supported. |
+| `public.career_progress`, `career_attempts` | Medium | Deliberately *not* High. Their reward markers could set up a repeat claim, but chips move only through the ledger, so the change does not itself overwrite economy truth — which is the line the rubric draws between Medium and High integrity. |
+
+### D2.13 — Estimator constants the rubric did not fix
+
+**Decided.** Test counts use four named constants: two cases per branch at High tier, three
+boundary cases at High tier, two cases per command at Medium, two probes at Low.
+
+**Why they are called out.** The rubric defines what each tier must *cover* and defines a policy
+branch. It does not say how many statements that implies. Those four numbers are therefore the
+implementation's, not the author's, and they are printed in the CP3 report beside the totals so a
+reader can see which part of the figure is rule and which is estimate.
+
+The three High-tier boundary cases are not arbitrary: they are the three the brief requires to
+appear somewhere in WP3 — null or absent identity, an identity for a deleted user, and an expired
+session.
+
+### D2.14 — Effective read and write exposure are computed, not judged
+
+**Decided.** `effectiveReadExposure` and `effectiveWriteExposure` are derived in the facts layer
+from grants and policies together: a grant is only reach if a policy also admits that grantee for
+a matching command, and RLS enabled with no policy yields server-only whatever the grants say.
+
+**Why it matters more than expected.** 27 of 40 resources have *different* read and write
+exposure — almost always authenticated-read and server-only-write. The author's rule about
+scoring the exposure that matches the driving failure mode is therefore load-bearing on two thirds
+of the inventory, not an edge case. Collapsing the two into one "exposure" value would have
+mis-scored 27 resources.
+
+**What is deliberately excluded.** A trigger that refuses writes is *not* folded into the computed
+write exposure, even where one exists. Whether a trigger actually refuses is settled by executing
+a statement, which is WP3's job; WP1 proved it for exactly one of them. Where a rating relies on a
+trigger, it says so and carries the evidence mark.

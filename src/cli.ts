@@ -23,6 +23,7 @@ import { readHarnessVersion } from "./harness-version.ts";
 import { buildRiskInputs } from "./risk-inputs.ts";
 import { renderRiskInputsMarkdown } from "./report-risk-inputs.ts";
 import { formatRubricStatus, readRubricStatus } from "./rubric.ts";
+import { runCp3 } from "./cp3.ts";
 
 /**
  * Sortable, unique, and it says what it is: when, and against which schema.
@@ -138,6 +139,11 @@ async function main(): Promise<void> {
       if (!st.authored) process.exitCode = 2;
       break;
     }
+    case "score": {
+      console.log("score (WP2)");
+      await runCp3((s) => console.log(s));
+      break;
+    }
     case "validate": {
       console.log("validate (WP1)");
       const v = await validate((s) => console.log(s));
@@ -154,12 +160,12 @@ async function main(): Promise<void> {
       const v = await validate((s) => console.log(s), runId);
       await cmdRiskInputs(runId);
       reportValidation(v);
-      console.log("rubric (WP2)");
-      console.log(formatRubricStatus(await readRubricStatus()));
+      console.log("score (WP2)");
+      await runCp3((s) => console.log(s), runId);
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|run]`);
       process.exitCode = 2;
   }
 }

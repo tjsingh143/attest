@@ -132,6 +132,18 @@ export interface RiskInput {
   readonly anonymousGrantExists: boolean;
   /** Raw fact: does any policy currently admit `anon` or `PUBLIC`? */
   readonly anonymousPolicyPermits: boolean;
+  /**
+   * Effective READ path, from grants and policies together.
+   *
+   * The rubric scores read and write exposure separately and picks the one the
+   * driving failure mode calls for, so both are computed here rather than
+   * collapsed. Derived from the catalogs only: a trigger that refuses writes is
+   * reported separately in `refusingTriggers`, because whether it actually
+   * refuses is settled by executing a statement (WP3), not by reading its name.
+   */
+  readonly effectiveReadExposure: ExposureClass;
+  /** Effective WRITE path, from grants and policies together. Same caveat. */
+  readonly effectiveWriteExposure: ExposureClass;
   readonly reachableBy: Readonly<Record<string, readonly string[]>>;
   readonly columnReachableBy: Readonly<Record<string, readonly string[]>>;
 
@@ -336,6 +348,12 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
       exposureDetail: exposure.detail,
       anonymousGrantExists: anonGrantees.length > 0,
       anonymousPolicyPermits: namedRoles.has("anon") || namedRoles.has("PUBLIC"),
+      effectiveReadExposure: effectivePath(
+        r.reachableBy, r.columnReachableBy, policies, r.rlsEnabled, READ_PRIVS,
+      ),
+      effectiveWriteExposure: effectivePath(
+        r.reachableBy, r.columnReachableBy, policies, r.rlsEnabled, WRITE_PRIVS,
+      ),
       reachableBy: r.reachableBy,
       columnReachableBy: r.columnReachableBy,
 
@@ -374,6 +392,50 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
   counts.totalPolicies = resources.reduce((a, r) => a + r.policyCount, 0);
 
   return { inventory, inputs: { resources, counts } };
+}
+
+const READ_PRIVS = new Set(["SELECT"]);
+const WRITE_PRIVS = new Set(["INSERT", "UPDATE", "DELETE"]);
+
+/** Commands a policy governs, expanded so ALL covers everything. */
+function policyCovers(command: string, privs: Set<string>): boolean {
+  if (command === "ALL") return true;
+  return privs.has(command);
+}
+
+/**
+ * The effective path for a set of privileges: a grant is only reach if a policy
+ * also admits the grantee for the matching command (or row security is off).
+ *
+ * RLS enabled with no policy therefore yields `server_only` whatever the grants
+ * say -- which is the deny-by-default case, measured rather than assumed.
+ */
+function effectivePath(
+  tableGrants: Readonly<Record<string, readonly string[]>>,
+  columnGrants: Readonly<Record<string, readonly string[]>>,
+  policies: readonly PolicyFact[],
+  rlsEnabled: boolean,
+  privs: Set<string>,
+): ExposureClass {
+  const holds = (role: string): boolean => {
+    const table = tableGrants[role] ?? [];
+    if (table.some((p) => privs.has(p))) return true;
+    return Object.entries(columnGrants).some(
+      ([key, list]) => key.startsWith(`${role}:`) && list.some((p) => privs.has(p)),
+    );
+  };
+  const admitted = (role: string): boolean => {
+    if (!rlsEnabled) return true;
+    return policies.some(
+      (p) => policyCovers(p.command, privs) && (p.roles.includes(role) || p.roles.includes("PUBLIC")),
+    );
+  };
+
+  for (const role of ["anon", "PUBLIC"]) {
+    if (holds(role) && admitted(role)) return "anonymous";
+  }
+  if (holds("authenticated") && admitted("authenticated")) return "authenticated";
+  return "server_only";
 }
 
 /** Does this function body name this relation? Text match; see the field comment. */
