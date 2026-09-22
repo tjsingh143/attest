@@ -19,6 +19,7 @@
  */
 import type { RiskInput } from "./risk-inputs.ts";
 import { F5_CALLER_SCOPED, F5_NO_TARGET_SPECS, F5_SPECS } from "../rubric/f5-escalation.ts";
+import { FIXTURES, literalFor } from "../rubric/fixtures.ts";
 import type { Level } from "./scorer.ts";
 
 export type Family =
@@ -126,7 +127,7 @@ const slug = (r: string) => r.replace(/[^a-z0-9]+/gi, "_");
 
 /** The seed as it stands after seed/seed.sql. */
 const FIXTURE_DEFAULT =
-  "the standing seed: alice, bob, carol and dave, with alice and bob seated at session e0000000-…-0001, carol not seated, alice↔bob friends, and alice blocking dave";
+  "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave";
 
 /**
  * Extra seeded state a probe needs beyond the standing seed. Collected so the
@@ -189,8 +190,8 @@ export function planWp3(
 
         if (membership?.kind === "session_participation") {
           negIdentity = CAROL;
-          posOp = `select from ${f.resource} for game session e0000000-0000-4000-8000-000000000001`;
-          negOp = `select from ${f.resource} for that same game session e0000000-0000-4000-8000-000000000001`;
+          posOp = `select from ${f.resource} for game session fixtures.session.id`;
+          negOp = `select from ${f.resource} for that same game session fixtures.session.id`;
           why = `access is decided by ${membership.detail}, not by any column on this table. Alice holds a live seat at that session; carol holds none`;
           if (ownerDrivers.length && p.combinator === "or") {
             negOp += ` — and the row selected belongs to alice, so carol falsifies BOTH disjuncts (${ownerDrivers.map((d) => d.detail).join(", ")} is not carol, and carol is not a participant)`;
@@ -198,20 +199,20 @@ export function planWp3(
           }
           if (p.combinator === "mixed" && ownerDrivers.length) {
             posOp += ` restricted to a row whose visibility = 'public'`;
-            posFix = needSeed(`one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session e0000000-…-0001`);
+            posFix = needSeed(`one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id`);
             negFix = posFix;
             why += `. The predicate is a conjunction of participation AND (public OR recipient), so the positive uses a public row and the negative falsifies the participation conjunct`;
           }
         } else if (membership?.kind === "room_membership") {
           negIdentity = CAROL;
-          posOp = `select from ${f.resource} for the seeded room`;
-          negOp = `select from ${f.resource} for that same room`;
+          posOp = `select from ${f.resource} for fixtures.roomAliceBob.id`;
+          negOp = `select from ${f.resource} for that same room fixtures.roomAliceBob.id`;
           posFix = negFix = needSeed("one private room hosted by alice with alice and bob as joined room_members, and carol NOT a member");
           why = `access is decided by ${membership.detail} — shared room membership, not ownership. host_user_id does not appear in this predicate`;
         } else if (membership?.kind === "tournament_membership") {
           negIdentity = CAROL;
-          posOp = `select from ${f.resource} for the seeded tournament`;
-          negOp = `select from ${f.resource} for that same tournament`;
+          posOp = `select from ${f.resource} for fixtures.tournamentAliceBob.id`;
+          negOp = `select from ${f.resource} for that same tournament fixtures.tournamentAliceBob.id`;
           posFix = negFix = needSeed("one tournament with alice and bob holding tournament_entries rows, and carol holding none");
           why = `access is decided by ${membership.detail} — shared tournament membership`;
           if (ownerDrivers.length && p.combinator === "or") {
@@ -219,19 +220,19 @@ export function planWp3(
             why += `. Disjunction, so both branches must be falsified`;
           }
         } else if (isProfilesVisible) {
-          posOp = `select from public.profiles where id = bob`;
-          negOp = `select from public.profiles where id = dave`;
+          posOp = `select from public.profiles where id = ${FIXTURES.bob.ref}`;
+          negOp = `select from public.profiles where id = ${FIXTURES.dave.ref}`;
           why = `this policy is a conjunction of privacy, block and friendship terms. Bob satisfies it (privacy = 'public', no block either way); dave falsifies it because alice has blocked him and the policy requires NOT viewer_has_blocked(id). Bob would NOT work as the negative — his public profile is legitimately visible. The OTHER permissive SELECT policy on profiles, profiles_select_self, is also falsified because dave's id is not alice's, so the refusal reflects effective authorization across both`;
         } else if (isProfilesSelf) {
-          posOp = `select from public.profiles where id = alice`;
-          negOp = `select from public.profiles where id = dave`;
+          posOp = `select from public.profiles where id = ${FIXTURES.alice.ref}`;
+          negOp = `select from public.profiles where id = ${FIXTURES.dave.ref}`;
           why = `ownership on id. Dave is the negative rather than bob because the OTHER permissive SELECT policy (profiles_select_visible) admits bob's public profile, so a bob fixture would not isolate a refusal`;
         } else if (ownerDrivers.length) {
           const cols = ownerDrivers.map((d) => d.detail);
-          posOp = `select from ${f.resource} where ${cols[0]} = alice`;
+          posOp = `select from ${f.resource} where ${cols[0]} = ${FIXTURES.alice.ref}`;
           negOp = cols.length > 1
-            ? `select from ${f.resource} for a row where NONE of ${cols.join(", ")} is alice — a bob↔carol row`
-            : `select from ${f.resource} where ${cols[0]} = bob`;
+            ? `select from ${f.resource} for a row where NONE of ${cols.join(", ")} is ${FIXTURES.alice.ref} — the bob↔carol row`
+            : `select from ${f.resource} where ${cols[0]} = ${FIXTURES.bob.ref}`;
           if (cols.length > 1) negFix = needSeed(`one ${f.resource} row linking bob and carol, with alice named in neither ${cols.join(" nor ")}`);
           why = cols.length > 1
             ? `ownership on ${cols.join(" OR ")}; a row naming alice in either column is legitimately visible to her, so the negative must name neither`
@@ -280,7 +281,7 @@ export function planWp3(
         tests.push({
           testId: id("F2", f.resource), family: "F2 write isolation", resource: f.resource,
           control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
-          operation: `${verb} ${f.resource} where ${pcol} = alice`,
+          operation: `${verb} ${f.resource} where ${pcol} = ${FIXTURES.alice.ref}`,
           expected: "1 row affected",
           fixture: FIXTURE_DEFAULT,
           covers: `USING branch of ${p.name} (${p.command}) satisfied for the owner`,
@@ -289,7 +290,7 @@ export function planWp3(
         tests.push({
           testId: id("F2", f.resource), family: "F2 write isolation", resource: f.resource,
           control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: ALICE,
-          operation: `${verb} ${f.resource} where ${pcol} = bob`,
+          operation: `${verb} ${f.resource} where ${pcol} = ${FIXTURES.bob.ref}`,
           expected: "0 rows affected — the policy filters the row out of the write",
           fixture: FIXTURE_DEFAULT,
           covers: `USING of ${p.name} (${p.command}) falsified. The predicate keys on ${p.authDrivers.map((d) => d.detail).join(" OR ") || pcol}, and the fixture names bob there instead of alice${p.authDrivers.filter((d) => d.kind === "ownership").length > 1 ? " in every clause, since a row naming alice in either column is legitimately writable by her" : ""}`,
@@ -297,16 +298,28 @@ export function planWp3(
         });
       }
     } else if (isHigh) {
-      tests.push({
-        testId: id("F2", f.resource), family: "F2 write isolation", resource: f.resource,
-        control: `${f.resource}#grant:authenticated`, tier, polarity: "negative", identity: ALICE,
-        operation: `insert into / update ${f.resource}`,
-        expected: "error 42501 — refused before any policy is consulted",
-        fixture: FIXTURE_DEFAULT,
-        covers:
-          "the grant surface itself: no client role holds a write privilege here, so the control is the absence of the grant (and, where present, a write-guard trigger behind it)",
-        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
-      });
+      // One Test ID per statement. INSERT, UPDATE and DELETE are three
+      // distinct privilege bits on the grant surface, and the control claim
+      // here is that `authenticated` holds none of them — so each is its own
+      // probe with its own evidence record rather than a slash-alternative.
+      for (const stmt of ["INSERT", "UPDATE", "DELETE"] as const) {
+        const op =
+          stmt === "INSERT"
+            ? `insert into ${f.resource} (default values, or the minimum NOT NULL set)`
+            : stmt === "UPDATE"
+              ? `update ${f.resource} set ${f.columns.find((c) => !c.notNull && !c.serverGenerated)?.name ?? f.columns[f.columns.length - 1]!.name} = ${literalFor(f.columns.find((c) => !c.notNull && !c.serverGenerated)?.name ?? f.columns[f.columns.length - 1]!.name, f.columns.find((c) => !c.notNull && !c.serverGenerated)?.type ?? f.columns[f.columns.length - 1]!.type)}`
+              : `delete from ${f.resource}`;
+        tests.push({
+          testId: id("F2", f.resource), family: "F2 write isolation", resource: f.resource,
+          control: `${f.resource}#grant:authenticated:${stmt}`, tier, polarity: "negative",
+          identity: ALICE,
+          operation: op,
+          expected: "error 42501 — refused before any policy is consulted",
+          fixture: FIXTURE_DEFAULT,
+          covers: `the grant surface for ${stmt} specifically: \`authenticated\` holds no ${stmt} privilege on this resource, so the control is the absence of that grant (and, where present, a write-guard trigger behind it). ${stmt} is a separate privilege bit from the other two and is therefore a separate probe`,
+          plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
+        });
+      }
     } else {
       na.push({
         family: "F2 write isolation", resource: f.resource,
@@ -340,7 +353,7 @@ export function planWp3(
           tests.push({
             testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
             control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
-            operation: `INSERT into ${f.resource} with ${pcol} = alice`,
+            operation: `INSERT into ${f.resource} with ${pcol} = ${FIXTURES.alice.ref}`,
             expected: "1 row affected",
             fixture: FIXTURE_DEFAULT,
             covers: `WITH CHECK of ${p.name} (INSERT) satisfied: a row attributed to the caller`,
@@ -349,7 +362,7 @@ export function planWp3(
           tests.push({
             testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
             control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: ALICE,
-            operation: `INSERT into ${f.resource} with ${pcol} = bob (no RETURNING clause)`,
+            operation: `INSERT into ${f.resource} with ${pcol} = ${FIXTURES.bob.ref} (no RETURNING clause)`,
             expected: "error 42501 — new row violates row-level security policy",
             fixture: FIXTURE_DEFAULT,
             covers: `WITH CHECK of ${p.name} (INSERT) unsatisfied: the policy compares \`${pcol}\`, so that is the column set to another account. No RETURNING, so the SELECT policy is not pulled in (DECISIONS D1.5)`,
@@ -359,7 +372,10 @@ export function planWp3(
           tests.push({
             testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
             control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
-            operation: `UPDATE ${f.resource} set <a client-granted column> where ${pcol} = alice`,
+            operation: (() => {
+              const g = f.columns.find((c) => c.clientUpdate.length > 0);
+              return `UPDATE ${f.resource} set ${g!.name} = ${literalFor(g!.name, g!.type)} where ${pcol} = ${FIXTURES.alice.ref}`;
+            })(),
             expected: "1 row affected, and the row is still attributed to alice afterwards",
             fixture: FIXTURE_DEFAULT,
             covers: `WITH CHECK of ${p.name} (UPDATE) satisfied: the post-update row still belongs to the caller`,
@@ -369,7 +385,7 @@ export function planWp3(
             tests.push({
               testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
               control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: ALICE,
-              operation: `UPDATE ${f.resource} set ${pcol} = bob where ${pcol} = alice — satisfying USING, violating WITH CHECK`,
+              operation: `UPDATE ${f.resource} set ${pcol} = ${FIXTURES.bob.ref} where ${pcol} = ${FIXTURES.alice.ref} — satisfying USING, violating WITH CHECK`,
               expected: "error 42501 — the post-update row would violate the policy's WITH CHECK",
               fixture: FIXTURE_DEFAULT,
               covers: `WITH CHECK of ${p.name} (UPDATE) unsatisfied while USING is satisfied. This is the only shape that isolates the WITH CHECK half from the USING half on an UPDATE`,
@@ -497,7 +513,7 @@ export function planWp3(
       tests.push({
         testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
         control: `${f.resource}#colgrant:UPDATE`, tier, polarity: "positive", identity: ALICE,
-        operation: `UPDATE ${f.resource} set ${updGranted[0]!.name} = <value> where ${oc ?? "id"} = alice`,
+        operation: `UPDATE ${f.resource} set ${updGranted[0]!.name} = ${literalFor(updGranted[0]!.name, updGranted[0]!.type)} where ${oc ?? "id"} = ${FIXTURES.alice.ref}`,
         expected: "1 row affected — a granted column on the caller's own row",
         fixture: FIXTURE_DEFAULT,
         covers: `the granted half of the WRITE column surface (${updGranted.map((c) => c.name).join(", ")})`,
@@ -506,7 +522,7 @@ export function planWp3(
       tests.push({
         testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
         control: `${f.resource}#colgrant:UPDATE`, tier, polarity: "negative", identity: ALICE,
-        operation: `UPDATE ${f.resource} set ${updExcluded[0]!.name} = <value> where ${oc ?? "id"} = alice`,
+        operation: `UPDATE ${f.resource} set ${updExcluded[0]!.name} = ${literalFor(updExcluded[0]!.name, updExcluded[0]!.type)} where ${oc ?? "id"} = ${FIXTURES.alice.ref}`,
         expected: "error 42501 — no column-level UPDATE privilege on that column",
         fixture: FIXTURE_DEFAULT,
         covers: `a column deliberately excluded from the client UPDATE grant (${updExcluded.map((c) => c.name).slice(0, 4).join(", ")}${updExcluded.length > 4 ? ", …" : ""})`,
@@ -612,12 +628,56 @@ export function planWp3(
       },
     };
 
+    /**
+     * What change on THIS resource would lack attribution or history.
+     *
+     * One sentence each, supported by the repository. The first version copied
+     * the "removing a block" example onto all seventeen resources, which was
+     * true of one of them.
+     */
+    const GAP_RATIONALE: Record<string, string> = {
+      "private.career_drill_seeds":
+        "the per-attempt drill seed determines which scenarios an attempt is graded against, and its regeneration or alteration leaves no record of when it changed or what it was before",
+      "private.game_state_private":
+        "mutation of the authoritative engine state — the undealt shoe order, the hole card, the version the next command is validated against — leaves no record of what changed it; only the current row survives, with updated_at",
+      "public.blocks":
+        "block creation and especially REMOVAL leave no trace at all: there is no soft-delete column and no delete trigger, and blocks are read by viewer_is_blocked_by inside profiles_select_visible, so an authorization-relevant change is unattributed",
+      "public.daily_challenges":
+        "a challenge being minted, and its seed being revealed by setting revealed_seed and seed_revealed_at in place, leave no record of what triggered the reveal or whether it preceded the challenge closing",
+      "public.friend_requests":
+        "a status transition from pending to accepted or declined is overwritten in place; responded_at records when but not which participant acted, and a deleted request leaves nothing behind",
+      "public.friendships":
+        "creation and removal of a friend edge widen or narrow profiles_select_visible through viewer_is_friend_of, and removal in particular leaves no record whatsoever",
+      "public.game_session_seats":
+        "seat occupancy, status and stack are overwritten in place, and seat membership is what authorizes five other relations plus the Realtime game topic — so a change to who is seated carries no attribution and no prior value",
+      "public.game_sessions":
+        "status and version transitions and changes to escrow_chips are overwritten in place; started_at and ended_at record timing but nothing attributes the transition",
+      "public.hand_records":
+        "the archive holds neither an actor column nor a creation timestamp among the recognised names, so an inserted or altered hand record carries no attribution for who wrote it or when",
+      "public.profiles":
+        "a change to privacy gates profiles_select_visible and is therefore an access-control decision, yet it is overwritten in place with updated_at recording only that something changed — not which of the six client-writable fields, nor its prior value",
+      "public.rate_limit_policies":
+        "a change to window_length or max_events alters enforcement configuration for every account and every action, and nothing records the change, its origin or the previous value",
+      "public.room_members":
+        "joining and leaving alter what caller_is_room_member authorizes; status and left_at are overwritten in place, and a removal performed by the host through remove_room_member leaves no record of who removed whom",
+      "public.rooms":
+        "a change to visibility or code alters who may join a private table, and no record of such a change is kept",
+      "public.rulesets":
+        "a change to the rules jsonb alters blackjack behaviour for every session, tournament and archived hand that references the ruleset, and neither the change nor the prior value is recorded",
+      "public.tournament_entries":
+        "placement, prize_chips and status are written in place as a competition resolves; prize_ledger_id names the ledger row that paid, but nothing records a placement or prize being altered after the fact",
+      "public.tournament_matches":
+        "setting or changing a winner determines bracket progression and therefore prizes, and no record of such a change is kept",
+      "public.wallets":
+        "the balance is overwritten in place and carries no attribution for the change; it is reconstructable from wallet_ledger, which is precisely why that ledger exists — the wallets row itself answers no who-did-what-when question",
+    };
+
     const trail = TRAILS[f.resource];
     if (isHigh && trail) {
       tests.push({
         testId: id("F10", f.resource), family: "F10 audit trail", resource: f.resource,
         control: `${f.resource}#audit:exists`, tier, polarity: "positive", identity: trail.inspectAs,
-        operation: `select the actor / action / time columns from ${f.resource}`,
+        operation: `select the actor, action and time columns from ${f.resource}`,
         expected: `rows returned carrying ${[trail.actor && "an actor", trail.action && "an action", trail.time && "a timestamp"].filter(Boolean).join(", ")}`,
         fixture: FIXTURE_DEFAULT,
         covers: `does a who-did-what-when record exist, and is it timestamped. ${trail.note}`,
@@ -653,7 +713,7 @@ export function planWp3(
           "NONE FOUND — recorded as a factual absence, and no trail is created to make the family pass",
         fixture: FIXTURE_DEFAULT,
         covers:
-          "the brief's family 10 question for a High-tier resource. Zero history, versioning or audit relations exist in public or private, and blocks / friendships / friend_requests carry no soft-delete column and no delete trigger — so removing a block, which feeds profiles_select_visible and therefore an authorization decision, leaves no trace",
+          `the brief's family 10 question for this High-tier resource. Zero history, versioning or audit relations exist anywhere in public or private. Specific to ${f.resource}: ${GAP_RATIONALE[f.resource] ?? "no resource-specific rationale has been written, which is itself a defect in this plan"}`,
         plumbing: "new", verdictWhenPredicted: "gap", authorIntent: "n/a (gap assessment, not a simulated attack)",
       });
     } else {
@@ -778,23 +838,23 @@ export function planWp3(
   const RT = "realtime.messages";
   const rtCases: readonly [string, Polarity, string, string, string, string][] = [
     ["arc21_game_topic_is_for_its_seated_players", "positive", ALICE,
-     "set realtime.topic to the seeded game topic, then select from realtime.messages",
+     "set realtime.topic to fixtures.session.topic, then select from realtime.messages",
      "at least 1 row — alice holds a live seat at that game",
      "the EXISTS branch satisfied: a seated player reads her own game's topic"],
     ["arc21_game_topic_is_for_its_seated_players", "negative", CAROL,
-     "set realtime.topic to the same game topic, then select from realtime.messages",
+     "set realtime.topic to fixtures.session.topic, then select from realtime.messages",
      "no data — carol holds no seat at that game",
      "the EXISTS branch unsatisfied: the seeded non-participant. This is why the seed seats two of three accounts. Both drivers are falsified — the seat subquery finds no row for carol, and the sibling permissive policy arc21_presence_roster_needs_an_account is falsified too because realtime.topic() is the game topic and not 'presence:players', so the refusal reflects effective authorization across both policies"],
     ["arc21_presence_roster_needs_an_account", "positive", ALICE,
-     "set realtime.topic to 'presence:players', then select from realtime.messages",
+     "set realtime.topic to fixtures.presenceTopic, then select from realtime.messages",
      "at least 1 row — the shared roster requires only an account",
      "the presence read branch satisfied"],
     ["arc21_presence_roster_needs_an_account", "negative", ANON,
-     "set realtime.topic to 'presence:players', then select from realtime.messages",
+     "set realtime.topic to fixtures.presenceTopic, then select from realtime.messages",
      "no data — no policy on realtime.messages names anon",
      "the presence read branch for a signed-out socket, exercising the latent anon grant. realtime.topic() matches this policy's predicate exactly, so the refusal is not the predicate failing — it is that neither this policy nor the sibling arc21_game_topic_is_for_its_seated_players names anon, which is effective authorization across both permissive policies"],
     ["arc21_only_presence_may_be_written_by_a_client", "positive", ALICE,
-     "set realtime.topic to 'presence:players', then insert into realtime.messages",
+     "set realtime.topic to fixtures.presenceTopic, then insert into realtime.messages",
      "1 row affected — a client may publish its own presence",
      "the WITH CHECK branch satisfied: the one topic a client may write"],
     ["arc21_only_presence_may_be_written_by_a_client", "negative", CAROL,
@@ -807,7 +867,7 @@ export function planWp3(
       testId: id("F8", RT), family: "F8 realtime channel authorization", resource: RT,
       control: `${RT}#policy:${policy}`, tier: tiers.get(RT) ?? "Medium", polarity, identity,
       operation, expected, covers,
-      fixture: needSeed("one realtime.messages row on topic 'game:e0000000-…-0001' and one on 'presence:players', inserted server-side so a read has something to return"),
+      fixture: needSeed("one realtime.messages row on topic 'game:fixtures.session.id' and one on 'presence:players', inserted server-side so a read has something to return"),
       plumbing: polarity === "negative" && policy.includes("only_presence") ? "reuse WP1" : "extend WP1",
       verdictWhenPredicted: "effective",
       authorIntent: polarity === "negative" ? null : "n/a (positive)",
@@ -821,15 +881,15 @@ export function planWp3(
   // drive the actual local Supabase Realtime socket.
   const rtIntegration: readonly [Polarity, string, string, string, string][] = [
     ["positive", ALICE,
-     "subscribe to the private channel `game:<seeded session>` over the local Realtime websocket using alice's JWT, then have the server broadcast a state message",
+     "subscribe to the private channel fixtures.session.topic over the local Realtime websocket using fixtures.aliceJwt, then have the server broadcast a state message",
      "the subscription is accepted and alice's client receives the payload",
      "end-to-end: confirms the real client path declares the channel private and therefore reaches arc21_game_topic_is_for_its_seated_players at all. An SQL-only suite cannot detect a client that subscribed non-privately"],
     ["negative", CAROL,
-     "subscribe to that same private channel `game:<seeded session>` using carol's JWT, who holds no seat",
+     "subscribe to that same private channel fixtures.session.topic using fixtures.carolJwt, who holds no seat",
      "the subscription is refused, or is accepted and delivers nothing; carol's client must receive no game payload",
      "the brief's family 8 question in its literal form — can a client subscribe to another user's channel — exercised through the socket rather than through SQL"],
     ["negative", CAROL,
-     "publish a `state` broadcast to `game:<seeded session>` over the websocket as carol",
+     "publish a `state` broadcast to fixtures.session.topic over the websocket as carol",
      "refused; no other subscriber receives a carol-originated state message",
      "the fabricated-state injection Arc21 measured against a running stack before these policies existed, retested at the layer where it actually happened"],
   ];
@@ -864,15 +924,25 @@ export function planWp3(
      "the non-negative-balance invariant, which is enforced as a database constraint rather than in application code",
      "server-side (apply_wallet_delta over-debit)", "new"],
     ["negative",
-     "update an existing wallet_ledger row",
-     "error — UPDATE is rejected for all roles by wallet_ledger_append_only",
-     "append-only enforcement on the economy history. The ledger is the authoritative source wallets.balance is recomputed from, which is why WP2 rated its reversibility High",
-     "server-side and as alice (both must be refused)", "extend WP1"],
+     `update public.wallet_ledger set delta = 1 where user_id = ${FIXTURES.alice.ref}`,
+     "error — UPDATE is rejected by wallet_ledger_append_only",
+     "append-only enforcement on the economy history, exercised as an ordinary client. The ledger is the authoritative source wallets.balance is recomputed from, which is why WP2 rated its reversibility High",
+     ALICE, "extend WP1"],
+    ["negative",
+     `update public.wallet_ledger set delta = 1 where user_id = ${FIXTURES.alice.ref}`,
+     "error — the trigger raises for every role, not only client roles",
+     "the same statement from the SERVER side. A separate Test ID because it is a separate identity and a materially different claim: the guard is not merely a client-role check but applies to the privileged path too, which is what makes the ledger authoritative",
+     "server-side (direct Postgres connection)", "extend WP1"],
     ["negative",
      "truncate public.wallet_ledger",
      "error — refused by wallet_ledger_deny_truncate",
-     "TRUNCATE is not reachable through a row policy at all, so a trigger is the only thing that can refuse it",
-     "server-side and as alice", "extend WP1"],
+     "TRUNCATE is not reachable through a row policy at all, so a trigger is the only thing that can refuse it. Exercised as an ordinary client",
+     ALICE, "extend WP1"],
+    ["negative",
+     "truncate public.wallet_ledger",
+     "error — refused by wallet_ledger_deny_truncate",
+     "the same TRUNCATE from the SERVER side, as its own Test ID for the same reason as the UPDATE pair above",
+     "server-side (direct Postgres connection)", "extend WP1"],
   ];
   for (const [polarity, operation, expected, covers, identity, plumbing] of f9) {
     tests.push({
@@ -904,8 +974,8 @@ export function planWp3(
       tests.push({
         testId: id("B", f.resource), family: "B boundary cases", resource: f.resource,
         control: `${f.resource}#boundary:deleted-user`, tier, polarity: "negative",
-        identity: "authenticated with claims for a deleted account (seeded dave, then removed)",
-        operation: `select from ${f.resource} where the owner column names the deleted account`,
+        identity: "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+        operation: `select from ${f.resource} where the owner column names ${FIXTURES.dave.ref}, the deleted account`,
         expected:
           "no data — and no error. A token outliving its account must not become a key to whatever the cascade left behind",
         fixture: FIXTURE_DEFAULT,

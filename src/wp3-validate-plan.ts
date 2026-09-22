@@ -24,11 +24,35 @@ const VAGUE = [
   /to be (confirmed|derived|decided|judged)/i, /\bderive later\b/i,
   /\bsome\b.*\brow\b/i, /\bappropriate\b/i, /\bas needed\b/i,
 ];
-/** Slash-separated alternatives that mean two statements in one row. */
-const BUNDLED = [
-  /\bUPDATE\b[^.]*\bDELETE\b/i, /\bUPDATE\b\s*[/,]\s*\bDELETE\b/i,
-  /\bINSERT\b\s*\/\s*\bUPDATE\b/i, /\btwo cases\b/i, /\(a\).*\(b\)/,
-  /\band\b\s+\bTRUNCATE\b/i,
+/**
+ * Anything that means more than one executable statement in one Test ID.
+ *
+ * The slash patterns are first because that is the form that survived two
+ * earlier passes: `insert into / update private.career_drill_seeds` read as one
+ * operation and was two.
+ */
+const BUNDLED: readonly [RegExp, string][] = [
+  [/\b(insert|update|delete|select|truncate)\b[^.]{0,40}\/\s*\b(insert|update|delete|select|truncate)\b/i,
+   "slash-separated SQL commands"],
+  [/\bUPDATE\b[^.]{0,60}\bDELETE\b/i, "UPDATE and DELETE in one operation"],
+  [/\band\b\s+\bTRUNCATE\b/i, "a statement bundled with TRUNCATE"],
+  [/\btwo cases\b/i, "the row describes two cases"],
+  [/\(a\)[\s\S]{0,200}\(b\)/, "the row is lettered (a)/(b)"],
+  [/\bboth\b[^.]{0,40}\brefused\b/i, "the row asserts two executions are both refused"],
+];
+
+/** Identity strings that name more than one execution identity. */
+const MULTI_IDENTITY: readonly [RegExp, string][] = [
+  [/\band as\b/i, "'... and as ...' names two identities"],
+  [/\bserver-side and\b/i, "'server-side and ...' names two identities"],
+  [/\balice\b[^.]{0,20}\bcarol\b/i, "two named accounts in one identity"],
+  [/\bboth\b/i, "'both' implies two identities"],
+];
+
+/** Unresolved placeholders. An angle bracket is never a final operation. */
+const PLACEHOLDER = [
+  /<[^>]{2,80}>/,
+  /\bfixtures\.[A-Za-z]+\.(?:id|token|topic)\b(?=[^]*)(?<!x)/,
 ];
 
 export function validatePlan(
@@ -55,8 +79,34 @@ export function validatePlan(
       if (re.test(text)) add("concrete operation", t, `vague text matching ${re}: "${text.slice(0, 120)}"`);
     }
     // 3. No row bundles two materially different statements.
-    for (const re of BUNDLED) {
-      if (re.test(t.operation)) add("one probe per row", t, `operation bundles more than one statement: "${t.operation.slice(0, 120)}"`);
+    for (const [re, why] of BUNDLED) {
+      if (re.test(t.operation)) add("one probe per row", t, `${why}: "${t.operation.slice(0, 130)}"`);
+    }
+    // 3b. No row names more than one execution identity.
+    for (const [re, why] of MULTI_IDENTITY) {
+      if (re.test(t.identity)) add("one identity per row", t, `${why}: "${t.identity}"`);
+    }
+    // 3c. No unresolved angle-bracket placeholder anywhere executable.
+    if (/<[^>]{2,80}>/.test(`${t.operation} ${t.expected} ${t.fixture}`)) {
+      add("no placeholders", t, `angle-bracket placeholder remains: "${(/<[^>]{2,80}>/.exec(`${t.operation} ${t.expected} ${t.fixture}`) ?? [""])[0]}"`);
+    }
+    // 3d. Count materially distinct DML/DDL commands in one operation.
+    //
+    // Two or more of these is always two probes, whatever connects them. An
+    // earlier version exempted operations containing "then", which let
+    // "delete from X, then truncate it" through — the exemption was meant for
+    // "call f(), then inspect the result", where only one statement mutates.
+    const dml = new Set(
+      [...t.operation.matchAll(/\b(insert|update|delete|truncate)\b/gi)].map((m) => m[1]!.toLowerCase()),
+    );
+    if (dml.size > 1) {
+      add("one probe per row", t, `operation contains ${dml.size} distinct DML/DDL commands (${[...dml].join(", ")})`);
+    }
+    // A read alongside a mutation is only acceptable as a `call ... then
+    // inspect` shape, where the RPC is the single probe.
+    const reads = /\bselect\b/i.test(t.operation);
+    if (reads && dml.size >= 1 && !/\bcall\b/i.test(t.operation)) {
+      add("one probe per row", t, `operation mixes a SELECT with ${[...dml].join(", ")} and is not a "call … then inspect" shape`);
     }
     // 4. AUTHOR INTENT is blank only on genuine attack rows.
     if (t.authorIntent === null && t.polarity !== "negative") {
@@ -116,5 +166,20 @@ export function validatePlan(
       }
     }
   }
+  // 7. Every F10 gap rationale must name the resource it assesses, and must
+  //    not carry an example copied from a different resource.
+  const gapRows = plan.tests.filter((t) => t.control.endsWith("#audit:absent"));
+  for (const t of gapRows) {
+    if (!t.covers.includes(t.resource)) {
+      add("gap rationale is resource-specific", t, `the rationale does not name ${t.resource}`);
+    }
+    if (/removing a block/i.test(t.covers) && t.resource !== "public.blocks") {
+      add("gap rationale is resource-specific", t, "the rationale carries the block-removal example from another resource");
+    }
+    if (/no resource-specific rationale/i.test(t.covers)) {
+      add("gap rationale is resource-specific", t, "no rationale was written for this resource");
+    }
+  }
+
   return issues;
 }

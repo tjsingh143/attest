@@ -1266,3 +1266,58 @@ acknowledges effective authorization rather than attributing the outcome to one 
 
 It found 12 real issues on its first run — 9 negatives that did not say what they falsified, and 3
 rows that ignored a sibling permissive policy — all fixed. It now reports clean.
+
+### D3.18 — Mechanical finalization: one statement, one identity, one exact value per Test ID
+
+Four classes of defect survived two earlier passes because the validator checked for them loosely
+or not at all. All four are fixed and all four are now provably caught.
+
+**1. Slash-alternative operations in F2.** Eighteen rows read
+`insert into / update <resource>` — one Test ID, two statements. The control claim on a no-write
+resource is that `authenticated` holds no write privilege, and INSERT, UPDATE and DELETE are
+three separate privilege bits, so the frozen High-tier rule ("every applicable branch") makes
+them three probes. Each is now its own Test ID with its own statement and evidence record.
+
+**2. Parameter and column placeholders.** `rubric/fixtures.ts` holds 47 deterministic
+references, each mapping to exactly one value, of which **23 are seed extensions** the plan now
+lists explicitly. Every `<value>`, `<a client-granted column>`, `<a room hosted by bob>` and
+`<bob's notification id>` is replaced by a reference such as `fixtures.bobNotification.id`, and
+`<value>` specifically by a literal derived from the column's own type via `literalFor()`. An
+implementer can now build the exact SQL or RPC call without a fresh judgment.
+
+**3. Multi-identity rows.** Two F9 rows read `server-side and as alice (both must be refused)` —
+two privilege levels, one Test ID. Both are necessary evidence and they make different claims:
+the client probe shows an ordinary account is refused; the server-side probe shows the guard
+applies to the privileged path too, which is what makes the ledger authoritative rather than
+merely client-protected. So each became its own Test ID rather than being narrowed away.
+
+**4. Copied F10 rationales.** All seventeen audit-absence rows carried the same
+"removing a block" sentence, which is true of one of them. Each now carries one factual sentence
+about what change on **that** resource would lack attribution — the drill seed's regeneration,
+the engine state's mutation, the reveal of a daily challenge's seed, a rules-jsonb change
+reaching every session that references it, a placement or prize altered after the fact, a
+rate-limit configuration change affecting every account. Supported by the repository, and nothing
+about application behaviour is invented.
+
+### D3.19 — Each new validator invariant is proven by deliberate failure
+
+**Decided.** The validator gained five checks, and each was verified by breaking the planner and
+confirming a non-zero exit rather than by assuming the check works.
+
+| Injected defect | Check that fired | Exit |
+|---|---|---|
+| `insert into / update <resource>` | one probe per row — slash-separated SQL commands | 1 |
+| identity `ALICE + " and as server-side"` | one identity per row | 1 |
+| `… where id = <value>` | no placeholders | 1 |
+| `delete from X, then truncate it` | one probe per row — 2 distinct DML commands | 1 |
+| gap rationale replaced by the block example | gap rationale is resource-specific | 1 |
+
+**One check had to be tightened to pass its own proof.** The multi-command test originally
+exempted any operation containing "then", intended for a `call f(), then inspect the result`
+shape where only one statement mutates. That exemption let `delete from X, then truncate it`
+through. Two or more DML or DDL commands is now always two probes, whatever connects them, and a
+SELECT mixed with a mutation is only accepted in an explicit `call … then inspect` shape.
+
+That is the second time a check passed while the thing it was meant to catch was present
+(D3.17 was the first, on the keyword scan). The lesson applied here is that a new invariant is
+not finished until it has been made to fail.
