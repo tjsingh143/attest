@@ -5,9 +5,9 @@ the ten control families the brief requires. **Nothing here has been run.**
 
 | | |
 |---|---|
-| Run | `20260922T014519Z-5695a4c3df2d` |
+| Run | `20260922T014650Z-5695a4c3df2d` |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0 sources 04436a6c5739` |
+| Harness version | `0.1.0 sources 3c35e7962cea` |
 | Planned tests | 263 |
 | Negative tests awaiting AUTHOR INTENT | **202** |
 
@@ -26,6 +26,29 @@ the ten control families the brief requires. **Nothing here has been run.**
 | **Total concrete planned** | **263** |
 | CP3 planning estimate | 185 |
 | **Difference** | **+78** |
+
+### Where the difference comes from
+
+The CP3 estimator counted **policy branches on relations**. Four of the ten families are not
+relation-branch-shaped, so they were not underestimated — they were **unmodelled**.
+
+| | Cases |
+|---|---:|
+| Planned within the estimator's model | 188 |
+| CP3 estimate | 185 |
+| **Variance within the shared scope** | **+3** |
+
+| Family outside the model | Cases | Why the estimator could not see it |
+|---|---:|---|
+| F5 SECURITY DEFINER escalation | 37 | the estimator counted branches on relations; a function was never a resource in that model, so all 37 escalation cases sat outside it |
+| F7 forced RLS / owner bypass | 8 | `#rls_forced` is a table attribute rather than a policy branch, so it was not counted as one |
+| F9 wallet / concurrency integrity | 5 | concurrency and idempotency are not policy branches; the two refusing triggers on wallets were counted, the interleaving cases were not |
+| F10 audit trail | 25 | the estimator had no notion of whether a who-did-what-when record exists, so the family contributed nothing to the branch count |
+| **Subtotal outside the model** | **75** | |
+
+188 + 75 = **263**. Within the scope both models share, the estimate was
+accurate to +3 cases. **The updated planning figure is 263**, and it is not a target — it
+follows the applicable controls.
 
 ## 2. Coverage of the ten required families
 

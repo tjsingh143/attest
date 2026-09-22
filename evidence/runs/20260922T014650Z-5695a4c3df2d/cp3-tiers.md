@@ -5,9 +5,9 @@ control inventory. The rules are the rubric's; this document is their output.
 
 | | |
 |---|---|
-| Run | `20260922T004014Z-5695a4c3df2d` |
+| Run | `20260922T014650Z-5695a4c3df2d` |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0` sources `3262b86aa67a` |
+| Harness version | `0.1.0` sources `3c35e7962cea` |
 | Instance | 127.0.0.1:54322/postgres |
 
 ## 1. Tier distribution
