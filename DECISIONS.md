@@ -1150,3 +1150,119 @@ client column-level UPDATE grant.
 The four F3 negatives are the four `public` INSERT policies. The tenth policy,
 `arc21_only_presence_may_be_written_by_a_client`, is exercisable and is tested under F8 so the
 three realtime policies stay documented together.
+
+### D3.11 — F1 fixtures come from the policy's authorization drivers, not from the table's columns
+
+**Decided.** `PolicyFact` carries `authDrivers` and `combinator`, classified from the complete
+USING expression: ownership, session participation, room membership, tournament membership,
+friendship, block, privacy flag, topic GUC, row flag — and whether they combine with AND or OR.
+F1 builds its fixtures from those.
+
+**What was wrong.** Fixtures were derived from "does this table have an owner column", which is a
+fact about the table and not about the policy. Five session-participant policies were being
+tested against `user_id`, `host_user_id` or `recipient_user_id` — columns that in several cases
+the predicate never reads:
+
+| Policy | Complete USING | Was tested via | Now |
+|---|---|---|---|
+| `game_sessions_select_participant` | `is_session_participant(id)` | `host_user_id` | alice seated / carol not |
+| `game_session_seats_select_participant` | `is_session_participant(game_session_id)` | `user_id` | alice seated / carol not |
+| `hand_records_select_participant` | `is_session_participant(game_session_id)` | participation *(already right)* | unchanged |
+| `game_events_select_participant` | `is_session_participant(...) AND (visibility = 'public' OR recipient_user_id = uid)` | `recipient_user_id` | participation conjunct; positive uses a public-visibility row |
+| `hand_players_select_participant` | `user_id = uid OR is_session_participant(...)` | `user_id` | carol, falsifying **both** disjuncts |
+| `room_members_select_same_room` | `caller_is_room_member(room_id)` | `user_id` | alice a member / carol not |
+| `rooms_select_member` | `caller_is_room_member(id)` | `host_user_id` | alice a member / carol not |
+| `tournament_entries_select_visible` | `user_id = uid OR viewer_is_in_tournament(...)` | `user_id` | carol, falsifying **both** disjuncts |
+| `tournament_matches_select_visible` | `viewer_is_in_tournament(tournament_id)` | *(was N/A — no identity column)* | alice entered / carol not |
+
+Membership drivers take precedence over an ownership term in the same expression, because they
+are what decides access when present. `hand_players` is the sharp case: alice is a participant in
+bob's session, so "read bob's row" would have been admitted through the participation disjunct —
+the negative has to be carol.
+
+### D3.12 — F4 states the exact anon predicate and seeds a concrete falsifying row
+
+**Decided.** Each anon-admitting policy's predicate is printed exactly, and the falsifying value
+is derived from it mechanically.
+
+| Policy | Exact USING | Falsifying row seeded |
+|---|---|---|
+| `career_nodes_select_active` | `is_active` | `is_active = false` |
+| `cosmetics_select_active` | `is_active` | `is_active = false` |
+| `rulesets_select_active` | `is_active` | `is_active = false` |
+| `tournaments_select_all` | `status <> 'cancelled'` | `status = 'cancelled'` |
+
+None is unconditional, so no invented negative had to be removed — but the planner now refuses to
+emit one where a predicate carries no falsifiable term, and records that the anonymous read is
+intentionally unconditional instead. The previous text, `where the policy predicate is false
+(e.g. is_active = false / status = 'cancelled')`, was a hypothetical fixture that the keyword
+scan passed.
+
+### D3.13 — `no_target` does not mean caller-scoped
+
+**Decided.** The 26 no-target functions are split: **5** with real shared or global behaviour get
+individual invariants, and **21** genuinely caller-scoped ones share one stated invariant with an
+executable probe each.
+
+**Why.** The generic rule "bob's and carol's rows must never change" is false for several of these,
+and would have flagged correct behaviour as escalation:
+
+| Function | Legitimate shared effect | Real invariant |
+|---|---|---|
+| `ensure_todays_daily_challenge()` | **creates a global `daily_challenges` row** every account plays, and `reveal_closed_daily_seeds()` mutates rows owned by nobody | must not return `seed_secret`, and must not reveal the seed of a still-OPEN challenge |
+| `latest_verifiable_daily_challenge()` | **does not read `auth.uid()` at all** — deliberately callable without an account, returns a row belonging to nobody | must never return a seed where `revealed_seed IS NULL` |
+| `join_matchmaking(p_tier)` | `expire_stale_queue_entries()` removes **other accounts'** stale rows | must enqueue only the caller; bob's *fresh* entry untouched |
+| `poll_matchmaking()` | same housekeeping; reads the waiting population | must return only the caller's own entry |
+| `create_private_room(p_max_seats)` | `expire_stale_rooms()` closes **other accounts'** expired rooms | room hosted by the caller; the 2..5 seat bound enforced (`P0001` at 9) |
+
+### D3.14 — One Test ID, one executable probe
+
+**Decided.** Enforced across the matrix and checked by the validator. Rows split:
+
+- `player_public_profile` → the blocked-user refusal and the non-friend projection are two probes.
+- `leaderboard_weekly_xp` → the authenticated projection and the anon refusal are two probes.
+- Every audit-immutability row → **UPDATE, DELETE and TRUNCATE are three probes**, three controls
+  and three evidence records. TRUNCATE is not reachable through a row policy at all.
+
+### D3.15 — F7's BYPASSRLS demonstration needs a third role, and `postgres` cannot be it
+
+**Decided.** The mechanism layer uses two purpose-made roles, and records their measured
+attributes as a characterization row of its own.
+
+**Why `postgres` cannot serve.** Measured: `rolsuper = false`, `rolbypassrls = true`. Not being a
+superuser was the easy half. The disqualifying fact is that `postgres` is granted the scratch
+**owner** role with INHERIT so that it can build the fixture at all, and PostgreSQL's
+`check_enable_rls` uses `has_privs_of_role`, which counts inherited membership — so `postgres`
+would be treated as the table **owner** and the probe would confound ownership with BYPASSRLS all
+over again, which is the exact error D3.8 corrected.
+
+| Role | rolsuper | rolbypassrls | owner of the scratch table | member of owner role |
+|---|---|---|---|---|
+| scratch owner | false | **false** | **yes** | — |
+| scratch bypass role | false | **true** | no | **no** |
+| `postgres` | false | true | no, but inherits owner rights | yes |
+
+Arc21's permanent roles are not changed; both scratch roles are created and dropped in-run.
+
+### D3.16 — An audit gap is an assessment, not a simulated attack
+
+**Decided.** The 17 F10 absence checks are `characterization` polarity with verdict `gap`, and
+require **no AUTHOR INTENT**. The 12 immutability probes are `negative` and do.
+
+**Why.** "Catalog inspection found no who/what/when trail" simulates nothing. Asking the author to
+write the attack it represents would be asking them to invent one.
+
+### D3.17 — The plan is validated semantically, and the run fails if it is not clean
+
+**Decided.** `src/wp3-validate-plan.ts` checks meaning rather than keywords, and `attest plan-wp3`
+exits non-zero on any issue.
+
+**Why.** The keyword scan reported zero placeholders while the matrix still contained
+`e.g. is_active = false` and rows bundling three statements. Checks: every Test ID unique and
+single-probe; no vague or slash-alternative operations; AUTHOR INTENT blank only on negatives;
+characterization rows never claim `effective`; a policy test's verb matches the policy's command;
+a negative names the driver it falsifies; and where sibling permissive policies exist, the row
+acknowledges effective authorization rather than attributing the outcome to one policy.
+
+It found 12 real issues on its first run — 9 negatives that did not say what they falsified, and 3
+rows that ignored a sibling permissive policy — all fixed. It now reports clean.

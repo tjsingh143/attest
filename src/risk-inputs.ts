@@ -96,8 +96,40 @@ export interface IdentityLinkage {
   readonly hops: number;
 }
 
+/** What a policy's USING/WITH CHECK expression actually keys authorization on. */
+export type AuthDriverKind =
+  | "ownership"
+  | "session_participation"
+  | "room_membership"
+  | "tournament_membership"
+  | "friendship"
+  | "block"
+  | "privacy_flag"
+  | "topic_guc"
+  | "row_flag";
+
+export interface AuthDriver {
+  readonly kind: AuthDriverKind;
+  /** The column or helper the driver reads. */
+  readonly detail: string;
+}
+
 export interface PolicyFact {
   readonly name: string;
+  /**
+   * The authorization drivers in this policy's USING expression, and how they
+   * combine.
+   *
+   * Needed because a fixture derived from "the resource has an owner column"
+   * is wrong wherever authorization is keyed on something else.
+   * `game_sessions_select_participant` is `is_session_participant(id)` — it
+   * never reads host_user_id — yet host_user_id was being used as the fixture.
+   * `hand_players_select_participant` is
+   * `user_id = uid OR is_session_participant(...)`, so a negative must falsify
+   * BOTH disjuncts or the row is still admitted.
+   */
+  readonly authDrivers: readonly AuthDriver[];
+  readonly combinator: "single" | "and" | "or" | "mixed" | "none";
   /**
    * Does this policy's expression read `auth.uid()`?
    *
@@ -299,6 +331,7 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
           /is_session_participant|caller_is_room_member|game_session_seats|room_members/i.test(
             `${s(p.using_expr)} ${s(p.with_check_expr)}`,
           ),
+        ...analyseAuth(s(p.using_expr)),
         command: s(p.command),
         permissive: s(p.permissive),
         roles: Array.isArray(p.roles) ? p.roles.map(String) : [],
@@ -465,6 +498,62 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
   counts.totalPolicies = resources.reduce((a, r) => a + r.policyCount, 0);
 
   return { inventory, inputs: { resources, counts } };
+}
+
+/**
+ * Classify what a USING expression keys authorization on.
+ *
+ * Deliberately conservative: it reports what it recognises and says `none`
+ * rather than guessing. The expressions in Arc21 are simple conjunctions and
+ * disjunctions of helper calls and column comparisons, which this covers.
+ */
+function analyseAuth(expr: string): { authDrivers: AuthDriver[]; combinator: PolicyFact["combinator"] } {
+  const drivers: AuthDriver[] = [];
+  if (!expr || expr === "null") return { authDrivers: [], combinator: "none" };
+
+  if (/is_session_participant/i.test(expr)) {
+    drivers.push({ kind: "session_participation", detail: "is_session_participant()" });
+  }
+  if (/caller_is_room_member/i.test(expr)) {
+    drivers.push({ kind: "room_membership", detail: "caller_is_room_member()" });
+  }
+  if (/viewer_is_in_tournament/i.test(expr)) {
+    drivers.push({ kind: "tournament_membership", detail: "viewer_is_in_tournament()" });
+  }
+  if (/viewer_is_friend_of|are_friends/i.test(expr)) {
+    drivers.push({ kind: "friendship", detail: "viewer_is_friend_of() / are_friends()" });
+  }
+  if (/viewer_is_blocked_by|viewer_has_blocked|is_blocked_between/i.test(expr)) {
+    drivers.push({ kind: "block", detail: "block helpers" });
+  }
+  if (/\bprivacy\b/i.test(expr)) {
+    drivers.push({ kind: "privacy_flag", detail: "privacy" });
+  }
+  if (/realtime\.topic\(\)/i.test(expr)) {
+    drivers.push({ kind: "topic_guc", detail: "realtime.topic()" });
+  }
+  for (const m of expr.matchAll(/\(?([a-z_][a-z0-9_]*)\s*=\s*\(?\s*SELECT auth\.uid\(\)/gi)) {
+    drivers.push({ kind: "ownership", detail: m[1] as string });
+  }
+  // A bare boolean column or an inequality with no auth-dependent term.
+  if (drivers.length === 0) {
+    const flag = /^\(?\s*([a-z_][a-z0-9_]*)\s*\)?$/.exec(expr.trim());
+    if (flag) drivers.push({ kind: "row_flag", detail: `${flag[1]} is true` });
+    else {
+      const cmp = /\(?\s*([a-z_][a-z0-9_]*)\s*(<>|=)\s*'([^']+)'/.exec(expr);
+      if (cmp) drivers.push({ kind: "row_flag", detail: `${cmp[1]} ${cmp[2]} '${cmp[3]}'` });
+    }
+  }
+
+  const hasOr = /\)\s+OR\s+\(|\bOR\b/i.test(expr);
+  const hasAnd = /\bAND\b/i.test(expr);
+  const combinator: PolicyFact["combinator"] =
+    drivers.length === 0 ? "none"
+    : hasOr && hasAnd ? "mixed"
+    : hasOr ? "or"
+    : hasAnd ? "and"
+    : "single";
+  return { authDrivers: drivers, combinator };
 }
 
 const READ_PRIVS = new Set(["SELECT"]);

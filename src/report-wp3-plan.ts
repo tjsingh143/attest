@@ -236,7 +236,7 @@ export function renderWp3PlanMarkdown(
         const v = t.verdictWhenPredicted === "effective" ? "effective"
           : t.verdictWhenPredicted === "gap" ? "**GAP**" : "**characterized**";
         p(
-          `| \`${cell(t.testId)}\` | \`${cell(t.control)}\` | ${cell(t.tier)} | ${pol} | ${cell(t.identity)} | ${cell(t.operation)} | ${cell(t.expected)} | ${v} | ${cell(t.covers)} | ${cell(t.plumbing)} | ${intent} |`,
+          `| \`${cell(t.testId)}\` | \`${cell(t.control)}\` | ${cell(t.tier)} | ${pol} | ${cell(t.identity)} | ${cell(t.operation)} | ${cell(t.expected)} | ${cell(t.fixture)} | ${v} | ${cell(t.covers)} | ${cell(t.plumbing)} | ${intent} |`,
         );
       }
       p();

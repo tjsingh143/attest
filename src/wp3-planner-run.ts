@@ -13,6 +13,7 @@ import { RATINGS } from "../rubric/ratings.ts";
 import { deriveImpact, scoredExposure, type Level } from "./scorer.ts";
 import { planWp3 } from "./wp3-plan.ts";
 import { reconcile, renderWp3PlanMarkdown } from "./report-wp3-plan.ts";
+import { validatePlan } from "./wp3-validate-plan.ts";
 
 /** Recompute the frozen tiers rather than reading a stale file. */
 const MATRIX: Record<Level, Record<"server_only" | "authenticated" | "anonymous", Level>> = {
@@ -25,7 +26,7 @@ export async function runWp3Planner(
   log: (s: string) => void = console.log,
   fixedRunId?: string,
   estimate?: number,
-): Promise<{ planned: number; awaitingIntent: number }> {
+): Promise<{ planned: number; awaitingIntent: number; issues: ReturnType<typeof validatePlan> }> {
   const startedAt = new Date();
   const sv = await readSchemaVersion();
   const runId =
@@ -66,10 +67,11 @@ export async function runWp3Planner(
 
   const plan = planWp3(inputs.resources, tiers, definers);
   const rec = reconcile(plan, estimate ?? 185);
+  const planIssues = validatePlan(plan, inputs.resources);
 
   const runDir = join(RUNS_ROOT, runId);
   await mkdir(runDir, { recursive: true });
-  await writeFile(join(runDir, "wp3-matrix.json"), JSON.stringify({ plan, reconciliation: rec }, null, 2) + "\n");
+  await writeFile(join(runDir, "wp3-matrix.json"), JSON.stringify({ plan, reconciliation: rec, semanticValidation: planIssues }, null, 2) + "\n");
   await writeFile(
     join(runDir, "wp3-matrix.md"),
     renderWp3PlanMarkdown(plan, rec, {
@@ -81,6 +83,14 @@ export async function runWp3Planner(
   log(`  estimate was ${rec.estimate}; difference ${rec.difference >= 0 ? "+" : ""}${rec.difference}`);
   log(`  ${plan.notApplicable.length} (family, resource) pairs marked not applicable with a stated reason`);
   log(`  ${rec.negativesAwaitingIntent} negative tests awaiting AUTHOR INTENT`);
+  if (planIssues.length) {
+    log(`  !! ${planIssues.length} semantic validation issue(s):`);
+    const byCheck = new Map<string, number>();
+    for (const i of planIssues) byCheck.set(i.check, (byCheck.get(i.check) ?? 0) + 1);
+    for (const [c, n] of byCheck) log(`       ${c}: ${n}`);
+  } else {
+    log("  semantic validation: clean");
+  }
   log(`  written to evidence/runs/${runId}/`);
-  return { planned: rec.totalPlanned, awaitingIntent: rec.negativesAwaitingIntent };
+  return { planned: rec.totalPlanned, awaitingIntent: rec.negativesAwaitingIntent, issues: planIssues };
 }

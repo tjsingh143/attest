@@ -151,7 +151,11 @@ async function main(): Promise<void> {
     }
     case "plan-wp3": {
       console.log("plan WP3 (matrix only — nothing executed)");
-      await runWp3Planner((s) => console.log(s));
+      const pl = await runWp3Planner((s) => console.log(s));
+      if (pl.issues.length > 0) {
+        console.error("\nattest: WP3 PLAN FAILED semantic validation — the matrix is not ready for AUTHOR INTENT.");
+        process.exitCode = 1;
+      }
       break;
     }
     case "validate": {
@@ -177,7 +181,11 @@ async function main(): Promise<void> {
         process.exitCode = 1;
       }
       console.log("plan WP3 (matrix only — nothing executed)");
-      await runWp3Planner((s) => console.log(s), runId, c.totalTestsPrimary);
+      const pl = await runWp3Planner((s) => console.log(s), runId, c.totalTestsPrimary);
+      if (pl.issues.length > 0) {
+        console.error("\nattest: WP3 PLAN FAILED semantic validation.");
+        process.exitCode = 1;
+      }
       break;
     }
     default:

@@ -196,8 +196,15 @@ export const F5_SPECS: readonly EscalationSpec[] = [
     "caller from auth.uid() decides visibility; the subject comes from the argument",
     "public.profiles past the caller's own policies",
     "returning a profile the caller should not see (private, or blocked in either direction), or returning friend-only fields to a non-friend",
-    "two cases. (a) as alice, call player_public_profile(<dave>), whom alice has blocked. (b) as alice, call it for <bob>, a non-friend with public privacy",
-    "(a) returns NO rows — the body returns early on is_blocked_between. (b) returns one row carrying the NON-FRIEND projection only. Expecting 'no data' for (b) would fail a control that is working"),
+    "as alice, call player_public_profile(<dave>), whom alice has blocked",
+    "returns NO rows — the body returns early on is_blocked_between, and nothing distinguishes 'they blocked you' from 'no such player'"),
+  G("player_public_profile", "p_user_id uuid [non-friend projection]", "target_user",
+    "the same function, exercising the projection rather than the refusal",
+    "caller from auth.uid() decides which fields are returned; the subject comes from the argument",
+    "public.profiles past the caller's own policies",
+    "returning friend-only fields to a caller who is not a friend",
+    "as alice, call player_public_profile(<bob>) — a non-friend whose privacy is 'public'",
+    "returns exactly ONE row carrying the non-friend projection. Expecting 'no data' here would fail a control that is working correctly: bob's public profile is meant to be visible"),
   G("viewer_is_friend_of", "p_other uuid", "target_user",
     "a helper reporting whether the caller is friends with an account",
     "caller from auth.uid(); the other party comes from the argument",
@@ -249,8 +256,15 @@ export const F5_SPECS: readonly EscalationSpec[] = [
     "caller from auth.uid(); no target argument — limit and offset only",
     "public.player_daily_xp and profiles aggregated across all accounts",
     "returning a private-privacy account's identity, or being callable without an account at all. WP0's own pgTAP gate treats granting this to anon as a breach",
-    "two cases. (a) as alice, call it and inspect the projection. (b) as anon, call it",
-    "(a) a public-safe projection only. (b) error 42501 — this function is granted to authenticated and must not be reachable by anon"),
+    "as alice, call leaderboard_weekly_xp(10, 0) and inspect every returned column",
+    "a public-safe projection only: no private-privacy account identity and no column beyond what a leaderboard needs"),
+  G("leaderboard_weekly_xp", "p_limit integer, p_offset integer [anon reachability]", "public_projection",
+    "the same function, exercising who may call it rather than what it returns",
+    "no identity at all — the probe runs as anon",
+    "public.player_daily_xp and profiles aggregated across all accounts",
+    "being callable without an account. WP0's own pgTAP gate treats granting this to anon as a breach",
+    "as anon, call leaderboard_weekly_xp(10, 0)",
+    "error 42501 — EXECUTE is granted to authenticated and must not be reachable by anon"),
   G("leaderboard_daily_challenge", "p_date date, p_limit integer, p_offset integer", "public_projection",
     "any signed-in user reads a day's challenge leaderboard",
     "caller from auth.uid(); the date and paging come from arguments",
@@ -282,20 +296,93 @@ export const F5_SPECS: readonly EscalationSpec[] = [
 ];
 
 /**
- * Functions with NO user-controlled target. There is no argument to point at
- * another account, so a 'pass Bob's resource' test would be inventing a
- * mechanism that does not exist. The valid escalation question for these is
- * whether the function returns or alters anything beyond the caller's own data
- * while another account's rows are present.
+ * Functions with no caller-supplied target.
+ *
+ * `no_target` means only that: no argument names an account or a resource. It
+ * does NOT mean the function touches only caller-owned data, and the generic
+ * rule "bob's and carol's rows must never change" is wrong for several of
+ * these. Three legitimately mutate other accounts' rows —
+ * `expire_stale_queue_entries()` and `expire_stale_rooms()` are housekeeping
+ * that runs on whatever is stale — and one does not read `auth.uid()` at all.
+ *
+ * So each records its own security invariant.
  */
-export const F5_NO_TARGET: readonly string[] = [
-  "claim_recovery_grant()", "delete_own_account()", "ensure_todays_daily_challenge()",
-  "grant_earned_cosmetics()", "latest_verifiable_daily_challenge()", "leave_matchmaking()",
-  "list_blocked()", "list_friend_requests()", "list_friends()", "my_active_session()",
-  "my_career_progress()", "my_competition_record()", "my_daily_entry()", "my_inventory()",
-  "my_level_progress()", "my_loadout()", "my_sprint_entry()",
-  "my_strategy_accuracy_progress()", "poll_matchmaking()", "touch_last_seen()",
-  "unread_notification_count()", "create_private_room(p_max_seats integer)",
-  "enforce_rate_limit(p_action text)", "join_matchmaking(p_tier table_tier)",
-  "my_leaderboard_position(p_category text)", "my_notifications(p_limit integer)",
+export interface NoTargetSpec {
+  readonly fn: string;
+  readonly purpose: string;
+  readonly identitySource: string;
+  readonly privileged: string;
+  /** Shared or cross-user effects that are legitimate and must not be flagged. */
+  readonly legitimateSharedEffects: string;
+  readonly escalationWouldBe: string;
+  readonly attempt: string;
+  readonly expectedSafe: string;
+}
+
+const N = (
+  fn: string, purpose: string, identitySource: string, privileged: string,
+  legitimateSharedEffects: string, escalationWouldBe: string, attempt: string, expectedSafe: string,
+): NoTargetSpec => ({ fn, purpose, identitySource, privileged, legitimateSharedEffects, escalationWouldBe, attempt, expectedSafe });
+
+const CALLER_SCOPED =
+  "none — this function reads and writes only rows keyed to auth.uid()";
+
+export const F5_NO_TARGET_SPECS: readonly NoTargetSpec[] = [
+  N("ensure_todays_daily_challenge()",
+    "mints today's daily challenge if it does not exist, and returns its public projection",
+    "auth.uid() must be non-null; nothing else is taken from the caller",
+    "public.daily_challenges including seed_secret, via ensure_daily_challenge_for() and reveal_closed_daily_seeds()",
+    "YES, and substantial: it CREATES a global daily_challenges row every account then plays, and reveal_closed_daily_seeds() mutates rows belonging to no one in particular. Both are intended. A rule requiring 'no shared row changes' would flag correct behaviour",
+    "returning seed_secret to the caller, or revealing the seed of a challenge that is still OPEN — either would let a caller know the shoe before playing it",
+    "as alice, call ensure_todays_daily_challenge() while today's challenge is open, and inspect every returned column; then read daily_challenges.revealed_seed and seed_revealed_at for today's row",
+    "the returned record is the daily_challenges_public projection, which has no seed_secret column at all; and today's still-open challenge has revealed_seed IS NULL afterwards"),
+  N("latest_verifiable_daily_challenge()",
+    "publishes the most recent challenge whose seed has already been revealed, so a past shoe can be verified",
+    "NONE — this function does not read auth.uid(). It is deliberately callable without an account",
+    "public.daily_challenges, selecting challenge_date, seed_commitment, revealed_seed, seed_revealed_at",
+    "YES: it returns a row that belongs to no account and is meant to be public. There is no caller-scoping to assert",
+    "returning a seed for a challenge that has NOT been revealed — the body's `where revealed_seed is not null` is the entire control",
+    "as anon, call latest_verifiable_daily_challenge() while one revealed and one unrevealed challenge both exist",
+    "exactly the revealed challenge is returned; the unrevealed one does not appear, and no seed_secret column is exposed"),
+  N("join_matchmaking(p_tier table_tier)",
+    "enqueues the caller for a public seat at the requested tier",
+    "caller from auth.uid(); only the tier comes from the argument",
+    "public.matchmaking_queue, public.game_session_seats and public.game_sessions across all accounts",
+    "YES: expire_stale_queue_entries() removes OTHER accounts' stale queue rows, which is intended housekeeping. It also reads other accounts' seats to decide seating",
+    "enqueuing or seating an account other than the caller, or being seated at a live table the caller is not entitled to join",
+    "as alice, call join_matchmaking('casual') while bob holds a fresh (non-stale) queue entry",
+    "a matchmaking_queue row appears with user_id = alice and no other; bob's fresh entry is untouched. Stale entries belonging to anyone MAY be expired — that is not a failure"),
+  N("poll_matchmaking()",
+    "reports the caller's matchmaking progress and any room they have been assigned",
+    "caller from auth.uid(); no arguments",
+    "public.matchmaking_queue and public.rooms across all accounts",
+    "YES: expire_stale_queue_entries() again, and it reads the waiting population to decide whether a room can be formed",
+    "returning another account's queue entry or room assignment, or assigning the caller into a room they were not matched to",
+    "as alice, call poll_matchmaking() while bob and carol also hold queue entries",
+    "the returned entry is alice's own; no bob or carol queue identity appears in the result"),
+  N("create_private_room(p_max_seats integer)",
+    "creates a private room hosted by the caller",
+    "caller from auth.uid(); only the seat count comes from the argument",
+    "public.rooms and public.room_members, plus enforce_rate_limit()",
+    "YES: expire_stale_rooms() closes OTHER accounts' expired rooms, which is intended housekeeping",
+    "creating a room hosted by another account, or bypassing the 2-to-5 seat bound, or bypassing the room_create rate limit",
+    "as alice, call create_private_room(9) — outside the permitted 2..5 range",
+    "error P0001, 'a private table seats between 2 and 5 players'; no rooms row is created"),
 ];
+
+/**
+ * The remaining no-target functions ARE caller-scoped: they read and write only
+ * rows keyed to auth.uid(), with no shared or global effect. They share one
+ * invariant, stated once, with one executable probe each.
+ */
+export const F5_CALLER_SCOPED: readonly string[] = [
+  "claim_recovery_grant()", "delete_own_account()", "grant_earned_cosmetics()",
+  "leave_matchmaking()", "list_blocked()", "list_friend_requests()", "list_friends()",
+  "my_active_session()", "my_career_progress()", "my_competition_record()", "my_daily_entry()",
+  "my_inventory()", "my_level_progress()", "my_loadout()", "my_sprint_entry()",
+  "my_strategy_accuracy_progress()", "touch_last_seen()", "unread_notification_count()",
+  "enforce_rate_limit(p_action text)", "my_leaderboard_position(p_category text)",
+  "my_notifications(p_limit integer)",
+];
+
+export const CALLER_SCOPED_INVARIANT = CALLER_SCOPED;

@@ -468,6 +468,13 @@
             "blocker_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "blocker_id"
+            }
+          ],
+          "combinator": "single",
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -483,6 +490,8 @@
             "blocker_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [],
+          "combinator": "none",
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -498,6 +507,13 @@
             "blocker_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "blocker_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -811,6 +827,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -1130,6 +1153,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "row_flag",
+              "detail": "is_active is true"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -1364,6 +1394,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -1604,6 +1641,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "row_flag",
+              "detail": "is_active is true"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -1967,6 +2011,8 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [],
+          "combinator": "none",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2415,6 +2461,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2594,6 +2647,8 @@
             "sender_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [],
+          "combinator": "none",
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2610,6 +2665,17 @@
             "receiver_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "sender_id"
+            },
+            {
+              "kind": "ownership",
+              "detail": "receiver_id"
+            }
+          ],
+          "combinator": "or",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2626,6 +2692,17 @@
             "receiver_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "sender_id"
+            },
+            {
+              "kind": "ownership",
+              "detail": "receiver_id"
+            }
+          ],
+          "combinator": "or",
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2775,6 +2852,17 @@
             "user_id_b"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id_a"
+            },
+            {
+              "kind": "ownership",
+              "detail": "user_id_b"
+            }
+          ],
+          "combinator": "or",
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2791,6 +2879,17 @@
             "user_id_b"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id_a"
+            },
+            {
+              "kind": "ownership",
+              "detail": "user_id_b"
+            }
+          ],
+          "combinator": "or",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -2989,6 +3088,17 @@
             "recipient_user_id"
           ],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "session_participation",
+              "detail": "is_session_participant()"
+            },
+            {
+              "kind": "ownership",
+              "detail": "recipient_user_id"
+            }
+          ],
+          "combinator": "mixed",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3225,6 +3335,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "session_participation",
+              "detail": "is_session_participant()"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -3689,6 +3806,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "session_participation",
+              "detail": "is_session_participant()"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4052,6 +4176,17 @@
             "user_id"
           ],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "session_participation",
+              "detail": "is_session_participant()"
+            },
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "or",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4282,6 +4417,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "session_participation",
+              "detail": "is_session_participant()"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4491,6 +4633,8 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [],
+          "combinator": "none",
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4506,6 +4650,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4521,6 +4672,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4697,6 +4855,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4927,6 +5092,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4942,6 +5114,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -4957,6 +5136,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5238,6 +5424,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5379,6 +5572,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5520,6 +5720,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -5830,6 +6037,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6156,6 +6370,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6792,6 +7013,13 @@
             "id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6805,6 +7033,21 @@
           "referencesAuthUid": true,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "friendship",
+              "detail": "viewer_is_friend_of() / are_friends()"
+            },
+            {
+              "kind": "block",
+              "detail": "block helpers"
+            },
+            {
+              "kind": "privacy_flag",
+              "detail": "privacy"
+            }
+          ],
+          "combinator": "mixed",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -6820,6 +7063,13 @@
             "id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "id"
+            }
+          ],
+          "combinator": "single",
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7027,6 +7277,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "DELETE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7042,6 +7299,8 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [],
+          "combinator": "none",
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7057,6 +7316,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7072,6 +7338,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "UPDATE",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7447,6 +7720,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "room_membership",
+              "detail": "caller_is_room_member()"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7704,6 +7984,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "room_membership",
+              "detail": "caller_is_room_member()"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -7915,6 +8202,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "row_flag",
+              "detail": "is_active is true"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8228,6 +8522,17 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "tournament_membership",
+              "detail": "viewer_is_in_tournament()"
+            },
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "or",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8459,6 +8764,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "tournament_membership",
+              "detail": "viewer_is_in_tournament()"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8817,6 +9129,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "row_flag",
+              "detail": "status <> 'cancelled'"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -8975,6 +9294,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -9236,6 +9562,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -9428,6 +9761,13 @@
             "user_id"
           ],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "ownership",
+              "detail": "user_id"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -9595,6 +9935,13 @@
           "referencesAuthUid": true,
           "predicateColumns": [],
           "referencesParticipation": true,
+          "authDrivers": [
+            {
+              "kind": "topic_guc",
+              "detail": "realtime.topic()"
+            }
+          ],
+          "combinator": "and",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -9608,6 +9955,8 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [],
+          "combinator": "none",
           "command": "INSERT",
           "permissive": "PERMISSIVE",
           "roles": [
@@ -9621,6 +9970,13 @@
           "referencesAuthUid": false,
           "predicateColumns": [],
           "referencesParticipation": false,
+          "authDrivers": [
+            {
+              "kind": "topic_guc",
+              "detail": "realtime.topic()"
+            }
+          ],
+          "combinator": "single",
           "command": "SELECT",
           "permissive": "PERMISSIVE",
           "roles": [
