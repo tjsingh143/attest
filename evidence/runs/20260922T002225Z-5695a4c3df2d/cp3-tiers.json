@@ -1,10 +1,10 @@
 {
-  "runId": "20260922T002142Z-5695a4c3df2d",
-  "startedAt": "2026-09-22T00:21:42.000Z",
+  "runId": "20260922T002225Z-5695a4c3df2d",
+  "startedAt": "2026-09-22T00:23:02.395Z",
   "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
   "harness": {
     "version": "0.1.0",
-    "sourcesSha256": "0472c93af06c6adbbedfa796d7e31cef32926236c886b0f98e60904be80f64ea",
+    "sourcesSha256": "b043c5775ab854b8e7a7e9869d4d11e697ffe05964d4c0cfa4789e2cc94d3cad",
     "fileCount": 33
   },
   "instance": "127.0.0.1:54322/postgres",

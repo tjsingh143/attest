@@ -5,9 +5,9 @@ control inventory. The rules are the rubric's; this document is their output.
 
 | | |
 |---|---|
-| Run | `20260922T002037Z-5695a4c3df2d` |
+| Run | `20260922T002225Z-5695a4c3df2d` |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0` sources `520d292bc114` |
+| Harness version | `0.1.0` sources `b043c5775ab8` |
 | Instance | 127.0.0.1:54322/postgres |
 
 ## 1. Tier distribution
@@ -369,3 +369,35 @@ Per resource:
 | `public.push_tokens` | Medium | 5 | 5 from 4 policy USING/WITH CHECK condition(s) | 8 |
 | `public.user_cosmetics` | Medium | 2 | 1 from 1 policy USING/WITH CHECK condition(s); 1 refusing trigger(s) | 2 |
 | `realtime.messages` | Medium | 4 | 3 from 3 policy USING/WITH CHECK condition(s); 1 for anonymous vs authenticated | 4 |
+
+## 7. Rule outcomes worth a second look
+
+Reported, not adjusted. Each of these follows from the rubric as written.
+
+### The exposure dimension did not change a single tier
+
+23 of 40 resources have High impact, and the rubric's floor fixes those at High
+whatever their exposure. The remaining 17 have Medium impact, where exposure *could* have
+lifted a resource to High — but only anonymous exposure does that, and none of them is
+anonymous. **Every tier in this run was decided by impact alone.**
+
+That is not a defect. It is what the floor is for, and it is precisely why the sensitivity
+analysis is informative: re-interpreting exposure is the only thing that makes the dimension
+do any work at all, and it moves 2 resources when it does.
+
+### No resource reached Low tier
+
+Low impact requires **all four** consequence dimensions to be Low. Combined with the rubric's
+uncertainty rule — Low reversibility must be positively supported, otherwise Medium/`U` — a
+resource can only reach Low tier if it is unimportant, isolated, harmless to corrupt **and**
+has a demonstrated restore path. Only a handful of resources here have the last of those, and
+each of them scores Medium or High somewhere else.
+
+The practical consequence is that the Low assurance activity is currently unused, and every
+resource earns at least limited scripted testing.
+
+### The nearest thing to a Low-tier resource
+
+- `public.loadouts` — Data, Blast and Integrity all Low; only Reversibility
+  Medium/`U` keeps it out of Low tier.
+  > A user's chosen loadout is recorded nowhere else, so a corrupted row cannot be restored to what it was — only re-chosen. Per the rubric's uncertainty rule, Low reversibility must be positively supported and is not.
