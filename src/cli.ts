@@ -24,6 +24,7 @@ import { buildRiskInputs } from "./risk-inputs.ts";
 import { renderRiskInputsMarkdown } from "./report-risk-inputs.ts";
 import { formatRubricStatus, readRubricStatus } from "./rubric.ts";
 import { runCp3 } from "./cp3.ts";
+import { runWp3Planner } from "./wp3-planner-run.ts";
 
 /**
  * Sortable, unique, and it says what it is: when, and against which schema.
@@ -148,6 +149,11 @@ async function main(): Promise<void> {
       }
       break;
     }
+    case "plan-wp3": {
+      console.log("plan WP3 (matrix only — nothing executed)");
+      await runWp3Planner((s) => console.log(s));
+      break;
+    }
     case "validate": {
       console.log("validate (WP1)");
       const v = await validate((s) => console.log(s));
@@ -170,10 +176,12 @@ async function main(): Promise<void> {
         console.error("\nattest: CP3 FAILED — the estimate is not internally consistent, or a resource is unrated.");
         process.exitCode = 1;
       }
+      console.log("plan WP3 (matrix only — nothing executed)");
+      await runWp3Planner((s) => console.log(s), runId, c.totalTestsPrimary);
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|run]`);
       process.exitCode = 2;
   }
 }

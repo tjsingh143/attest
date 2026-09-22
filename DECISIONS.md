@@ -917,3 +917,72 @@ failure is loud rather than embarrassing.
 Verified by breaking it: with a deliberate `+7` injected into the total, the run printed
 `ESTIMATOR INVARIANT FAILED — Primary: total equals per-tier subtotal plus suite-level cases:
 184 + 1 = 192` and exited 1.
+
+---
+
+## WP3 — planning
+
+### D3.1 — The matrix is generated from the frozen tiers, not hand-written
+
+**Decided.** `src/wp3-plan.ts` derives every planned test from the WP0 inventory facts and the
+frozen WP2 tiers. Applicability per (family, resource) is decided by rule; a family that does not
+apply produces a row carrying the factual reason and no test.
+
+**Why.** A hand-written matrix drifts from the inventory the moment either changes, and it invites
+exactly the failure the CP3 transcription error demonstrated. Generating it means the matrix, the
+tiers and the inventory cannot disagree, and the 147 not-applicable rows each carry a reason that
+was computed rather than asserted.
+
+### D3.2 — Isolation is scoped by ownership OR by session participation
+
+**Decided.** Read-isolation applicability tests for an owner column **or** a policy that scopes by
+session participation (`is_session_participant`, `caller_is_room_member`, or a direct subquery on
+`game_session_seats`).
+
+**Why.** The first version required an owner column, and marked `public.hand_records`
+not-applicable for read isolation — a High-tier resource whose `hand_records_select_participant`
+policy is exactly a read-isolation control. Arc21 isolates some resources by "are you seated at
+this game" rather than "is this your row", and a planner blind to that would have silently skipped
+testing them. The negative subject differs accordingly: another account's row for ownership, and
+the seeded non-participant (carol) for participation.
+
+The same pass corrected a misleading not-applicable reason on `public.rulesets`, which read
+"effective read exposure is anonymous" when the true reason is that a global catalogue has no
+per-caller subset to isolate.
+
+### D3.3 — The expired-session boundary is planned at the API boundary, not in PostgreSQL
+
+**Decided.** Null-identity and deleted-user are planned as database tests on the High-tier
+resources where each is applicable. Expired session is a single suite-level test issued over HTTP
+against the local PostgREST endpoint, expecting 401.
+
+**Why.** An expired JWT never reaches PostgreSQL — PostgREST verifies and rejects it first. A
+per-resource database test for it would be asserting that PostgreSQL enforced something it never
+saw. Planning it at the boundary where the rejection actually happens is the only version of this
+test that means anything, and it is why the CP3 estimator counted it once for the suite.
+
+### D3.4 — WP1 code is reused; WP1 evidence is not
+
+**Decided.** Each row is marked `reuse WP1`, `extend WP1` or `new`. Reuse refers to the
+**mechanism** — the role-scoped session, the expectation model, the evidence recorder. Every WP3
+row produces a fresh WP3 evidence record, and no WP1 deliberate-break scenario counts as a
+completed WP3 control test.
+
+**Why.** WP1's scenarios exist to prove the harness can detect a broken control. That is a
+different claim from "this control works in production configuration", and the two must not be
+conflated in the evidence store. The five WP1 scenarios happen to overlap five WP3 rows; those
+rows are still planned, still executed, and still recorded separately.
+
+### D3.5 — The audit-trail family tests what exists and records what does not
+
+**Decided.** Four High-tier resources carry a who-did-what-when record and get a positive
+existence test plus a negative immutability test. The other seventeen get a single row whose
+expected outcome is **the factual absence of a trail**, recorded as a finding candidate for WP5.
+
+**Why.** The brief is explicit: *"if Arc21 has no audit trail, that is a finding and a good one.
+Report it. Do not build one silently to make the test pass."* The inspection found zero history,
+versioning or audit relations anywhere in `public` or `private`, and no soft-delete column or
+delete trigger on `blocks`, `friendships` or `friend_requests` — so removing a block, which feeds
+`profiles_select_visible` and therefore an authorization decision, leaves no trace at all.
+
+Nothing was created to close that. It is planned as evidence of an absence.

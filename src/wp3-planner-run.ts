@@ -1,0 +1,86 @@
+/**
+ * Attest — generate the WP3 plan. Plans only; executes no control test.
+ */
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { RUNS_ROOT, APPLICATION_SCHEMAS } from "./config.ts";
+import { adminSession, withSession } from "./db.ts";
+import { buildRiskInputs } from "./risk-inputs.ts";
+import { runProbes } from "./inventory.ts";
+import { readSchemaVersion, shortVersion } from "./schema-version.ts";
+import { readHarnessVersion } from "./harness-version.ts";
+import { RATINGS } from "../rubric/ratings.ts";
+import { deriveImpact, scoredExposure, type Level } from "./scorer.ts";
+import { planWp3 } from "./wp3-plan.ts";
+import { reconcile, renderWp3PlanMarkdown } from "./report-wp3-plan.ts";
+
+/** Recompute the frozen tiers rather than reading a stale file. */
+const MATRIX: Record<Level, Record<"server_only" | "authenticated" | "anonymous", Level>> = {
+  Low: { server_only: "Low", authenticated: "Low", anonymous: "Medium" },
+  Medium: { server_only: "Medium", authenticated: "Medium", anonymous: "High" },
+  High: { server_only: "High", authenticated: "High", anonymous: "High" },
+};
+
+export async function runWp3Planner(
+  log: (s: string) => void = console.log,
+  fixedRunId?: string,
+  estimate?: number,
+): Promise<{ planned: number; awaitingIntent: number }> {
+  const startedAt = new Date();
+  const sv = await readSchemaVersion();
+  const runId =
+    fixedRunId ??
+    `${startedAt.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z")}-${shortVersion(sv)}`;
+  const harness = await readHarnessVersion();
+
+  const { inputs, definers } = await withSession(adminSession("wp3-plan"), async (a) => {
+    const { inputs } = await buildRiskInputs(a);
+    const raw = await runProbes(a);
+    // Client-callable SECURITY DEFINER functions that name a High-tier resource.
+    const highSet = new Set(
+      RATINGS.filter((r) => MATRIX[deriveImpact(r).impact][scoredExposure(r.exposure)] === "High").map(
+        (r) => r.resource,
+      ),
+    );
+    const definers = raw.routines
+      .filter((f) => f.security_definer === true)
+      .map((f) => {
+        const body = String(f.definition ?? "");
+        const touches = [...highSet].filter((h) => {
+          const [schema, name] = h.split(".");
+          return name ? new RegExp(`\\b${schema}\\.${name}\\b`, "i").test(body) : false;
+        });
+        return {
+          resource: String(f.resource),
+          executableBy: Array.isArray(f.executable_by) ? f.executable_by.map(String) : [],
+          touches,
+        };
+      })
+      .filter((f) => f.touches.length > 0);
+    return { inputs, definers };
+  });
+
+  const tiers = new Map<string, Level>(
+    RATINGS.map((r) => [r.resource, MATRIX[deriveImpact(r).impact][scoredExposure(r.exposure)]]),
+  );
+
+  const plan = planWp3(inputs.resources, tiers, definers);
+  const rec = reconcile(plan, estimate ?? 185);
+
+  const runDir = join(RUNS_ROOT, runId);
+  await mkdir(runDir, { recursive: true });
+  await writeFile(join(runDir, "wp3-matrix.json"), JSON.stringify({ plan, reconciliation: rec }, null, 2) + "\n");
+  await writeFile(
+    join(runDir, "wp3-matrix.md"),
+    renderWp3PlanMarkdown(plan, rec, {
+      runId, schemaVersion: sv.migrationSetSha256, harness: `${harness.version} sources ${harness.sourcesSha256.slice(0, 12)}`,
+    }),
+  );
+
+  log(`  ${rec.totalPlanned} tests planned — High ${rec.highPlanned}, Medium ${rec.mediumPlanned}, suite ${rec.suitePlanned}`);
+  log(`  estimate was ${rec.estimate}; difference ${rec.difference >= 0 ? "+" : ""}${rec.difference}`);
+  log(`  ${plan.notApplicable.length} (family, resource) pairs marked not applicable with a stated reason`);
+  log(`  ${rec.negativesAwaitingIntent} negative tests awaiting AUTHOR INTENT`);
+  log(`  written to evidence/runs/${runId}/`);
+  return { planned: rec.totalPlanned, awaitingIntent: rec.negativesAwaitingIntent };
+}

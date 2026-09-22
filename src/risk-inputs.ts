@@ -92,6 +92,17 @@ export interface PolicyFact {
    * case APPLICABLE here rather than merely required somewhere in the suite.
    */
   readonly referencesAuthUid: boolean;
+  /**
+   * Does this policy scope by SESSION PARTICIPATION rather than row ownership?
+   *
+   * Arc21 isolates some resources by "are you seated at this game" instead of
+   * "is this your row" -- `is_session_participant()`, `caller_is_room_member()`,
+   * or a direct subquery on `game_session_seats`. Those resources have a
+   * genuine read-isolation control and no owner column, so a planner that
+   * looked only for an owner column would mark them not-applicable and silently
+   * skip testing them.
+   */
+  readonly referencesParticipation: boolean;
   readonly command: string;
   readonly permissive: string;
   readonly roles: readonly string[];
@@ -184,6 +195,8 @@ export interface RiskInput {
   readonly commandsWithPolicy: readonly string[];
   /** True when any policy here reads `auth.uid()`. See PolicyFact.referencesAuthUid. */
   readonly anyPolicyReferencesAuthUid: boolean;
+  /** True when any policy here scopes by session participation. */
+  readonly anyPolicyReferencesParticipation: boolean;
   /** True when the resource records whose row it is, directly or transitively. */
   readonly hasIdentityLinkage: boolean;
   readonly realtimePublished: boolean;
@@ -249,6 +262,10 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
       {
         name: s(p.policy_name),
         referencesAuthUid: /auth\.uid\(\)/i.test(`${s(p.using_expr)} ${s(p.with_check_expr)}`),
+        referencesParticipation:
+          /is_session_participant|caller_is_room_member|game_session_seats|room_members/i.test(
+            `${s(p.using_expr)} ${s(p.with_check_expr)}`,
+          ),
         command: s(p.command),
         permissive: s(p.permissive),
         roles: Array.isArray(p.roles) ? p.roles.map(String) : [],
@@ -389,6 +406,7 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
       policyCount: policies.length,
       commandsWithPolicy: [...new Set(policies.map((p) => p.command))].sort(),
       anyPolicyReferencesAuthUid: policies.some((p) => p.referencesAuthUid),
+      anyPolicyReferencesParticipation: policies.some((p) => p.referencesParticipation),
       hasIdentityLinkage:
         links.some((l) => l.relation === "auth.users") ||
         links.some((l) => l.relation !== "auth.users" && identityPaths.has(l.relation)),
