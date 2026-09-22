@@ -163,7 +163,7 @@ export function renderRiskInputsMarkdown(
     p(`| Column | Type | Not null | Server-generated | Client privilege on this column |`);
     p(`|---|---|---|---|---|`);
     for (const c of r.columns) {
-      p(`| \`${cell(c.name)}\` | ${cell(c.type)} | ${yn(c.notNull)} | ${yn(c.serverGenerated)} | ${c.clientWritable.length ? cell(c.clientWritable.join("; ")) : "—"} |`);
+      p(`| \`${cell(c.name)}\` | ${cell(c.type)} | ${yn(c.notNull)} | ${yn(c.serverGenerated)} | ${c.clientAny.length ? cell(c.clientAny.join("; ")) : "—"} |`);
     }
     p();
 

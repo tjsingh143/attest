@@ -61,8 +61,22 @@ export interface ColumnFact {
   readonly notNull: boolean;
   readonly serverGenerated: boolean;
   readonly declaredIntent: string | null;
-  /** Client roles holding a column-level privilege here, if any. */
-  readonly clientWritable: readonly string[];
+  /**
+   * Column-level privileges held by client roles, SPLIT BY PRIVILEGE TYPE.
+   *
+   * An earlier version collapsed these into one `clientWritable` list, which
+   * was wrong in a way that produced invalid tests: `public.daily_challenges`
+   * grants column-level SELECT on 14 columns while excluding `seed_secret`,
+   * and the collapsed field made that look like 14 writable columns. The
+   * planner then generated UPDATE probes against a read boundary.
+   *
+   * SELECT grants describe a confidentiality boundary; UPDATE grants describe
+   * an integrity one. They are tested with different statements.
+   */
+  readonly clientSelect: readonly string[];
+  readonly clientUpdate: readonly string[];
+  /** Any column-level privilege at all, of any type. */
+  readonly clientAny: readonly string[];
 }
 
 export interface RelationLink {
@@ -103,6 +117,18 @@ export interface PolicyFact {
    * skip testing them.
    */
   readonly referencesParticipation: boolean;
+  /**
+   * The columns this policy compares to `auth.uid()`, in order of appearance.
+   *
+   * A negative test has to falsify the ACTUAL predicate. Picking a generic
+   * "owner column" off the resource was wrong on two policies and would have
+   * produced tests that pass while proving nothing:
+   * `blocks_insert_own` compares `blocker_id`, not `blocked_id`, and
+   * `friend_requests_insert_as_sender` compares `sender_id` — setting
+   * `receiver_id` to another account satisfies its `receiver_id <> uid`
+   * clause rather than violating anything.
+   */
+  readonly predicateColumns: readonly string[];
   readonly command: string;
   readonly permissive: string;
   readonly roles: readonly string[];
@@ -262,6 +288,13 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
       {
         name: s(p.policy_name),
         referencesAuthUid: /auth\.uid\(\)/i.test(`${s(p.using_expr)} ${s(p.with_check_expr)}`),
+        predicateColumns: [
+          ...new Set(
+            [...`${s(p.using_expr)} ${s(p.with_check_expr)}`.matchAll(
+              /\(?([a-z_][a-z0-9_]*)\s*=\s*\(?\s*SELECT auth\.uid\(\)/gi,
+            )].map((m) => m[1] as string),
+          ),
+        ],
         referencesParticipation:
           /is_session_participant|caller_is_room_member|game_session_seats|room_members/i.test(
             `${s(p.using_expr)} ${s(p.with_check_expr)}`,
@@ -323,15 +356,18 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
     const links = outbound.get(r.resource) ?? [];
     const back = inbound.get(r.resource) ?? [];
 
-    // Which client roles hold a privilege on each column.
-    const colWritable = new Map<string, string[]>();
+    // Which client roles hold which KIND of privilege on each column.
+    const colSelect = new Map<string, string[]>();
+    const colUpdate = new Map<string, string[]>();
+    const colAny = new Map<string, string[]>();
     for (const [key, privs] of Object.entries(r.columnReachableBy)) {
       const [grantee, column] = key.split(":");
       if (!column) continue;
-      colWritable.set(column, [
-        ...(colWritable.get(column) ?? []),
-        `${grantee}: ${privs.join(", ")}`,
-      ]);
+      for (const priv of privs) {
+        const target = priv === "SELECT" ? colSelect : priv === "UPDATE" ? colUpdate : null;
+        if (target) target.set(column, [...(target.get(column) ?? []), `${grantee}: ${priv}`]);
+        colAny.set(column, [...(colAny.get(column) ?? []), `${grantee}: ${priv}`]);
+      }
     }
 
     const exposure = classifyExposure(r.reachableBy, obs, r.rlsEnabled);
@@ -354,7 +390,9 @@ export async function buildRiskInputs(session: Session): Promise<{ inventory: In
         notNull: c.not_null === true,
         serverGenerated: c.server_generated === true,
         declaredIntent: c.declared_intent === null ? null : s(c.declared_intent),
-        clientWritable: colWritable.get(s(c.column_name)) ?? [],
+        clientSelect: colSelect.get(s(c.column_name)) ?? [],
+        clientUpdate: colUpdate.get(s(c.column_name)) ?? [],
+        clientAny: colAny.get(s(c.column_name)) ?? [],
       })),
       columnCount: cols.length,
       directIdentityColumns: [

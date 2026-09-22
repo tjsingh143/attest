@@ -156,8 +156,39 @@ export function renderWp3PlanMarkdown(
   }
   p();
 
+  // --- verdict semantics --------------------------------------------------
+  p(`## 3. Execution versus assurance verdict`);
+  p();
+  p(`Every evidence record carries **two** independent fields, so that "the probe did what we`);
+  p(`predicted" can never be read as "the control holds".`);
+  p();
+  p(`| Field | Values | Says |`);
+  p(`|---|---|---|`);
+  p(`| \`observation\` | as_predicted / not_as_predicted / harness_error | did execution match the prediction |`);
+  p(`| \`verdict\` | effective / deficient / characterized / gap / not_measured | what that means for the control |`);
+  p();
+  p(`The two come apart in exactly the places that would otherwise produce a false green:`);
+  p();
+  p(`- **F7 owner bypass.** The probe returns every row, precisely as predicted, because row-level`);
+  p(`  security is enabled and not forced. \`observation: as_predicted\`, \`verdict:\``);
+  p(`  **\`characterized\`** — a fact was recorded and no control was asserted either way. It is`);
+  p(`  never \`effective\`, because the control was not applied at all.`);
+  p(`- **F10 audit trail.** The probe confirms no trail exists, precisely as predicted.`);
+  p(`  \`observation: as_predicted\`, \`verdict:\` **\`gap\`** — the control does not exist to be`);
+  p(`  exercised.`);
+  p(`- **Partial trails.** Two of the four structures that look like audit trails answer only part`);
+  p(`  of who-did-what-when, so their existence check also records \`gap\` rather than \`effective\`.`);
+  p();
+  p(`A harness error remains a third, separate state: it never matches an expectation, renders as`);
+  p(`\`HARNESS ERROR\`, and yields \`verdict: not_measured\` (DECISIONS D1.13).`);
+  p();
+  const byVerdict = { effective: 0, characterized: 0, gap: 0 } as Record<string, number>;
+  for (const t of plan.tests) byVerdict[t.verdictWhenPredicted] = (byVerdict[t.verdictWhenPredicted] ?? 0) + 1;
+  p(`Planned verdicts when execution matches: **${byVerdict.effective}** effective, **${byVerdict.characterized}** characterized, **${byVerdict.gap}** gap.`);
+  p();
+
   // --- the matrix ----------------------------------------------------------
-  p(`## 3. The matrix`);
+  p(`## 4. The matrix`);
   p();
   p(`Grouped by family. \`Plumbing\`: **reuse WP1** means the same mechanism WP1 already drives;`);
   p(`**extend WP1** means the mechanism exists but needs a new case or seeded row; **new** means it`);
@@ -171,12 +202,14 @@ export function renderWp3PlanMarkdown(
     p(`### ${family}`);
     p();
     if (rows.length) {
-      p(`| Test ID | Resource / control | Tier | ± | Identity | Operation | Expected | Covers | Plumbing | AUTHOR INTENT |`);
-      p(`|---|---|---|---|---|---|---|---|---|---|`);
+      p(`| Test ID | Resource / control | Tier | ± | Identity | Operation | Expected | Verdict if predicted | Covers | Plumbing | AUTHOR INTENT |`);
+      p(`|---|---|---|---|---|---|---|---|---|---|---|`);
       for (const t of rows) {
         const intent = t.polarity === "negative" ? "**AUTHOR INTENT:** \\_\\_\\_\\_\\_" : "—";
+        const v = t.verdictWhenPredicted === "effective" ? "effective"
+          : t.verdictWhenPredicted === "gap" ? "**GAP**" : "**characterized**";
         p(
-          `| \`${cell(t.testId)}\` | \`${cell(t.control)}\` | ${cell(t.tier)} | ${t.polarity === "positive" ? "pos" : "**neg**"} | ${cell(t.identity)} | ${cell(t.operation)} | ${cell(t.expected)} | ${cell(t.covers)} | ${cell(t.plumbing)} | ${intent} |`,
+          `| \`${cell(t.testId)}\` | \`${cell(t.control)}\` | ${cell(t.tier)} | ${t.polarity === "positive" ? "pos" : "**neg**"} | ${cell(t.identity)} | ${cell(t.operation)} | ${cell(t.expected)} | ${v} | ${cell(t.covers)} | ${cell(t.plumbing)} | ${intent} |`,
         );
       }
       p();

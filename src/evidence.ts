@@ -72,6 +72,39 @@ export interface Outcome {
   readonly sample: readonly unknown[];
 }
 
+/**
+ * Did the probe do what was predicted? A statement about EXECUTION only.
+ *
+ *   as_predicted     the observed outcome matched the expectation
+ *   not_as_predicted the observed outcome differed
+ *   harness_error    the harness threw; nothing was measured
+ */
+export type Observation = "as_predicted" | "not_as_predicted" | "harness_error";
+
+/**
+ * What the observation MEANS for the control. A separate judgment, and
+ * deliberately not derivable from `observation` alone.
+ *
+ * The two were conflated in the WP3 plan's first draft and it produced two
+ * false greens:
+ *
+ *   An owner-bypass probe (F7) returns every row, exactly as predicted,
+ *   because row-level security is enabled and not forced. Execution matched.
+ *   The control did not hold — it was never applied. That is `characterized`,
+ *   not `effective`.
+ *
+ *   An audit-trail probe (F10) confirms that no trail exists, exactly as
+ *   predicted. Execution matched. The assurance answer is a gap.
+ *
+ * So:
+ *   effective     the control was exercised and held
+ *   deficient     the control was exercised and did not hold
+ *   characterized a fact was recorded; no control was asserted either way
+ *   gap           the control does not exist to be exercised
+ *   not_measured  the probe did not execute meaningfully (harness error)
+ */
+export type Verdict = "effective" | "deficient" | "characterized" | "gap" | "not_measured";
+
 export interface EvidenceRecord {
   readonly recordId: string;
   readonly runId: string;
@@ -96,7 +129,15 @@ export interface EvidenceRecord {
   readonly identity: SessionIdentity;
   readonly expected: string;
   readonly actual: string;
+  /**
+   * DEPRECATED in favour of `observation` + `verdict`. Retained so WP1's
+   * records stay readable, and always consistent with `observation`.
+   */
   readonly outcome: "pass" | "fail";
+  /** Did execution match the prediction? */
+  readonly observation: Observation;
+  /** What that means for the control. Never inferred from `observation` alone. */
+  readonly verdict: Verdict;
   readonly detail: Outcome;
 }
 
@@ -165,6 +206,15 @@ export async function execute(
 
 export interface CheckSpec {
   readonly testId: string;
+  /**
+   * The assurance verdict to record when execution matches the prediction.
+   *
+   * Defaults to `effective`, because most probes assert a control. A probe that
+   * merely records a fact declares `characterized`; one that confirms an
+   * absence declares `gap`. A mismatch is always `deficient`, and a harness
+   * error is always `not_measured`, whatever this says.
+   */
+  readonly verdictWhenPredicted?: Verdict;
   readonly family: string;
   readonly controlId: string;
   readonly description: string;
@@ -189,6 +239,14 @@ export async function record(
   const detail = await execute(session, spec.statement, params);
   const expected = describeExpectation(spec.expect);
   const actual = summarize(detail);
+  const matched = matches(spec.expect, detail);
+  const observation: Observation = detail.harnessError
+    ? "harness_error"
+    : matched ? "as_predicted" : "not_as_predicted";
+  const verdict: Verdict =
+    observation === "harness_error" ? "not_measured"
+    : observation === "as_predicted" ? (spec.verdictWhenPredicted ?? "effective")
+    : "deficient";
   return {
     recordId: `${spec.testId}:${session.identity.label}:${suffix}`,
     runId: ctx.runId,
@@ -204,7 +262,9 @@ export async function record(
     identity: session.identity,
     expected,
     actual,
-    outcome: matches(spec.expect, detail) ? "pass" : "fail",
+    outcome: matched ? "pass" : "fail",
+    observation,
+    verdict,
     detail,
   };
 }

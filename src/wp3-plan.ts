@@ -18,6 +18,7 @@
  * sentence for the author, and the planner does not write it.
  */
 import type { RiskInput } from "./risk-inputs.ts";
+import { F5_NO_TARGET, F5_SPECS } from "../rubric/f5-escalation.ts";
 import type { Level } from "./scorer.ts";
 
 export type Family =
@@ -36,6 +37,9 @@ export type Family =
 export type Polarity = "positive" | "negative";
 export type Plumbing = "reuse WP1" | "extend WP1" | "new";
 
+/** The assurance verdict this test records when execution matches prediction. */
+export type PlannedVerdict = "effective" | "characterized" | "gap";
+
 export interface PlannedTest {
   readonly testId: string;
   readonly family: Family;
@@ -49,6 +53,12 @@ export interface PlannedTest {
   /** Which policy branch or critical path this case covers, and why it exists. */
   readonly covers: string;
   readonly plumbing: Plumbing;
+  /**
+   * What a prediction-matching execution MEANS. Declared in the plan so that
+   * "the probe did what we said" can never be read as "the control holds".
+   * F7 rows are `characterized`; F10 absence rows are `gap`.
+   */
+  readonly verdictWhenPredicted: PlannedVerdict;
   /** Reserved for the author. Null on every negative test, by design. */
   readonly authorIntent: string | null;
 }
@@ -107,14 +117,39 @@ export function planWp3(
       : f.anyPolicyReferencesParticipation
         ? "participant"
         : null;
+    // PERMISSIVE policies are OR-ed, so a negative fixture that falsifies one
+    // policy can still be admitted by another. Every policy in Arc21 is
+    // permissive, so a negative subject has to falsify ALL applicable ones or
+    // the outcome cannot be attributed to the policy under test.
+    //
+    // `public.profiles` is the case that forced this. It carries two permissive
+    // SELECT policies, and all four seeded accounts have privacy = 'public'
+    // (the column default) — so "alice selects bob's row, expect no data" would
+    // have failed a working control: profiles_select_visible legitimately
+    // admits bob's public profile. The subject that falsifies both is dave,
+    // whom the seed has alice blocking, because profiles_select_visible
+    // requires NOT viewer_has_blocked(id).
+    const multiSelect = selectPolicies.length > 1;
     if (clientReadable && selectPolicies.length && isolationScope) {
       const branches = isHigh ? selectPolicies : selectPolicies.slice(0, 1);
       for (const p of branches) {
+        const isProfiles = f.resource === "public.profiles";
+        const negSubject = isProfiles ? "dave" : "bob";
+        // The columns the POLICY compares to auth.uid(), not a generic owner
+        // column. Where there is more than one they are OR-ed, so a negative
+        // fixture must falsify EVERY clause: a friend_requests row with
+        // sender_id = bob but receiver_id = alice is legitimately visible to
+        // alice, and using it as a negative would fail a working control.
+        const pcols = p.predicateColumns.length ? p.predicateColumns : oc ? [oc] : [];
+        const pcol = pcols[0] ?? oc;
+        const multiClause = pcols.length > 1;
         const posOp = isolationScope === "owner"
-          ? `select from ${f.resource} where ${oc} = alice`
+          ? `select from ${f.resource} where ${pcol} = alice`
           : `select from ${f.resource} for the seeded game session alice is seated at`;
         const negOp = isolationScope === "owner"
-          ? `select from ${f.resource} where ${oc} = bob`
+          ? multiClause
+            ? `select from ${f.resource} for a row where NONE of ${pcols.join(", ")} is alice (a ${negSubject}↔carol row)`
+            : `select from ${f.resource} where ${pcol} = ${negSubject}`
           : `select from ${f.resource} for that same game session`;
         const negIdentity = isolationScope === "owner" ? ALICE : CAROL;
         tests.push({
@@ -125,17 +160,23 @@ export function planWp3(
           covers: isolationScope === "owner"
             ? `USING branch of ${p.name} satisfied: the caller's own row`
             : `USING branch of ${p.name} satisfied: a participant of that session`,
-          plumbing: "reuse WP1", authorIntent: "n/a (positive)",
+          plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: "n/a (positive)",
         });
         tests.push({
           testId: id("F1", f.resource), family: "F1 read isolation", resource: f.resource,
           control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: negIdentity,
           operation: negOp,
           expected: "no data (0 rows — RLS filters rather than raising)",
-          covers: isolationScope === "owner"
-            ? `USING branch of ${p.name} unsatisfied: a row belonging to another account`
-            : `USING branch of ${p.name} unsatisfied: carol holds no seat at that session, which is why the seed seats two of three accounts`,
-          plumbing: "reuse WP1", authorIntent: null,
+          covers:
+            (isolationScope === "owner"
+              ? isProfiles
+                ? `USING branch of ${p.name} unsatisfied, AND the other permissive SELECT policy (profiles_select_visible) also falsified: alice has blocked dave, and that policy requires NOT viewer_has_blocked(id). Bob would NOT work as the subject — his privacy is 'public', so profiles_select_visible admits him legitimately`
+                : `USING branch of ${p.name} unsatisfied: a row belonging to another account`
+              : `USING branch of ${p.name} unsatisfied: carol holds no seat at that session, which is why the seed seats two of three accounts`) +
+            (multiSelect && !isProfiles
+              ? `. NOTE: this resource carries ${selectPolicies.length} permissive SELECT policies, so the claim is about EFFECTIVE authorization rather than this policy alone`
+              : ""),
+          plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
         });
       }
     } else {
@@ -154,21 +195,22 @@ export function planWp3(
       const branches = isHigh ? writePolicies : writePolicies.slice(0, 1);
       for (const p of branches) {
         const verb = p.command === "DELETE" ? "delete from" : "update";
+        const pcol = p.predicateColumns[0] ?? oc;
         tests.push({
           testId: id("F2", f.resource), family: "F2 write isolation", resource: f.resource,
           control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
-          operation: `${verb} ${f.resource} where ${oc} = alice`,
+          operation: `${verb} ${f.resource} where ${pcol} = alice`,
           expected: "1 row affected",
           covers: `USING branch of ${p.name} (${p.command}) satisfied for the owner`,
-          plumbing: "reuse WP1", authorIntent: "n/a (positive)",
+          plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: "n/a (positive)",
         });
         tests.push({
           testId: id("F2", f.resource), family: "F2 write isolation", resource: f.resource,
           control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: ALICE,
-          operation: `${verb} ${f.resource} where ${oc} = bob`,
+          operation: `${verb} ${f.resource} where ${pcol} = bob`,
           expected: "0 rows affected — the policy filters the row out of the write",
           covers: `USING branch of ${p.name} (${p.command}) unsatisfied: another account's row`,
-          plumbing: "reuse WP1", authorIntent: null,
+          plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
         });
       }
     } else if (isHigh) {
@@ -179,7 +221,7 @@ export function planWp3(
         expected: "error 42501 — refused before any policy is consulted",
         covers:
           "the grant surface itself: no client role holds a write privilege here, so the control is the absence of the grant (and, where present, a write-guard trigger behind it)",
-        plumbing: "reuse WP1", authorIntent: null,
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
       });
     } else {
       na.push({
@@ -189,25 +231,69 @@ export function planWp3(
     }
 
     // ---------------------------------------------------------------- F3
+    // The command comes from the POLICY, not from a template. An INSERT policy
+    // is tested with INSERT; an UPDATE policy with UPDATE. They are different
+    // controls: an INSERT WITH CHECK governs the row being created, an UPDATE
+    // WITH CHECK governs the row as it will be AFTER the update.
+    //
+    // And an UPDATE WITH CHECK is only independently exercisable if the caller
+    // can change a column the expression reads. In Arc21 it never can: every
+    // UPDATE WITH CHECK compares the owner column, and no owner column appears
+    // in any client column-level UPDATE grant. That is recorded rather than
+    // faked, because a negative test that cannot be constructed must not be
+    // planned as though it could.
     if (f.effectiveWriteExposure === "authenticated" && checkPolicies.length && oc) {
       const branches = isHigh ? checkPolicies : checkPolicies.slice(0, 1);
       for (const p of branches) {
-        tests.push({
-          testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
-          control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
-          operation: `insert into ${f.resource} with ${oc} = alice`,
-          expected: "1 row affected",
-          covers: `WITH CHECK branch of ${p.name} satisfied: a row attributed to the caller`,
-          plumbing: "reuse WP1", authorIntent: "n/a (positive)",
-        });
-        tests.push({
-          testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
-          control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: ALICE,
-          operation: `insert into ${f.resource} with ${oc} = bob`,
-          expected: "error 42501 — new row violates row-level security policy",
-          covers: `WITH CHECK branch of ${p.name} unsatisfied: a row attributed to another account. Tested WITHOUT a RETURNING clause so the SELECT policy is not pulled into the result (see DECISIONS D1.5)`,
-          plumbing: "reuse WP1", authorIntent: null,
-        });
+        // The column the WITH CHECK actually compares to auth.uid().
+        const pcol = p.predicateColumns[0] ?? oc;
+        const ownerColGranted = f.columns.some(
+          (c) => c.name === pcol && c.clientUpdate.length > 0,
+        );
+        const tableUpdateGrant = (f.reachableBy["authenticated"] ?? []).includes("UPDATE");
+
+        if (p.command === "INSERT") {
+          tests.push({
+            testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
+            control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
+            operation: `INSERT into ${f.resource} with ${pcol} = alice`,
+            expected: "1 row affected",
+            covers: `WITH CHECK of ${p.name} (INSERT) satisfied: a row attributed to the caller`,
+            plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: "n/a (positive)",
+          });
+          tests.push({
+            testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
+            control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: ALICE,
+            operation: `INSERT into ${f.resource} with ${pcol} = bob (no RETURNING clause)`,
+            expected: "error 42501 — new row violates row-level security policy",
+            covers: `WITH CHECK of ${p.name} (INSERT) unsatisfied: the policy compares \`${pcol}\`, so that is the column set to another account. No RETURNING, so the SELECT policy is not pulled in (DECISIONS D1.5)`,
+            plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
+          });
+        } else if (p.command === "UPDATE") {
+          tests.push({
+            testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
+            control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
+            operation: `UPDATE ${f.resource} set <a client-granted column> where ${pcol} = alice`,
+            expected: "1 row affected, and the row is still attributed to alice afterwards",
+            covers: `WITH CHECK of ${p.name} (UPDATE) satisfied: the post-update row still belongs to the caller`,
+            plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: "n/a (positive)",
+          });
+          if (ownerColGranted || tableUpdateGrant) {
+            tests.push({
+              testId: id("F3", f.resource), family: "F3 WITH CHECK enforcement", resource: f.resource,
+              control: `${f.resource}#policy:${p.name}`, tier, polarity: "negative", identity: ALICE,
+              operation: `UPDATE ${f.resource} set ${pcol} = bob where ${pcol} = alice — satisfying USING, violating WITH CHECK`,
+              expected: "error 42501 — the post-update row would violate the policy's WITH CHECK",
+              covers: `WITH CHECK of ${p.name} (UPDATE) unsatisfied while USING is satisfied. This is the only shape that isolates the WITH CHECK half from the USING half on an UPDATE`,
+              plumbing: "extend WP1", verdictWhenPredicted: "effective", authorIntent: null,
+            });
+          } else {
+            na.push({
+              family: "F3 WITH CHECK enforcement", resource: f.resource,
+              reason: `${p.name} is an UPDATE policy whose WITH CHECK compares \`${oc}\`, and \`${oc}\` appears in no client column-level UPDATE grant (granted: ${f.columns.filter((c) => c.clientUpdate.length).map((c) => c.name).join(", ") || "none"}). A client cannot construct a row that satisfies USING and violates WITH CHECK, so that branch is not independently exercisable from a client session. It is defence in depth behind the column grant, and becomes reachable only if the grant is ever widened`,
+            });
+          }
+        }
       }
     } else {
       na.push({
@@ -226,7 +312,7 @@ export function planWp3(
         operation: `select from ${f.resource}`,
         expected: "at least 1 row — this resource is deliberately readable without an account",
         covers: "the intended anonymous read path; confirms the catalogue is reachable as designed",
-        plumbing: "reuse WP1", authorIntent: "n/a (positive)",
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: "n/a (positive)",
       });
       tests.push({
         testId: id("F4", f.resource), family: "F4 anonymous exposure", resource: f.resource,
@@ -234,7 +320,7 @@ export function planWp3(
         operation: `select from ${f.resource} where the policy predicate is false (e.g. is_active = false / status = 'cancelled')`,
         expected: "no data — the policy admits anon only for rows satisfying its predicate",
         covers: "the unsatisfied branch of the anon-admitting policy; requires a seeded inactive row",
-        plumbing: "extend WP1", authorIntent: null,
+        plumbing: "extend WP1", verdictWhenPredicted: "effective", authorIntent: null,
       });
     } else {
       tests.push({
@@ -247,48 +333,66 @@ export function planWp3(
         covers: f.anonymousGrantExists
           ? "the latent anonymous grant recorded in WP2: this test is what demonstrates the policy set is the only thing denying it"
           : "the anonymous reach surface: confirms a signed-out caller obtains nothing here",
-        plumbing: "reuse WP1", authorIntent: null,
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
       });
     }
 
     // ---------------------------------------------------------------- F6
-    const grantedCols = f.columns.filter((c) => c.clientWritable.length > 0);
-    const excludedCols = f.columns.filter((c) => c.clientWritable.length === 0);
-    if (grantedCols.length > 0 && excludedCols.length > 0) {
+    // The privilege TYPE decides the statement. A column-level SELECT grant is
+    // a confidentiality boundary and is tested by reading; a column-level
+    // UPDATE grant is an integrity boundary and is tested by writing.
+    //
+    // Collapsing the two is what produced the previous plan's invalid case:
+    // public.daily_challenges grants column-level SELECT on 14 columns and
+    // excludes seed_secret, and the collapsed facts made that look like 14
+    // writable columns, so the planner proposed UPDATEs against a read boundary.
+    const selGranted = f.columns.filter((c) => c.clientSelect.length > 0);
+    const updGranted = f.columns.filter((c) => c.clientUpdate.length > 0);
+    const selExcluded = f.columns.filter((c) => c.clientSelect.length === 0);
+    const updExcluded = f.columns.filter((c) => c.clientUpdate.length === 0);
+
+    if (selGranted.length > 0 && selExcluded.length > 0) {
       tests.push({
         testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
-        control: `${f.resource}#colgrant`, tier, polarity: "positive", identity: ALICE,
-        operation: `update ${f.resource} set ${grantedCols[0]!.name} = <value> where ${oc ?? "id"} = alice`,
+        control: `${f.resource}#colgrant:SELECT`, tier, polarity: "positive", identity: ALICE,
+        operation: `SELECT ${selGranted.slice(0, 3).map((c) => c.name).join(", ")} from ${f.resource}`,
+        expected: `rows returned — ${selGranted.length} of ${f.columnCount} columns carry a client SELECT grant`,
+        covers: `the granted half of the READ column surface: the caller may see the intended exposed columns`,
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: "n/a (positive)",
+      });
+      tests.push({
+        testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
+        control: `${f.resource}#colgrant:SELECT`, tier, polarity: "negative", identity: ALICE,
+        operation: `SELECT ${selExcluded[0]!.name} from ${f.resource}`,
+        expected: "error 42501 — no column-level SELECT privilege on that column",
+        covers: `the confidentiality boundary INSIDE a readable row: ${selExcluded.map((c) => c.name).join(", ")} ${selExcluded.length === 1 ? "is" : "are"} excluded from every client SELECT grant. A row-level check cannot see this, and a table-level one cannot either`,
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
+      });
+    }
+
+    if (updGranted.length > 0 && updExcluded.length > 0) {
+      tests.push({
+        testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
+        control: `${f.resource}#colgrant:UPDATE`, tier, polarity: "positive", identity: ALICE,
+        operation: `UPDATE ${f.resource} set ${updGranted[0]!.name} = <value> where ${oc ?? "id"} = alice`,
         expected: "1 row affected — a granted column on the caller's own row",
-        covers: `the granted half of the column surface (${grantedCols.length} of ${f.columnCount} columns are client-writable)`,
-        plumbing: "reuse WP1", authorIntent: "n/a (positive)",
+        covers: `the granted half of the WRITE column surface (${updGranted.map((c) => c.name).join(", ")})`,
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: "n/a (positive)",
       });
       tests.push({
         testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
-        control: `${f.resource}#colgrant`, tier, polarity: "negative", identity: ALICE,
-        operation: `update ${f.resource} set ${excludedCols[0]!.name} = <value> where ${oc ?? "id"} = alice`,
-        expected: "error 42501 — no column-level privilege on that column",
-        covers: `a column deliberately excluded from the client grant (${excludedCols.map((c) => c.name).slice(0, 4).join(", ")}${excludedCols.length > 4 ? ", …" : ""}). A table-level check cannot see this`,
-        plumbing: "reuse WP1", authorIntent: null,
+        control: `${f.resource}#colgrant:UPDATE`, tier, polarity: "negative", identity: ALICE,
+        operation: `UPDATE ${f.resource} set ${updExcluded[0]!.name} = <value> where ${oc ?? "id"} = alice`,
+        expected: "error 42501 — no column-level UPDATE privilege on that column",
+        covers: `a column deliberately excluded from the client UPDATE grant (${updExcluded.map((c) => c.name).slice(0, 4).join(", ")}${updExcluded.length > 4 ? ", …" : ""})`,
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
       });
-    } else if (f.resource === "public.daily_challenges") {
-      // Read-side column exclusion rather than write-side.
-      tests.push({
-        testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
-        control: `${f.resource}#colgrant:seed_secret`, tier, polarity: "negative", identity: ALICE,
-        operation: `select seed_secret from ${f.resource}`,
-        expected: "error 42501 — seed_secret is excluded from all 14 client column grants",
-        covers:
-          "the read-side column exclusion: the row is readable and one column is not. This is the control that keeps the day's shoe secret while the challenge metadata stays public",
-        plumbing: "reuse WP1", authorIntent: null,
-      });
-    } else {
+    }
+
+    if (selGranted.length === 0 && updGranted.length === 0) {
       na.push({
         family: "F6 column-level leakage", resource: f.resource,
-        reason:
-          grantedCols.length === 0
-            ? "no client role holds a column-level privilege here, so there is no column surface to leak through"
-            : "every column is client-granted, so no column is excluded to test against",
+        reason: "no client role holds a column-level privilege of any type here, so there is no column surface to leak through — access is decided at the table level",
       });
     }
 
@@ -301,8 +405,8 @@ export function planWp3(
         expected:
           "all rows returned — row-level security is enabled but NOT forced, so policies are not applied to the table owner",
         covers:
-          "the enabled-versus-forced distinction on a High-tier resource whose policy would otherwise exclude these rows. Characterisation: the expected outcome documents the absence of FORCE rather than asserting a control holds",
-        plumbing: "reuse WP1", authorIntent: null,
+          "the enabled-versus-forced distinction on a High-tier resource whose policy would otherwise exclude these rows. The expected outcome documents the absence of FORCE rather than asserting a control holds, so a matching execution records `characterized` and never `effective` — the policy was not applied at all",
+        plumbing: "reuse WP1", verdictWhenPredicted: "characterized", authorIntent: null,
       });
     } else if (isHigh) {
       na.push({
@@ -318,41 +422,93 @@ export function planWp3(
     }
 
     // ---------------------------------------------------------------- F10
-    const auditTrails: Record<string, string> = {
-      "public.wallet_ledger": "itself — user_id, delta, reason, created_at, seq, idempotency_key, guarded append-only",
-      "public.game_events": "itself — seq-ordered, created_at, recipient_user_id, deny_client_write",
-      "private.game_commands": "itself — user_id, command_type, created_at, applied_version",
-      "public.rate_limit_events": "itself — user_id, action, occurred_at (allowed attempts only; refusals are deliberately not recorded)",
+    // Two corrections over the first draft.
+    //
+    // IDENTITY. The existence check must run as a role that can legitimately
+    // read the trail. The first draft used alice for all four, including
+    // private.game_commands and public.rate_limit_events — which F1 had
+    // correctly marked as having no client read path at all. Those existence
+    // checks run server-side; only the tamper attempt runs as a client.
+    //
+    // SEMANTICS. "Who did what when" needs an ACTOR, an ACTION and a TIME. A
+    // recipient or affected-user column is not an actor. Where a table is
+    // missing one of the three it is recorded as a PARTIAL trail and kept as a
+    // finding candidate, not relabelled as a complete one.
+    interface TrailSpec {
+      readonly inspectAs: string;
+      readonly actor: string | null;
+      readonly action: string | null;
+      readonly time: string | null;
+      readonly completeness: "complete" | "partial";
+      readonly note: string;
+    }
+    const TRAILS: Record<string, TrailSpec> = {
+      "public.wallet_ledger": {
+        inspectAs: ALICE,
+        actor: "user_id (the account whose balance moved)",
+        action: "reason (a ledger_reason enum) plus delta and reference_type/reference_id",
+        time: "created_at, plus seq for a total order",
+        completeness: "complete",
+        note: "the only structure in Arc21 carrying all three of actor, action and time, guarded append-only with a truncate guard. Readable by its owner, so alice can inspect her own",
+      },
+      "public.game_events": {
+        inspectAs: ALICE,
+        actor: null,
+        action: "type plus a sanitised payload",
+        time: "created_at, plus seq for a total order",
+        completeness: "partial",
+        note: "PARTIAL. recipient_user_id names who a seat-scoped event is FOR, not who caused it. There is no actor column, so this answers what-happened-when for a session but not who-did-it. Finding candidate",
+      },
+      "private.game_commands": {
+        inspectAs: "server-side (admin) — no client role holds USAGE on the private schema",
+        actor: "user_id, derived from the verified JWT rather than from a payload",
+        action: "command_type plus applied_version and the committed response",
+        time: "created_at",
+        completeness: "complete",
+        note: "carries all three, and its comment records that user_id comes from the verified JWT so a replay under another account is rejected. Not client-readable at all, so the existence check is server-side",
+      },
+      "public.rate_limit_events": {
+        inspectAs: "server-side (admin) — RLS is enabled with no policy and no client grant exists",
+        actor: "user_id",
+        action: "action (the rate-limited operation)",
+        time: "occurred_at",
+        completeness: "partial",
+        note: "PARTIAL for security purposes. It records ALLOWED attempts only — refusals are deliberately not recorded — and it is pruned on every consume, so it holds at most one window. It cannot answer 'who was refused, when'. Finding candidate",
+      },
     };
-    if (isHigh && auditTrails[f.resource]) {
+
+    const trail = TRAILS[f.resource];
+    if (isHigh && trail) {
       tests.push({
         testId: id("F10", f.resource), family: "F10 audit trail", resource: f.resource,
-        control: `${f.resource}#audit`, tier, polarity: "positive", identity: ALICE,
-        operation: `select the who/what/when columns from ${f.resource} for alice's own activity`,
-        expected: "at least 1 row, each carrying an actor, an action and a timestamp",
-        covers: `a who-did-what-when record exists and is timestamped: ${auditTrails[f.resource]}`,
-        plumbing: "new", authorIntent: "n/a (positive)",
+        control: `${f.resource}#audit:exists`, tier, polarity: "positive", identity: trail.inspectAs,
+        operation: `select the actor / action / time columns from ${f.resource}`,
+        expected: `rows returned carrying ${[trail.actor && "an actor", trail.action && "an action", trail.time && "a timestamp"].filter(Boolean).join(", ")}`,
+        covers: `does a who-did-what-when record exist, and is it timestamped. ${trail.note}`,
+        plumbing: "new",
+        verdictWhenPredicted: trail.completeness === "complete" ? "effective" : "gap",
+        authorIntent: "n/a (positive)",
       });
       tests.push({
         testId: id("F10", f.resource), family: "F10 audit trail", resource: f.resource,
-        control: `${f.resource}#audit-immutable`, tier, polarity: "negative", identity: ALICE,
-        operation: `update, delete and truncate ${f.resource}`,
+        control: `${f.resource}#audit:immutable`, tier, polarity: "negative", identity: ALICE,
+        operation: `as an ordinary client, attempt UPDATE, DELETE and TRUNCATE on ${f.resource}`,
         expected: "error 42501 on each — the trail is not client-modifiable",
         covers:
-          "immutability of the trail. TRUNCATE is included deliberately: row-level security does not apply to TRUNCATE at all, so only a trigger can refuse it",
-        plumbing: "extend WP1", authorIntent: null,
+          "can a user modify or delete the record. TRUNCATE is included deliberately: row-level security does not apply to TRUNCATE at all, so only a trigger can refuse it",
+        plumbing: "extend WP1", verdictWhenPredicted: "effective", authorIntent: null,
       });
     } else if (isHigh) {
       tests.push({
         testId: id("F10", f.resource), family: "F10 audit trail", resource: f.resource,
-        control: `${f.resource}#audit`, tier, polarity: "negative", identity: OWNER,
+        control: `${f.resource}#audit:absent`, tier, polarity: "negative", identity: OWNER,
         operation:
           "search the catalogs for any history, versioning or audit relation recording changes to this resource, and for a soft-delete column or delete trigger that would retain a record",
         expected:
-          "NONE FOUND — recorded as a factual absence. This is a finding candidate for WP5 and no trail is created to make the family pass",
+          "NONE FOUND — recorded as a factual absence, and no trail is created to make the family pass",
         covers:
-          "the brief's family 10 question for a High-tier resource: does a who-did-what-when record exist? Zero history/versioning/audit relations exist in public or private",
-        plumbing: "new", authorIntent: null,
+          "the brief's family 10 question for a High-tier resource. Zero history, versioning or audit relations exist in public or private, and blocks / friendships / friend_requests carry no soft-delete column and no delete trigger — so removing a block, which feeds profiles_select_visible and therefore an authorization decision, leaves no trace",
+        plumbing: "new", verdictWhenPredicted: "gap", authorIntent: null,
       });
     } else {
       na.push({
@@ -367,29 +523,36 @@ export function planWp3(
   // =======================================================================
 
   // ------------------------------------------------------------------- F5
-  // A SECURITY DEFINER function executes with its owner's privileges, so the
-  // caller's policies stop applying inside it. The control is therefore the
-  // function's own argument handling, and the test is whether one can be used
-  // to reach data the caller's policies forbid.
-  const escalationCandidates = definerFunctions.filter(
-    (fn) => fn.executableBy.includes("authenticated") || fn.executableBy.includes("anon"),
-  );
-  for (const fn of escalationCandidates) {
+  // One case per function, from rubric/f5-escalation.ts, where each carries its
+  // own purpose, identity source, privileged reach, escalation shape, concrete
+  // attempt and exact safe result. The generic "pass Bob's resource" template
+  // is gone: it faked a target argument on functions that have none, and it
+  // expected "no data" from functions that are cross-user by design.
+  for (const spec of F5_SPECS) {
     tests.push({
-      testId: id("F5", fn.resource), family: "F5 SECURITY DEFINER escalation", resource: fn.resource,
-      control: `${fn.resource}#security_definer`, tier: "High", polarity: "negative", identity: ALICE,
-      operation:
-        "call the function as alice with an argument naming a resource or row belonging to bob",
-      expected:
-        "refusal or no data — the function must not return or alter what alice's own policies forbid",
-      covers: `escalation through a client-callable SECURITY DEFINER function that touches a High-tier resource (${fn.touches.slice(0, 3).join(", ")}${fn.touches.length > 3 ? ", …" : ""}). Argument mapping must be derived per function before implementation`,
-      plumbing: "new", authorIntent: null,
+      testId: id("F5", spec.fn), family: "F5 SECURITY DEFINER escalation",
+      resource: `public.${spec.fn}(${spec.args})`,
+      control: `public.${spec.fn}#security_definer`, tier: "High", polarity: "negative",
+      identity: ALICE,
+      operation: spec.attempt,
+      expected: spec.expectedSafe,
+      covers: `[${spec.klass}] ${spec.purpose}. Identity: ${spec.identitySource}. Reaches: ${spec.privilegedReach}. Escalation would be: ${spec.escalationWouldBe}`,
+      plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
     });
   }
-  if (escalationCandidates.length === 0) {
-    na.push({
-      family: "F5 SECURITY DEFINER escalation", resource: "(application schemas)",
-      reason: "no SECURITY DEFINER function touching a High-tier resource is executable by a client role",
+  // Functions with no user-controlled target: one case each, asking the only
+  // escalation question that applies to them.
+  for (const fn of F5_NO_TARGET) {
+    tests.push({
+      testId: id("F5", fn.split("(")[0] ?? fn), family: "F5 SECURITY DEFINER escalation",
+      resource: `public.${fn}`,
+      control: `public.${fn.split("(")[0]}#security_definer`, tier: "High", polarity: "negative",
+      identity: ALICE,
+      operation: `call ${fn} as alice while bob's and carol's rows are present in every table it reads`,
+      expected: "only alice's own data is returned or altered; no row belonging to bob or carol appears or changes",
+      covers:
+        "[no_target] this function takes no argument naming another account or resource — its identity derives solely from auth.uid(). There is no target to abuse, so the applicable escalation question is whether the definer privilege leaks past the caller's own data",
+      plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
     });
   }
 
@@ -430,6 +593,36 @@ export function planWp3(
       control: `${RT}#policy:${policy}`, tier: tiers.get(RT) ?? "Medium", polarity, identity,
       operation, expected, covers,
       plumbing: polarity === "negative" && policy.includes("only_presence") ? "reuse WP1" : "extend WP1",
+      verdictWhenPredicted: "effective",
+      authorIntent: polarity === "negative" ? null : "n/a (positive)",
+    });
+  }
+
+  // The SQL policy tests above prove the POLICIES behave. They do not prove the
+  // real client path reaches them. Realtime only consults these policies when a
+  // channel is declared private, so a client that subscribed non-privately
+  // would bypass them entirely while every SQL test still passed. These cases
+  // drive the actual local Supabase Realtime socket.
+  const rtIntegration: readonly [Polarity, string, string, string, string][] = [
+    ["positive", ALICE,
+     "subscribe to the private channel `game:<seeded session>` over the local Realtime websocket using alice's JWT, then have the server broadcast a state message",
+     "the subscription is accepted and alice's client receives the payload",
+     "end-to-end: confirms the real client path declares the channel private and therefore reaches arc21_game_topic_is_for_its_seated_players at all. An SQL-only suite cannot detect a client that subscribed non-privately"],
+    ["negative", CAROL,
+     "subscribe to that same private channel `game:<seeded session>` using carol's JWT, who holds no seat",
+     "the subscription is refused, or is accepted and delivers nothing; carol's client must receive no game payload",
+     "the brief's family 8 question in its literal form — can a client subscribe to another user's channel — exercised through the socket rather than through SQL"],
+    ["negative", CAROL,
+     "publish a `state` broadcast to `game:<seeded session>` over the websocket as carol",
+     "refused; no other subscriber receives a carol-originated state message",
+     "the fabricated-state injection Arc21 measured against a running stack before these policies existed, retested at the layer where it actually happened"],
+  ];
+  for (const [polarity, identity, operation, expected, covers] of rtIntegration) {
+    tests.push({
+      testId: id("F8i", RT), family: "F8 realtime channel authorization", resource: RT,
+      control: `${RT}#realtime-socket`, tier: tiers.get(RT) ?? "Medium", polarity, identity,
+      operation, expected, covers,
+      plumbing: "new", verdictWhenPredicted: "effective",
       authorIntent: polarity === "negative" ? null : "n/a (positive)",
     });
   }
@@ -468,7 +661,7 @@ export function planWp3(
     tests.push({
       testId: id("F9", W), family: "F9 wallet / concurrency integrity", resource: W,
       control: `${W}#integrity`, tier: "High", polarity, identity, operation, expected, covers,
-      plumbing, authorIntent: polarity === "negative" ? null : "n/a (positive)",
+      plumbing, verdictWhenPredicted: "effective", authorIntent: polarity === "negative" ? null : "n/a (positive)",
     });
   }
 
@@ -485,7 +678,7 @@ export function planWp3(
         expected: "no data — a policy comparing to a null auth.uid() matches nothing",
         covers:
           "the brief's null/absent-identity boundary, applicable here because a policy on this resource reads auth.uid()",
-        plumbing: "reuse WP1", authorIntent: null,
+        plumbing: "reuse WP1", verdictWhenPredicted: "effective", authorIntent: null,
       });
     }
     if (f.hasIdentityLinkage) {
@@ -498,7 +691,7 @@ export function planWp3(
           "no data — and no error. A token outliving its account must not become a key to whatever the cascade left behind",
         covers:
           "the brief's deleted-user boundary, applicable here because this resource records an owner. The seed provisions a fourth account for exactly this",
-        plumbing: "extend WP1", authorIntent: null,
+        plumbing: "extend WP1", verdictWhenPredicted: "effective", authorIntent: null,
       });
     }
   }
@@ -512,7 +705,7 @@ export function planWp3(
     expected: "HTTP 401 — rejected at the API boundary before any statement reaches PostgreSQL",
     covers:
       "the brief's expired-session boundary. Counted once for the suite rather than per resource, because an expired JWT never arrives at the database: PostgREST verifies and rejects it first, so there is no per-resource control to exercise and pretending otherwise would claim PostgreSQL enforced something it never saw",
-    plumbing: "new", authorIntent: null,
+    plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
   });
 
   return { tests, notApplicable: na };

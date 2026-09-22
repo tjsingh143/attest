@@ -986,3 +986,85 @@ delete trigger on `blocks`, `friendships` or `friend_requests` — so removing a
 `profiles_select_visible` and therefore an authorization decision, leaves no trace at all.
 
 Nothing was created to close that. It is planned as evidence of an absence.
+
+### D3.6 — Seven semantic corrections to the WP3 matrix before it was handed over
+
+The first generated matrix was structurally complete and semantically wrong in seven places. All
+seven were corrected from catalog and repository evidence; none changed a WP2 tier or the rubric.
+
+**1. The F3 command came from a template, not from the policy.** Five UPDATE policies —
+`friend_requests_update_participants`, `loadouts_update_own`, `notifications_update_own`,
+`profiles_update_self`, `push_tokens_update_own` — were being tested with INSERT because both
+commands can carry a WITH CHECK. The command is now read from `pg_policy.polcmd`.
+
+That correction produced a finding-shaped result. An UPDATE WITH CHECK is only independently
+exercisable if the caller can change a column the expression reads, and in Arc21 it never can:
+every UPDATE WITH CHECK compares the owner column, and **no owner column appears in any client
+column-level UPDATE grant**. Three of the five are therefore recorded as *not independently
+exercisable from a client session* — defence in depth behind the column grant, reachable only if
+that grant is ever widened. A negative test that cannot be constructed is not planned as though
+it could.
+
+**2. Column privileges were collapsed across privilege types.** `public.daily_challenges` grants
+column-level **SELECT** on 14 columns and excludes `seed_secret`; the facts layer's single
+`clientWritable` field made that look like 14 writable columns, and the planner proposed UPDATEs
+against a read boundary. `ColumnFact` now carries `clientSelect` and `clientUpdate` separately.
+A SELECT grant is a confidentiality boundary tested by reading; an UPDATE grant is an integrity
+boundary tested by writing.
+
+**3. F5 was 37 copies of one template.** Replaced with `rubric/f5-escalation.ts`: 29
+function-specific specifications plus 26 functions correctly classified as having no
+user-controlled target. Five classes, derived from catalog signals and body reads. The safe
+outcomes genuinely differ — `remove_room_member` returns `false`, `get_room_state` raises
+**PT404** rather than 42501, `mark_notifications_read` returns a count of 0, the boolean helpers
+return `false` — and `player_public_profile` and the four leaderboards are cross-user **by
+design**, so expecting "no data" would have failed working controls.
+
+**4. Execution and assurance verdict were the same field.** Every evidence record now carries
+`observation` (as_predicted / not_as_predicted / harness_error) *and* `verdict` (effective /
+deficient / characterized / gap / not_measured). The eight F7 owner-bypass probes record
+**characterized** — they return every row exactly as predicted, because the policy was never
+applied — and the nineteen F10 absence probes record **gap**. Neither can now read as a green
+pass. Harness errors remain a third state (D1.13).
+
+**5. F10 used an identity that cannot read the trail.** The existence checks for
+`private.game_commands` and `public.rate_limit_events` were planned as `authenticated:alice`,
+on resources F1 had already established have no client read path. Existence now runs
+server-side where that is the only role that can inspect; the tamper attempt still runs as an
+ordinary client, which is the half that needs a client.
+
+**6. Two "audit trails" are only partial, and are recorded as such.** `public.game_events` has an
+action and a time but **no actor** — `recipient_user_id` names who a seat-scoped event is *for*,
+not who caused it. `public.rate_limit_events` records **allowed attempts only**, by explicit
+design, and is pruned to one window, so it cannot answer "who was refused, when". Both keep
+verdict `gap` rather than being relabelled complete. Only `wallet_ledger` and
+`private.game_commands` carry all three of actor, action and time.
+
+**7. Negative fixtures were derived from a generic owner column, not the actual predicate.** Two
+were outright wrong: `blocks_insert_own` compares `blocker_id`, not `blocked_id`, and
+`friend_requests_insert_as_sender` compares `sender_id` — setting `receiver_id` to another
+account *satisfies* its `receiver_id <> uid` clause rather than violating anything. Policies now
+carry `predicateColumns`, extracted from the USING and WITH CHECK expressions.
+
+Two further consequences of reading the real predicates:
+
+- **Multi-clause OR predicates.** `friend_requests_select_participants` is
+  `sender_id = uid OR receiver_id = uid`. A row with `sender_id = bob` and `receiver_id = alice`
+  is legitimately visible to alice, so the negative fixture must falsify **every** clause — a
+  bob↔carol row. Same for `friendships_select_own`.
+- **Permissive policies are OR-ed, and `public.profiles` has two SELECT policies.** All four
+  seeded accounts have `privacy = 'public'` (the column default), so "alice selects bob's row,
+  expect no data" would have failed a working control: `profiles_select_visible` admits bob's
+  public profile and should. The subject that falsifies both policies is **dave**, whom the seed
+  has alice blocking, because that policy requires `NOT viewer_has_blocked(id)`.
+
+### D3.7 — F8 gains an end-to-end Realtime check alongside the SQL policy tests
+
+**Decided.** The six SQL policy tests on `realtime.messages` are kept, and three integration cases
+added that drive the actual local Supabase Realtime websocket: a seated participant subscribing,
+a non-participant subscribing, and a non-participant publishing to a game topic.
+
+**Why.** Realtime consults those policies **only when a channel is declared private**. A client
+that subscribed non-privately would bypass them entirely while every SQL test still passed. The
+SQL tests prove the policies behave; the integration cases prove the real client path reaches
+them, which is the assumption the SQL tests rest on and cannot themselves check.
