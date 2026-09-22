@@ -5,8 +5,8 @@ disposable local instance rebuilt from migrations. Nothing in this document is h
 
 | | |
 |---|---|
-| Run | `20260922T021010Z-5695a4c3df2d` |
-| Started | 2026-09-22T02:10:45.313Z |
+| Run | `20260922T022235Z-5695a4c3df2d` |
+| Started | 2026-09-22T02:23:11.030Z |
 | Instance | 127.0.0.1:54322/postgres |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
 | Migrations | 59 files |

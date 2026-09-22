@@ -5,13 +5,13 @@ the ten control families the brief requires. **Nothing here has been run.**
 
 | | |
 |---|---|
-| Run | `20260922T022003Z-5695a4c3df2d` |
+| Run | `20260922T022235Z-5695a4c3df2d` |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0 sources d3f99bb7d32a` |
+| Harness version | `0.1.0 sources b3e17dcd9330` |
 | Planned tests | 298 |
-| Negative tests awaiting AUTHOR INTENT | **212** |
+| Negative tests awaiting AUTHOR INTENT | **211** |
 
-> **212 negative tests carry an empty AUTHOR INTENT field.** Brief §1.1
+> **211 negative tests carry an empty AUTHOR INTENT field.** Brief §1.1
 > reserves that sentence — one line naming the attack or misuse each negative test simulates —
 > for the author. The harness does not write it, and the suite is not implemented until they
 > are supplied.
@@ -58,7 +58,7 @@ follows the applicable controls.
 | F2 write isolation | 31 | 7 | 24 | 0 | 16 |
 | F3 WITH CHECK enforcement | 11 | 7 | 4 | 0 | 37 |
 | F4 anonymous exposure | 44 | 4 | 40 | 0 | 0 |
-| F5 SECURITY DEFINER escalation | 56 | 0 | 56 | 0 | 0 |
+| F5 SECURITY DEFINER escalation | 56 | 0 | 55 | 1 | 0 |
 | F6 column-level leakage | 12 | 6 | 6 | 0 | 34 |
 | F7 forced RLS / owner bypass | 24 | 1 | 0 | 23 | 19 |
 | F8 realtime channel authorization | 9 | 4 | 5 | 0 | 0 |
@@ -91,9 +91,32 @@ The two come apart in exactly the places that would otherwise produce a false gr
 A harness error remains a third, separate state: it never matches an expectation, renders as
 `HARNESS ERROR`, and yields `verdict: not_measured` (DECISIONS D1.13).
 
-Planned verdicts when execution matches: **256** effective, **23** characterized, **19** gap.
+Planned verdicts when execution matches: **255** effective, **24** characterized, **19** gap.
 
-## 4. The matrix
+## 4. F3 applicability — every policy carrying a WITH CHECK
+
+One row per policy **considered**, whether or not a test was planned for it. Three numbers
+describe different sets and the table is what keeps them apart:
+
+- **5** UPDATE policies had their command corrected from INSERT to UPDATE.
+- **5** policies are **not independently exercisable** from a client session.
+- **4** negative tests are planned.
+- **1** exercisable but not selected for a negative case by the tier's representative rule.
+
+| Resource | Policy | polcmd | New-row check reads | Client INSERT cols | Client UPDATE cols | Exercisable | Reason if no | Positive | Negative |
+|---|---|---|---|---|---|:---:|---|---|---|
+| `public.blocks` | `blocks_insert_own` | INSERT | `blocker_id` | (table-level INSERT: all columns) | none | yes | — | `F3.public_blocks.018` | `F3.public_blocks.019` |
+| `public.friend_requests` | `friend_requests_insert_as_sender` | INSERT | `sender_id` | (table-level INSERT: all columns) | `status` | yes | — | `F3.public_friend_requests.047` | `F3.public_friend_requests.048` |
+| `public.friend_requests` | `friend_requests_update_participants` | UPDATE | `sender_id`, `receiver_id` | (table-level INSERT: all columns) | `status` | **no** | UPDATE policy whose new-row check reads sender_id, receiver_id; the client's column-level UPDATE grant covers only status, so no client statement can satisfy USING while violating WITH CHECK. Defence in depth behind the column grant; reachable only if that grant is widened | `F3.public_friend_requests.049` | — |
+| `public.loadouts` | `loadouts_insert_own` | INSERT | `user_id` | (table-level INSERT: all columns) | `avatar_cosmetic_id`, `card_back_cosmetic_id`, `table_theme_cosmetic_id` | yes | — | `F3.public_loadouts.094` | `F3.public_loadouts.095` |
+| `public.loadouts` | `loadouts_update_own` | UPDATE | `user_id` | (table-level INSERT: all columns) | `avatar_cosmetic_id`, `card_back_cosmetic_id`, `table_theme_cosmetic_id` | **no** | UPDATE policy whose new-row check reads user_id; the client's column-level UPDATE grant covers only avatar_cosmetic_id, card_back_cosmetic_id, table_theme_cosmetic_id, so no client statement can satisfy USING while violating WITH CHECK. Defence in depth behind the column grant; reachable only if that grant is widened | — | — |
+| `public.notifications` | `notifications_update_own` | UPDATE | `user_id` | none | `read_at` | **no** | UPDATE policy whose new-row check reads user_id; the client's column-level UPDATE grant covers only read_at, so no client statement can satisfy USING while violating WITH CHECK. Defence in depth behind the column grant; reachable only if that grant is widened | `F3.public_notifications.106` | — |
+| `public.profiles` | `profiles_update_self` | UPDATE | `id` | none | `username`, `display_name`, `bio`, `avatar_url`, `country_code`, `privacy` | **no** | UPDATE policy whose new-row check reads id; the client's column-level UPDATE grant covers only username, display_name, bio, avatar_url, country_code, privacy, so no client statement can satisfy USING while violating WITH CHECK. Defence in depth behind the column grant; reachable only if that grant is widened | `F3.public_profiles.131` | — |
+| `public.push_tokens` | `push_tokens_insert_own` | INSERT | `user_id` | (table-level INSERT: all columns) | `device_id`, `is_active`, `last_used_at` | yes | — | `F3.public_push_tokens.141` | `F3.public_push_tokens.142` |
+| `public.push_tokens` | `push_tokens_update_own` | UPDATE | `user_id` | (table-level INSERT: all columns) | `device_id`, `is_active`, `last_used_at` | **no** | UPDATE policy whose new-row check reads user_id; the client's column-level UPDATE grant covers only device_id, is_active, last_used_at, so no client statement can satisfy USING while violating WITH CHECK. Defence in depth behind the column grant; reachable only if that grant is widened | — | — |
+| `realtime.messages` | `arc21_only_presence_may_be_written_by_a_client` | INSERT | — | (table-level INSERT: all columns) | none | yes | exercisable, and tested under F8 realtime channel authorization rather than F3, so the three realtime policies stay documented in one place | — | — |
+
+## 5. The matrix
 
 Grouped by family. `Plumbing`: **reuse WP1** means the same mechanism WP1 already drives;
 **extend WP1** means the mechanism exists but needs a new case or seeded row; **new** means it
@@ -352,7 +375,7 @@ record, and no WP1 deliberate-break scenario counts as a completed WP3 control t
 | `F5.caller_is_room_member.210` | `public.caller_is_room_member#security_definer` | High | **neg** | authenticated:alice | as carol, call caller_is_room_member(<a room carol is not in>) | returns FALSE. This function does not raise; false is the safe answer | effective | [target_resource] a helper the policies call to decide room membership. Identity: caller from auth.uid(); the room comes from the argument. Reaches: public.room_members. Escalation would be: returning true for a room the caller is not in, which would widen every policy that calls it | new | **AUTHOR INTENT:** \_\_\_\_\_ |
 | `F5.is_session_participant.211` | `public.is_session_participant#security_definer` | High | **neg** | authenticated:alice | as carol, call is_session_participant(<the seeded session carol is not seated at>) | returns FALSE | effective | [target_resource] a helper six policies call to decide session participation. Identity: caller from auth.uid(); the session comes from the argument. Reaches: public.game_session_seats. Escalation would be: returning true for a session the caller holds no seat at, which would widen five relations' policies at once | new | **AUTHOR INTENT:** \_\_\_\_\_ |
 | `F5.sprint_standings.212` | `public.sprint_standings#security_definer` | High | **neg** | authenticated:alice | as carol, call sprint_standings(<a tournament alice and bob have entered and carol has not>) | error 42501, message 'you are not in that tournament'. Not an empty result: the body raises rather than returning zero rows | effective | [target_resource] an ENTRANT reads the standings of a tournament they have entered. Not public: the body requires a tournament_entries row for auth.uid(). Identity: caller from auth.uid() gates access; the tournament comes from the argument. Reaches: public.tournament_entries joined to public.profiles, both past the caller's own policies. Escalation would be: a NON-ENTRANT reading the standings — other entrants' display names, chip stacks, placements and prize amounts for a tournament the caller never joined | new | **AUTHOR INTENT:** \_\_\_\_\_ |
-| `F5.sprint_standings.213` | `public.sprint_standings#security_definer` | High | **neg** | authenticated:alice | seed alice and dave into the same tournament (the seed has alice blocking dave), then as alice call sprint_standings(<that tournament>) | to be judged against intent, not assumed: co-entrants seeing each other's names in standings is plainly intended, so a returned display_name is NOT automatically a failure. The executable claim is narrow and factual — record whether dave's display_name is returned despite the block — and it is a finding candidate for WP5 rather than a pass/fail control assertion | effective | [target_resource] the same function, examined for what its definer privilege exposes rather than for who may call it. Identity: caller from auth.uid() gates ACCESS; the profiles join inside the body runs with the owner's privileges. Reaches: public.profiles directly, with NO block or privacy check — profiles_select_visible is not consulted because the function is SECURITY DEFINER. Escalation would be: a fellow entrant seeing the display_name of an account that has blocked them, or of a private-privacy account, which profiles_select_visible would have withheld | new | **AUTHOR INTENT:** \_\_\_\_\_ |
+| `F5.sprint_standings.213` | `public.sprint_standings#security_definer` | High | char | authenticated:alice | seed alice and dave into the same tournament (the seed already has alice blocking dave), then as alice call sprint_standings(<that tournament>) | dave's display_name IS returned. That is a definite prediction, not an open question: the body joins public.profiles with no block or privacy filter, and because the function is SECURITY DEFINER the caller's profiles_select_visible never runs. Recorded as a CHARACTERIZATION — co-entrants seeing each other's names in standings is plainly intended, so this is a fact for the WP5 narrative to weigh, not a control that passed or failed | **characterized** | [target_resource] the same function, examined for what its definer privilege exposes rather than for who may call it. Identity: caller from auth.uid() gates ACCESS; the profiles join inside the body runs with the owner's privileges. Reaches: public.profiles directly, with NO block or privacy check — profiles_select_visible is not consulted because the function is SECURITY DEFINER. Escalation would be: a fellow entrant seeing the display_name of an account that has blocked them, or of a private-privacy account, which profiles_select_visible would have withheld | new | — |
 | `F5.viewer_is_in_tournament.214` | `public.viewer_is_in_tournament#security_definer` | High | **neg** | authenticated:alice | as carol, call viewer_is_in_tournament(<a tournament carol has not entered>) | returns FALSE | effective | [target_resource] a helper reporting whether the caller is in a tournament. Identity: caller from auth.uid(); the tournament comes from the argument. Reaches: public.tournament_entries. Escalation would be: returning true for a tournament the caller has not entered | new | **AUTHOR INTENT:** \_\_\_\_\_ |
 | `F5.accept_friend_request.215` | `public.accept_friend_request#security_definer` | High | **neg** | authenticated:alice | as carol, call accept_friend_request(<alice>) when no request from alice to carol exists | refusal or no effect; no friendships row appears between alice and carol | effective | [target_user] a REQUEST RECEIVER accepts a pending request sent to them. Identity: caller from auth.uid() is the receiver; the sender comes from the argument. Reaches: public.friend_requests and public.friendships — and friendship widens profiles_select_visible. Escalation would be: accepting a request that was never sent to the caller, thereby manufacturing a friendship and the profile visibility it confers | new | **AUTHOR INTENT:** \_\_\_\_\_ |
 | `F5.decline_friend_request.216` | `public.decline_friend_request#security_definer` | High | **neg** | authenticated:alice | as carol, call decline_friend_request(<alice>) for a request alice sent to bob | no effect on the alice→bob request | effective | [target_user] a request receiver declines a pending request. Identity: caller from auth.uid() is the receiver; the sender comes from the argument. Reaches: public.friend_requests. Escalation would be: declining a request addressed to somebody else | new | **AUTHOR INTENT:** \_\_\_\_\_ |
