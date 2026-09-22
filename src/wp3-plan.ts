@@ -34,7 +34,14 @@ export type Family =
   | "F10 audit trail"
   | "B boundary cases";
 
-export type Polarity = "positive" | "negative";
+/**
+ * `characterization` is a third polarity, not a flavour of negative.
+ *
+ * A row that records what the catalog says — RLS enabled, FORCE absent, owner
+ * is postgres — asserts no control and simulates no attack, so it needs no
+ * AUTHOR INTENT. Only `negative` rows do.
+ */
+export type Polarity = "positive" | "negative" | "characterization";
 export type Plumbing = "reuse WP1" | "extend WP1" | "new";
 
 /** The assurance verdict this test records when execution matches prediction. */
@@ -69,9 +76,37 @@ export interface NotApplicable {
   readonly reason: string;
 }
 
+/**
+ * One row per policy CONSIDERED for WITH CHECK testing, whether or not a test
+ * was planned for it.
+ *
+ * It exists because the prose reconciliation was ambiguous: five UPDATE
+ * policies had their command corrected, three were found non-exercisable, and
+ * four negative tests were planned. Those three numbers are all correct and
+ * describe different sets, which is exactly the kind of thing a table settles
+ * and a sentence does not. Two of the five were never evaluated at all — the
+ * Medium-tier representative rule selected the resource's INSERT policy and
+ * the UPDATE one was dropped before the exercisability check ran. That is now
+ * visible rather than invisible.
+ */
+export interface F3Applicability {
+  readonly resource: string;
+  readonly policy: string;
+  readonly polcmd: string;
+  readonly withCheck: string;
+  readonly newRowColumns: readonly string[];
+  readonly clientInsertColumns: readonly string[];
+  readonly clientUpdateColumns: readonly string[];
+  readonly exercisable: boolean;
+  readonly reasonIfNot: string;
+  readonly positiveTestId: string | null;
+  readonly negativeTestId: string | null;
+}
+
 export interface Wp3Plan {
   readonly tests: readonly PlannedTest[];
   readonly notApplicable: readonly NotApplicable[];
+  readonly f3Applicability: readonly F3Applicability[];
 }
 
 const ALICE = "authenticated:alice";
@@ -94,6 +129,7 @@ export function planWp3(
 ): Wp3Plan {
   const tests: PlannedTest[] = [];
   const na: NotApplicable[] = [];
+  const f3rows: F3Applicability[] = [];
   let seq = 0;
   const id = (fam: string, res: string) => `${fam}.${slug(res)}.${String(++seq).padStart(3, "0")}`;
 
@@ -397,27 +433,36 @@ export function planWp3(
     }
 
     // ---------------------------------------------------------------- F7
-    if (isHigh && f.anyPolicyReferencesAuthUid && selectPolicies.length) {
+    // TWO LAYERS, kept apart because conflating them was a logical error.
+    //
+    // The previous plan ran these probes as owner(postgres) and claimed they
+    // demonstrated the owner exemption. They cannot. WP1 established that
+    // `postgres` holds BYPASSRLS, so it would see every row even with FORCE
+    // enabled — the probe cannot distinguish "not forced" from "bypasses
+    // anyway". The observation is real; the attribution was wrong.
+    //
+    // Layer 1, here: per-resource CHARACTERIZATION of the catalog state. It
+    // records relrowsecurity, relforcerowsecurity and the owner. It asserts no
+    // control, simulates no attack, and therefore needs no AUTHOR INTENT.
+    //
+    // Layer 2, below: the mechanism demonstration, on a scratch table owned by
+    // a role holding no BYPASSRLS, where the variable CAN be isolated. Arc21's
+    // ownership model is not mutated to manufacture a per-resource test.
+    if (isHigh) {
       tests.push({
         testId: id("F7", f.resource), family: "F7 forced RLS / owner bypass", resource: f.resource,
-        control: `${f.resource}#rls_forced`, tier, polarity: "negative", identity: OWNER,
-        operation: `select from ${f.resource} (as the table owner, with no identity claims set)`,
-        expected:
-          "all rows returned — row-level security is enabled but NOT forced, so policies are not applied to the table owner",
+        control: `${f.resource}#rls_forced`, tier, polarity: "characterization",
+        identity: "server-side catalog read (no control is exercised)",
+        operation: `read relrowsecurity, relforcerowsecurity and the owner for ${f.resource} from pg_class`,
+        expected: `rls_enabled = true, rls_forced = FALSE, owner = ${f.owner}`,
         covers:
-          "the enabled-versus-forced distinction on a High-tier resource whose policy would otherwise exclude these rows. The expected outcome documents the absence of FORCE rather than asserting a control holds, so a matching execution records `characterized` and never `effective` — the policy was not applied at all",
-        plumbing: "reuse WP1", verdictWhenPredicted: "characterized", authorIntent: null,
-      });
-    } else if (isHigh) {
-      na.push({
-        family: "F7 forced RLS / owner bypass", resource: f.resource,
-        reason:
-          "no identity-scoped SELECT policy here, so there are no rows a policy would exclude from the owner; the catalog fact (relforcerowsecurity = false) is recorded for all 39 tables in the WP0 inventory",
+          "records the enabled-versus-forced state for a High-tier resource. A characterization fact: no statement is issued against the table and no control is asserted, so this row carries no AUTHOR INTENT. What the absence of FORCE would MEAN is demonstrated separately on a scratch owner that does not hold BYPASSRLS",
+        plumbing: "reuse WP1", verdictWhenPredicted: "characterized", authorIntent: "n/a (characterization)",
       });
     } else {
       na.push({
         family: "F7 forced RLS / owner bypass", resource: f.resource,
-        reason: `tier is ${tier}; the owner-bypass demonstration is scoped to High-tier resources, and the catalog fact is inventoried for all 39 tables in WP0`,
+        reason: `tier is ${tier}; per-resource characterization is scoped to High-tier resources, and the catalog fact is inventoried for all 39 tables in WP0`,
       });
     }
 
@@ -529,15 +574,21 @@ export function planWp3(
   // is gone: it faked a target argument on functions that have none, and it
   // expected "no data" from functions that are cross-user by design.
   for (const spec of F5_SPECS) {
+    // A spec whose predicted safe result is itself a recorded fact rather than
+    // a refusal is a characterization, and carries no AUTHOR INTENT.
+    const isCharacterization = spec.expectedSafe.includes("CHARACTERIZATION");
     tests.push({
       testId: id("F5", spec.fn), family: "F5 SECURITY DEFINER escalation",
       resource: `public.${spec.fn}(${spec.args})`,
-      control: `public.${spec.fn}#security_definer`, tier: "High", polarity: "negative",
+      control: `public.${spec.fn}#security_definer`, tier: "High",
+      polarity: isCharacterization ? "characterization" : "negative",
       identity: ALICE,
       operation: spec.attempt,
       expected: spec.expectedSafe,
       covers: `[${spec.klass}] ${spec.purpose}. Identity: ${spec.identitySource}. Reaches: ${spec.privilegedReach}. Escalation would be: ${spec.escalationWouldBe}`,
-      plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
+      plumbing: "new",
+      verdictWhenPredicted: isCharacterization ? "characterized" : "effective",
+      authorIntent: isCharacterization ? "n/a (characterization)" : null,
     });
   }
   // Functions with no user-controlled target: one case each, asking the only
@@ -553,6 +604,36 @@ export function planWp3(
       covers:
         "[no_target] this function takes no argument naming another account or resource — its identity derives solely from auth.uid(). There is no target to abuse, so the applicable escalation question is whether the definer privilege leaks past the caller's own data",
       plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
+    });
+  }
+
+  // ------------------------------------------------- F7 mechanism demonstration
+  // The only place the owner exemption can actually be isolated: a scratch
+  // table owned by a purpose-made role holding NO BYPASSRLS, created and
+  // dropped inside the run. This is WP1 §2's experiment, re-executed to produce
+  // WP3 evidence rather than cited from WP1.
+  const F7M = "(scratch table, owner without BYPASSRLS)";
+  const f7Mech: readonly [Polarity, string, string, string, string][] = [
+    ["characterization", "scratch owner (owns the table, no BYPASSRLS, not a superuser)",
+     "with RLS enabled and NOT forced, select from the scratch table whose policy admits 1 of its 2 rows",
+     "2 rows — the owner is not subject to the policy",
+     "isolates the OWNER exemption. The role holds no BYPASSRLS, so this outcome can only be ownership, which is the inference the Arc21 probes could not support"],
+    ["positive", "the same scratch owner, same statement",
+     "enable FORCE ROW LEVEL SECURITY on the scratch table and repeat the select",
+     "1 row — FORCE removes the owner's exemption and the policy now applies",
+     "demonstrates what FORCE changes, with ownership as the only variable moved"],
+    ["characterization", "postgres (holds BYPASSRLS, NOT the owner of the scratch table)",
+     "with FORCE still enabled, select from the scratch table",
+     "2 rows — BYPASSRLS is a separate exemption that FORCE does not touch",
+     "keeps the two exemptions explicitly apart. This is why the Arc21 per-resource rows are characterization only: their owner holds both exemptions at once"],
+  ];
+  for (const [polarity, identity, operation, expected, covers] of f7Mech) {
+    tests.push({
+      testId: id("F7m", "mechanism"), family: "F7 forced RLS / owner bypass", resource: F7M,
+      control: "FORCE ROW LEVEL SECURITY vs BYPASSRLS", tier: "suite", polarity, identity,
+      operation, expected, covers,
+      plumbing: "reuse WP1", verdictWhenPredicted: polarity === "positive" ? "effective" : "characterized",
+      authorIntent: polarity === "negative" ? null : "n/a (mechanism demonstration)",
     });
   }
 
@@ -708,5 +789,62 @@ export function planWp3(
     plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
   });
 
-  return { tests, notApplicable: na };
+  // ---------------------------------------------------- F3 applicability table
+  // Evaluated for EVERY policy carrying a WITH CHECK, independently of whether
+  // the tier's representative rule selected it for a test.
+  for (const f of resources) {
+    for (const p of f.policies.filter((x) => x.hasWithCheck)) {
+      const pcol = p.predicateColumns[0] ?? ownerCol(f);
+      const newRowCols = p.predicateColumns.length ? [...p.predicateColumns] : pcol ? [pcol] : [];
+      const insCols = (f.reachableBy["authenticated"] ?? []).includes("INSERT")
+        ? ["(table-level INSERT: all columns)"]
+        : [];
+      const updCols = f.columns.filter((c) => c.clientUpdate.length > 0).map((c) => c.name);
+      const tableUpd = (f.reachableBy["authenticated"] ?? []).includes("UPDATE");
+      const pos = tests.find(
+        (t) => t.family === "F3 WITH CHECK enforcement" && t.control.endsWith(`#policy:${p.name}`) && t.polarity === "positive",
+      );
+      const neg = tests.find(
+        (t) => t.family === "F3 WITH CHECK enforcement" && t.control.endsWith(`#policy:${p.name}`) && t.polarity === "negative",
+      );
+
+      let exercisable: boolean;
+      let reason = "";
+      if (f.effectiveWriteExposure !== "authenticated") {
+        exercisable = false;
+        reason = `effective write exposure is ${f.effectiveWriteExposure}: no client can reach a write on this resource at all`;
+      } else if (p.command === "INSERT") {
+        exercisable = insCols.length > 0;
+        reason = exercisable ? "" : "no client INSERT grant, so the new-row check cannot be reached";
+      } else {
+        // UPDATE: the WITH CHECK is only independently exercisable if the
+        // caller can change a column the check reads.
+        const canChange = newRowCols.some((c) => updCols.includes(c)) || tableUpd;
+        exercisable = canChange;
+        reason = canChange
+          ? ""
+          : `UPDATE policy whose new-row check reads ${newRowCols.join(", ")}; the client's column-level UPDATE grant covers only ${updCols.join(", ") || "nothing"}, so no client statement can satisfy USING while violating WITH CHECK. Defence in depth behind the column grant; reachable only if that grant is widened`;
+      }
+
+      f3rows.push({
+        resource: f.resource, policy: p.name, polcmd: p.command,
+        withCheck: "present (explicit)",
+        newRowColumns: newRowCols,
+        clientInsertColumns: insCols,
+        clientUpdateColumns: updCols,
+        exercisable,
+        reasonIfNot: exercisable
+          ? neg
+            ? ""
+            : f.resource === "realtime.messages"
+              ? "exercisable, and tested under F8 realtime channel authorization rather than F3, so the three realtime policies stay documented in one place"
+              : "exercisable, but the tier's representative rule selected another WITH CHECK policy on this resource for the negative case"
+          : reason,
+        positiveTestId: pos?.testId ?? null,
+        negativeTestId: neg?.testId ?? null,
+      });
+    }
+  }
+
+  return { tests, notApplicable: na, f3Applicability: f3rows };
 }

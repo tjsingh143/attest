@@ -1068,3 +1068,85 @@ a non-participant subscribing, and a non-participant publishing to a game topic.
 that subscribed non-privately would bypass them entirely while every SQL test still passed. The
 SQL tests prove the policies behave; the integration cases prove the real client path reaches
 them, which is the assumption the SQL tests rest on and cannot themselves check.
+
+### D3.8 — F7 is split so the owner exemption is not confounded with BYPASSRLS
+
+**Decided.** F7 has two layers and a third polarity.
+
+- **21 per-resource characterization records.** One per High-tier resource, reading
+  `relrowsecurity`, `relforcerowsecurity` and the owner from `pg_class`. No statement is issued
+  against the table, no control is asserted, and they carry **no AUTHOR INTENT**.
+- **3 suite-level mechanism rows** on a scratch table owned by a purpose-made role holding no
+  `BYPASSRLS`, created and dropped inside the run: unforced → owner sees both rows; FORCE on →
+  owner sees one; then `postgres` with FORCE still on → sees both, because `BYPASSRLS` is a
+  separate exemption.
+
+**Why.** The previous plan ran the Arc21 probes as `owner(postgres)` and claimed they
+demonstrated the owner exemption. They cannot. WP1 established that `postgres` holds
+`BYPASSRLS`, so it would return every row **even with FORCE enabled** — the probe cannot
+distinguish "not forced" from "bypasses anyway". The observation was real and the attribution was
+wrong, which is worse than a missing test because it reads as evidence.
+
+This is a regression against WP1: §2 of the validation report made exactly this argument and
+built the scratch-owner experiment for exactly this reason, and the WP3 planner did not carry it
+forward. The mechanism rows re-execute that experiment to produce WP3 evidence rather than citing
+WP1's.
+
+**Arc21's ownership model is not mutated.** Transferring a real table to a scratch owner to
+manufacture a per-resource test would change the access control surface of the system under
+measurement, which D1.8 already ruled out.
+
+**A third polarity.** `characterization` is not a flavour of negative. A row recording what the
+catalog says simulates no attack, so requiring an AUTHOR INTENT for it would be asking the author
+to describe an attack that does not exist. **F7 now requires zero AUTHOR INTENT statements.**
+
+### D3.9 — `sprint_standings` resolved from the body; no unresolved F5 row remains
+
+**Decided.** Two concrete cases, and the previous "to be confirmed against the body" wording is
+gone.
+
+**What the body establishes.** Access is **entrants only**. `sprint_standings` raises
+`42501 'you are not in that tournament'` when `auth.uid()` has no `tournament_entries` row for
+the id — it is neither public nor open to authenticated callers generally. Intentionally exposed
+to a fellow entrant: `entry_id`, `display_name`, `chips`, `status`, `placement`,
+`eliminated_after_hand`, `in_tie_break`, `prize_chips`, `prize_xp`, and an `is_you` flag.
+
+**Case 1, negative.** As carol, who has not entered, call it for a tournament alice and bob have
+entered. Expected: **error 42501**, that message. Not an empty result — the body raises.
+
+**Case 2, characterization.** The body joins `public.profiles` with no block or privacy filter,
+and because the function is `SECURITY DEFINER` the caller's `profiles_select_visible` never runs.
+So with alice and dave in the same tournament and the seeded alice→dave block in place,
+**dave's display_name is returned.** That is a definite prediction, not an open question. It is
+recorded as a characterization for the WP5 narrative to weigh rather than as a control that
+passed or failed, because co-entrants seeing each other's names in standings is plainly intended.
+
+### D3.10 — The F3 applicability table replaces a prose reconciliation that was ambiguous
+
+**Decided.** `wp3-matrix.md` carries one row per policy **considered** for WITH CHECK testing,
+with its `polcmd`, the columns its new-row check reads, the client's INSERT and UPDATE column
+grants, whether it is independently exercisable, the reason if not, and the planned test ids.
+
+**Why, and what it corrected.** The prose said five UPDATE policies had their command corrected,
+three were non-exercisable, and four negatives were planned. All three numbers were true of
+different sets, which a sentence cannot hold apart. Evaluating every policy rather than only the
+ones a tier rule had selected also changed one of them:
+
+| | Count |
+|---|---:|
+| Policies carrying a WITH CHECK | 10 |
+| Commands corrected INSERT → UPDATE | 5 |
+| **Not independently exercisable** | **5** — not 3 |
+| F3 negative tests planned | 4 |
+| Exercisable, tested under F8 instead | 1 |
+
+`loadouts_update_own` and `push_tokens_update_own` were previously invisible: the Medium-tier
+representative rule selected each resource's INSERT policy and dropped the UPDATE one **before**
+the exercisability check ran, so they appeared in neither the tests nor the not-applicable list.
+All five UPDATE policies are now evaluated, and all five are non-exercisable for the same reason
+— every UPDATE WITH CHECK in Arc21 reads the owner column, and no owner column appears in any
+client column-level UPDATE grant.
+
+The four F3 negatives are the four `public` INSERT policies. The tenth policy,
+`arc21_only_presence_may_be_written_by_a_client`, is exercisable and is tested under F8 so the
+three realtime policies stay documented together.

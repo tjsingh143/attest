@@ -15,7 +15,7 @@ export interface Reconciliation {
   readonly totalPlanned: number;
   readonly estimate: number;
   readonly difference: number;
-  readonly familyCoverage: readonly { family: Family; tests: number; positive: number; negative: number; notApplicable: number }[];
+  readonly familyCoverage: readonly { family: Family; tests: number; positive: number; negative: number; characterization: number; notApplicable: number }[];
   readonly negativesAwaitingIntent: number;
   /** Families the branch-based estimator could count, and those it could not. */
   readonly inEstimatorModel: number;
@@ -72,6 +72,7 @@ export function reconcile(plan: Wp3Plan, estimate: number): Reconciliation {
       tests: t.filter((x) => x.family === family).length,
       positive: t.filter((x) => x.family === family && x.polarity === "positive").length,
       negative: t.filter((x) => x.family === family && x.polarity === "negative").length,
+      characterization: t.filter((x) => x.family === family && x.polarity === "characterization").length,
       notApplicable: plan.notApplicable.filter((x) => x.family === family).length,
     })),
     negativesAwaitingIntent: t.filter((x) => x.polarity === "negative" && x.authorIntent === null).length,
@@ -149,10 +150,10 @@ export function renderWp3PlanMarkdown(
   // --- family coverage -----------------------------------------------------
   p(`## 2. Coverage of the ten required families`);
   p();
-  p(`| Family | Tests | Positive | Negative | Resources marked N/A |`);
-  p(`|---|---:|---:|---:|---:|`);
+  p(`| Family | Tests | Positive | Negative *(needs intent)* | Characterization | Marked N/A |`);
+  p(`|---|---:|---:|---:|---:|---:|`);
   for (const f of rec.familyCoverage) {
-    p(`| ${cell(f.family)} | ${f.tests} | ${f.positive} | ${f.negative} | ${f.notApplicable} |`);
+    p(`| ${cell(f.family)} | ${f.tests} | ${f.positive} | ${f.negative} | ${f.characterization} | ${f.notApplicable} |`);
   }
   p();
 
@@ -187,8 +188,33 @@ export function renderWp3PlanMarkdown(
   p(`Planned verdicts when execution matches: **${byVerdict.effective}** effective, **${byVerdict.characterized}** characterized, **${byVerdict.gap}** gap.`);
   p();
 
+  // --- F3 applicability ---------------------------------------------------
+  p(`## 4. F3 applicability — every policy carrying a WITH CHECK`);
+  p();
+  p(`One row per policy **considered**, whether or not a test was planned for it. Three numbers`);
+  p(`describe different sets and the table is what keeps them apart:`);
+  p();
+  const f3 = plan.f3Applicability;
+  const corrected = f3.filter((x) => x.polcmd === "UPDATE");
+  const nonEx = f3.filter((x) => !x.exercisable);
+  const negs = f3.filter((x) => x.negativeTestId !== null);
+  const skipped = f3.filter((x) => x.exercisable && x.negativeTestId === null);
+  p(`- **${corrected.length}** UPDATE policies had their command corrected from INSERT to UPDATE.`);
+  p(`- **${nonEx.length}** policies are **not independently exercisable** from a client session.`);
+  p(`- **${negs.length}** negative tests are planned.`);
+  p(`- **${skipped.length}** exercisable but not selected for a negative case by the tier's representative rule.`);
+  p();
+  p(`| Resource | Policy | polcmd | New-row check reads | Client INSERT cols | Client UPDATE cols | Exercisable | Reason if no | Positive | Negative |`);
+  p(`|---|---|---|---|---|---|:---:|---|---|---|`);
+  for (const x of f3) {
+    p(
+      `| \`${cell(x.resource)}\` | \`${cell(x.policy)}\` | ${cell(x.polcmd)} | ${x.newRowColumns.map((c) => `\`${c}\``).join(", ") || "—"} | ${x.clientInsertColumns.join(", ") || "none"} | ${x.clientUpdateColumns.map((c) => `\`${c}\``).join(", ") || "none"} | ${x.exercisable ? "yes" : "**no**"} | ${cell(x.reasonIfNot) || "—"} | ${x.positiveTestId ? `\`${x.positiveTestId}\`` : "—"} | ${x.negativeTestId ? `\`${x.negativeTestId}\`` : "—"} |`,
+    );
+  }
+  p();
+
   // --- the matrix ----------------------------------------------------------
-  p(`## 4. The matrix`);
+  p(`## 5. The matrix`);
   p();
   p(`Grouped by family. \`Plumbing\`: **reuse WP1** means the same mechanism WP1 already drives;`);
   p(`**extend WP1** means the mechanism exists but needs a new case or seeded row; **new** means it`);
@@ -206,10 +232,11 @@ export function renderWp3PlanMarkdown(
       p(`|---|---|---|---|---|---|---|---|---|---|---|`);
       for (const t of rows) {
         const intent = t.polarity === "negative" ? "**AUTHOR INTENT:** \\_\\_\\_\\_\\_" : "—";
+        const pol = t.polarity === "positive" ? "pos" : t.polarity === "negative" ? "**neg**" : "char";
         const v = t.verdictWhenPredicted === "effective" ? "effective"
           : t.verdictWhenPredicted === "gap" ? "**GAP**" : "**characterized**";
         p(
-          `| \`${cell(t.testId)}\` | \`${cell(t.control)}\` | ${cell(t.tier)} | ${t.polarity === "positive" ? "pos" : "**neg**"} | ${cell(t.identity)} | ${cell(t.operation)} | ${cell(t.expected)} | ${v} | ${cell(t.covers)} | ${cell(t.plumbing)} | ${intent} |`,
+          `| \`${cell(t.testId)}\` | \`${cell(t.control)}\` | ${cell(t.tier)} | ${pol} | ${cell(t.identity)} | ${cell(t.operation)} | ${cell(t.expected)} | ${v} | ${cell(t.covers)} | ${cell(t.plumbing)} | ${intent} |`,
         );
       }
       p();

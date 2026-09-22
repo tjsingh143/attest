@@ -119,13 +119,27 @@ export const F5_SPECS: readonly EscalationSpec[] = [
     "returning true for a session the caller holds no seat at, which would widen five relations' policies at once",
     "as carol, call is_session_participant(<the seeded session carol is not seated at>)",
     "returns FALSE"),
+  // RESOLVED against the body. Access is ENTRANTS ONLY, not public and not
+  // authenticated-general: the function raises 42501 'you are not in that
+  // tournament' when auth.uid() has no tournament_entries row for the id.
+  // Intentionally exposed to a fellow entrant: entry_id, display_name, chips,
+  // status, placement, eliminated_after_hand, in_tie_break, prize_chips,
+  // prize_xp, and an is_you flag.
   G("sprint_standings", "p_tournament_id uuid", "target_resource",
-    "an entrant reads the standings of a tournament",
-    "caller from auth.uid(); the tournament comes from the argument",
-    "public.tournament_entries joined to profiles",
-    "reading standings of a tournament the caller has not entered, if standings are not intended to be public",
-    "as carol, call sprint_standings(<a tournament carol has not entered>)",
-    "to be confirmed against the body before execution: either a refusal, or a public-safe projection if standings are intentionally public. The expectation must be derived, not assumed"),
+    "an ENTRANT reads the standings of a tournament they have entered. Not public: the body requires a tournament_entries row for auth.uid()",
+    "caller from auth.uid() gates access; the tournament comes from the argument",
+    "public.tournament_entries joined to public.profiles, both past the caller's own policies",
+    "a NON-ENTRANT reading the standings — other entrants' display names, chip stacks, placements and prize amounts for a tournament the caller never joined",
+    "as carol, call sprint_standings(<a tournament alice and bob have entered and carol has not>)",
+    "error 42501, message 'you are not in that tournament'. Not an empty result: the body raises rather than returning zero rows"),
+  // A second, sharper question about the same function, and a concrete one.
+  G("sprint_standings", "p_tournament_id uuid (profiles join)", "target_resource",
+    "the same function, examined for what its definer privilege exposes rather than for who may call it",
+    "caller from auth.uid() gates ACCESS; the profiles join inside the body runs with the owner's privileges",
+    "public.profiles directly, with NO block or privacy check — profiles_select_visible is not consulted because the function is SECURITY DEFINER",
+    "a fellow entrant seeing the display_name of an account that has blocked them, or of a private-privacy account, which profiles_select_visible would have withheld",
+    "seed alice and dave into the same tournament (the seed already has alice blocking dave), then as alice call sprint_standings(<that tournament>)",
+    "dave's display_name IS returned. That is a definite prediction, not an open question: the body joins public.profiles with no block or privacy filter, and because the function is SECURITY DEFINER the caller's profiles_select_visible never runs. Recorded as a CHARACTERIZATION — co-entrants seeing each other's names in standings is plainly intended, so this is a fact for the WP5 narrative to weigh, not a control that passed or failed"),
   G("viewer_is_in_tournament", "p_tournament_id uuid", "target_resource",
     "a helper reporting whether the caller is in a tournament",
     "caller from auth.uid(); the tournament comes from the argument",
