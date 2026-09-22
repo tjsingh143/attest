@@ -6504,6 +6504,13 @@
       }
     ],
     "negativesAwaitingIntent": 240,
+    "polarityTotals": {
+      "positive": 63,
+      "negative": 240,
+      "characterization": 42,
+      "total": 345,
+      "balances": true
+    },
     "inEstimatorModel": 222,
     "outsideEstimatorModel": 123,
     "outsideBreakdown": [

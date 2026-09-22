@@ -166,6 +166,22 @@ export function validatePlan(
       }
     }
   }
+  // 6b. The polarity totals must account for every Test ID exactly once.
+  //     A row whose polarity fell outside the three known values would
+  //     otherwise vanish from every summary without anything complaining.
+  {
+    const pos = plan.tests.filter((t) => t.polarity === "positive").length;
+    const neg = plan.tests.filter((t) => t.polarity === "negative").length;
+    const chr = plan.tests.filter((t) => t.polarity === "characterization").length;
+    if (pos + neg + chr !== plan.tests.length) {
+      issues.push({
+        check: "polarity totals balance",
+        testId: "(whole plan)",
+        problem: `${pos} positive + ${neg} negative + ${chr} characterization = ${pos + neg + chr}, but there are ${plan.tests.length} Test IDs`,
+      });
+    }
+  }
+
   // 7. Every F10 gap rationale must name the resource it assesses, and must
   //    not carry an example copied from a different resource.
   const gapRows = plan.tests.filter((t) => t.control.endsWith("#audit:absent"));

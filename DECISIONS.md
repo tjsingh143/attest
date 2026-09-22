@@ -1321,3 +1321,69 @@ SELECT mixed with a mutation is only accepted in an explicit `call … then insp
 That is the second time a check passed while the thing it was meant to catch was present
 (D3.17 was the first, on the keyword scan). The lesson applied here is that a new invariant is
 not finished until it has been made to fail.
+
+### D3.20 — Bookkeeping correction: 17 F2 rows, not 18
+
+**Corrected.** The report for D3.18 said "eighteen rows read `insert into / update <resource>`" and
+"51 total". Checked against the matrix: there are **17** such resources, each split into 3 probes,
+giving **51**. The row count was wrong and the probe count was right.
+
+**The matrix was not changed.** The prose was.
+
+The `+36` growth from 309 to 345 Test IDs reconciles exactly:
+
+| | |
+|---|---:|
+| F2: 17 bundled rows → 51 probes | **+34** |
+| F9: 2 multi-identity rows → 4 probes | **+2** |
+| **Total** | **+36** |
+
+Same arithmetic for the negative count, 204 → 240, because every one of those 36 new probes is a
+negative.
+
+### D3.21 — The polarity totals are a machine-checked invariant
+
+**Decided.** `positive + negative + characterization = total Test IDs` is now checked on every
+planning run, and a mismatch fails the run.
+
+Currently **63 + 240 + 42 = 345**, against 345 Test IDs.
+
+**Why it earns a check.** Every count in the report is sliced by polarity, and a row whose
+polarity fell outside the three known values would disappear from all of those summaries while
+the total stayed right — the same shape of defect as the estimator arithmetic in D2.17, which is
+where this habit came from.
+
+Proven by deliberate failure: widening `Polarity` with a fourth value and assigning it to the F2
+grant probes produced `polarity totals balance: 1` and exit 1.
+
+### D3.22 — The AUTHOR INTENT worksheet is generated from the matrix, and cannot drift from it
+
+**Decided.** `src/intent-worksheet.ts` builds the worksheet from the same in-memory plan the
+matrix is rendered from, so the two cannot disagree. It emits exactly the rows where
+`polarity === "negative"` and `authorIntent === null` — currently 240 — grouped F1 through F10 and
+then boundary cases, with Test IDs verbatim.
+
+**Six validations, all passing**, checked again independently by set comparison against the matrix:
+
+| Check | Result |
+|---|---|
+| exactly 240 unique Test IDs | 240 rows, 240 unique, 240 required |
+| every worksheet ID is a matrix negative requiring intent | all present and negative |
+| every matrix negative requiring intent appears exactly once | none missing |
+| no positive, characterization or gap-assessment row appears | none present |
+| batches account for every row exactly once | 13 batches totalling 240 of 240 |
+| no intent sentence was pre-filled | the generator has no path that writes one |
+
+**The question is a prompt, not a hint.** Each row asks *"If this succeeded, what would they have
+got away with? Name the attack or the mistake in one sentence."* It deliberately avoids
+"confirm that …", which would invite agreement with the planner's own `Covers` rationale rather
+than an independent sentence. The generator has no code path that writes an intent, and does not
+read `Covers` when producing the question — brief §1.1 reserves the sentence for the author, and
+a sentence derived from the rationale the planner already wrote would be the harness agreeing
+with itself.
+
+**Batching.** 240 rows is too many to review at once, so they are also written as 13 batch files
+of roughly 25 under `batches/`, with the canonical complete worksheet kept whole. Batches respect
+family boundaries: a family shorter than a batch is never split across two, so a review session
+covers one kind of control rather than straddling several. The batch files are a convenience —
+`author-intent-worksheet.md` is the document of record.

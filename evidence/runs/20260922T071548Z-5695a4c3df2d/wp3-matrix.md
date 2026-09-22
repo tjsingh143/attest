@@ -5,11 +5,13 @@ the ten control families the brief requires. **Nothing here has been run.**
 
 | | |
 |---|---|
-| Run | `20260922T042622Z-5695a4c3df2d` |
+| Run | `20260922T071548Z-5695a4c3df2d` |
 | Schema version | `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec` |
-| Harness version | `0.1.0 sources 211b0e7a6750` |
+| Harness version | `0.1.0 sources 06844bc5eb28` |
 | Planned tests | 345 |
 | Negative tests awaiting AUTHOR INTENT | **240** |
+
+**Polarity invariant.** 63 positive + 240 negative + 42 characterization = **345**, against 345 Test IDs — balances.
 
 > **240 negative tests carry an empty AUTHOR INTENT field.** Brief §1.1
 > reserves that sentence — one line naming the attack or misuse each negative test simulates —

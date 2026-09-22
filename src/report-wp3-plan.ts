@@ -17,6 +17,8 @@ export interface Reconciliation {
   readonly difference: number;
   readonly familyCoverage: readonly { family: Family; tests: number; positive: number; negative: number; characterization: number; notApplicable: number }[];
   readonly negativesAwaitingIntent: number;
+  /** positive + negative + characterization must equal the Test ID count. */
+  readonly polarityTotals: { positive: number; negative: number; characterization: number; total: number; balances: boolean };
   /** Families the branch-based estimator could count, and those it could not. */
   readonly inEstimatorModel: number;
   readonly outsideEstimatorModel: number;
@@ -76,6 +78,12 @@ export function reconcile(plan: Wp3Plan, estimate: number): Reconciliation {
       notApplicable: plan.notApplicable.filter((x) => x.family === family).length,
     })),
     negativesAwaitingIntent: t.filter((x) => x.polarity === "negative" && x.authorIntent === null).length,
+    polarityTotals: (() => {
+      const positive = t.filter((x) => x.polarity === "positive").length;
+      const negative = t.filter((x) => x.polarity === "negative").length;
+      const characterization = t.filter((x) => x.polarity === "characterization").length;
+      return { positive, negative, characterization, total: t.length, balances: positive + negative + characterization === t.length };
+    })(),
     inEstimatorModel: t.filter((x) => IN_ESTIMATOR_MODEL.has(x.family)).length,
     outsideEstimatorModel: t.filter((x) => !IN_ESTIMATOR_MODEL.has(x.family)).length,
     outsideBreakdown: FAMILIES.filter((f) => !IN_ESTIMATOR_MODEL.has(f))
@@ -107,6 +115,8 @@ export function renderWp3PlanMarkdown(
   p(`| Harness version | \`${meta.harness}\` |`);
   p(`| Planned tests | ${rec.totalPlanned} |`);
   p(`| Negative tests awaiting AUTHOR INTENT | **${rec.negativesAwaitingIntent}** |`);
+  p();
+  p(`**Polarity invariant.** ${rec.polarityTotals.positive} positive + ${rec.polarityTotals.negative} negative + ${rec.polarityTotals.characterization} characterization = **${rec.polarityTotals.positive + rec.polarityTotals.negative + rec.polarityTotals.characterization}**, against ${rec.polarityTotals.total} Test IDs — ${rec.polarityTotals.balances ? "balances" : "**DOES NOT BALANCE**"}.`);
   p();
   p(`> **${rec.negativesAwaitingIntent} negative tests carry an empty AUTHOR INTENT field.** Brief §1.1`);
   p(`> reserves that sentence — one line naming the attack or misuse each negative test simulates —`);

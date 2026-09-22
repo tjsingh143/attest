@@ -14,6 +14,7 @@ import { deriveImpact, scoredExposure, type Level } from "./scorer.ts";
 import { planWp3 } from "./wp3-plan.ts";
 import { reconcile, renderWp3PlanMarkdown } from "./report-wp3-plan.ts";
 import { validatePlan } from "./wp3-validate-plan.ts";
+import { buildWorksheet, writeWorksheet } from "./intent-worksheet.ts";
 
 /** Recompute the frozen tiers rather than reading a stale file. */
 const MATRIX: Record<Level, Record<"server_only" | "authenticated" | "anonymous", Level>> = {
@@ -26,7 +27,7 @@ export async function runWp3Planner(
   log: (s: string) => void = console.log,
   fixedRunId?: string,
   estimate?: number,
-): Promise<{ planned: number; awaitingIntent: number; issues: ReturnType<typeof validatePlan> }> {
+): Promise<{ planned: number; awaitingIntent: number; issues: ReturnType<typeof validatePlan>; worksheetValid: boolean }> {
   const startedAt = new Date();
   const sv = await readSchemaVersion();
   const runId =
@@ -83,6 +84,13 @@ export async function runWp3Planner(
   log(`  estimate was ${rec.estimate}; difference ${rec.difference >= 0 ? "+" : ""}${rec.difference}`);
   log(`  ${plan.notApplicable.length} (family, resource) pairs marked not applicable with a stated reason`);
   log(`  ${rec.negativesAwaitingIntent} negative tests awaiting AUTHOR INTENT`);
+  // The AUTHOR INTENT worksheet is generated from the same plan, so it can
+  // never drift from the matrix it is meant to describe.
+  const worksheet = buildWorksheet(plan);
+  await writeWorksheet(worksheet, runDir, { runId, schemaVersion: sv.migrationSetSha256 });
+  log(`  author-intent worksheet: ${worksheet.rows.length} rows in ${worksheet.batches.length} batches — ${worksheet.valid ? "validation passes" : "VALIDATION FAILED"}`);
+  for (const v of worksheet.validation.filter((x) => !x.passed)) log(`       !! ${v.check}: ${v.detail}`);
+
   if (planIssues.length) {
     log(`  !! ${planIssues.length} semantic validation issue(s):`);
     const byCheck = new Map<string, number>();
@@ -92,5 +100,5 @@ export async function runWp3Planner(
     log("  semantic validation: clean");
   }
   log(`  written to evidence/runs/${runId}/`);
-  return { planned: rec.totalPlanned, awaitingIntent: rec.negativesAwaitingIntent, issues: planIssues };
+  return { planned: rec.totalPlanned, awaitingIntent: rec.negativesAwaitingIntent, issues: planIssues, worksheetValid: worksheet.valid };
 }

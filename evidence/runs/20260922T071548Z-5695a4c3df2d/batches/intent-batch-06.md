@@ -1,0 +1,64 @@
+# AUTHOR INTENT — batch 6 of 13
+
+**F3** · 4 rows · run `20260922T071548Z-5695a4c3df2d`
+
+One sentence each, in your own words, naming the attack or misuse the probe simulates.
+Test IDs are verbatim from the matrix — do not renumber them.
+
+---
+
+#### 1. `F3.public_blocks.027`
+
+| | |
+|---|---|
+| Control | `public.blocks#policy:blocks_insert_own` |
+| Runs as | authenticated:alice |
+| Operation | INSERT into public.blocks with blocker_id = fixtures.bob.id (no RETURNING clause) |
+| Expected safe result | error 42501 — new row violates row-level security policy |
+| Covers | WITH CHECK of blocks_insert_own (INSERT) unsatisfied: the policy compares `blocker_id`, so that is the column set to another account. No RETURNING, so the SELECT policy is not pulled in (DECISIONS D1.5) |
+
+> If alice could actually do this and it succeeded, what would they have got away with? Name the attack or the mistake in one sentence.
+
+**AUTHOR INTENT:** \_\_\_\_\_
+
+#### 2. `F3.public_friend_requests.058`
+
+| | |
+|---|---|
+| Control | `public.friend_requests#policy:friend_requests_insert_as_sender` |
+| Runs as | authenticated:alice |
+| Operation | INSERT into public.friend_requests with sender_id = fixtures.bob.id (no RETURNING clause) |
+| Expected safe result | error 42501 — new row violates row-level security policy |
+| Covers | WITH CHECK of friend_requests_insert_as_sender (INSERT) unsatisfied: the policy compares `sender_id`, so that is the column set to another account. No RETURNING, so the SELECT policy is not pulled in (DECISIONS D1.5) |
+
+> If alice could actually do this and it succeeded, what would they have got away with? Name the attack or the mistake in one sentence.
+
+**AUTHOR INTENT:** \_\_\_\_\_
+
+#### 3. `F3.public_loadouts.115`
+
+| | |
+|---|---|
+| Control | `public.loadouts#policy:loadouts_insert_own` |
+| Runs as | authenticated:alice |
+| Operation | INSERT into public.loadouts with user_id = fixtures.bob.id (no RETURNING clause) |
+| Expected safe result | error 42501 — new row violates row-level security policy |
+| Covers | WITH CHECK of loadouts_insert_own (INSERT) unsatisfied: the policy compares `user_id`, so that is the column set to another account. No RETURNING, so the SELECT policy is not pulled in (DECISIONS D1.5) |
+
+> If alice could actually do this and it succeeded, what would they have got away with? Name the attack or the mistake in one sentence.
+
+**AUTHOR INTENT:** \_\_\_\_\_
+
+#### 4. `F3.public_push_tokens.162`
+
+| | |
+|---|---|
+| Control | `public.push_tokens#policy:push_tokens_insert_own` |
+| Runs as | authenticated:alice |
+| Operation | INSERT into public.push_tokens with user_id = fixtures.bob.id (no RETURNING clause) |
+| Expected safe result | error 42501 — new row violates row-level security policy |
+| Covers | WITH CHECK of push_tokens_insert_own (INSERT) unsatisfied: the policy compares `user_id`, so that is the column set to another account. No RETURNING, so the SELECT policy is not pulled in (DECISIONS D1.5) |
+
+> If alice could actually do this and it succeeded, what would they have got away with? Name the attack or the mistake in one sentence.
+
+**AUTHOR INTENT:** \_\_\_\_\_
