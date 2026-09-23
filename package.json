@@ -13,7 +13,14 @@
     "inventory": "node src/cli.ts inventory",
     "typecheck": "tsc --noEmit",
     "rubric": "node src/cli.ts rubric",
-    "risk-inputs": "node src/cli.ts risk-inputs"
+    "risk-inputs": "node src/cli.ts risk-inputs",
+    "score": "node src/cli.ts score",
+    "plan-wp3": "node src/cli.ts plan-wp3",
+    "seed-extensions": "node src/cli.ts seed-extensions",
+    "draft-intents": "node src/cli.ts draft-intents",
+    "preflight-wp3": "node src/cli.ts preflight-wp3",
+    "prove-gates": "node src/cli.ts prove-gates",
+    "execute-wp3": "node src/cli.ts execute-wp3"
   },
   "dependencies": {
     "pg": "^8.16.3"

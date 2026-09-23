@@ -24,6 +24,7 @@ import { promisify } from "node:util";
 import { join } from "node:path";
 import { SUT_MIGRATIONS_DIR, SUT_REPO } from "./config.ts";
 import type { Session } from "./db.ts";
+import { READ_ONLY_GIT_ENV } from "./arc21-guard.ts";
 
 const run = promisify(execFile);
 
@@ -80,7 +81,9 @@ export async function readSchemaVersion(): Promise<SchemaVersion> {
 async function readGit(migrationNames: readonly string[]) {
   const git = async (...args: string[]) => {
     try {
-      const { stdout } = await run("git", ["-C", SUT_REPO, ...args]);
+      // GIT_OPTIONAL_LOCKS=0: `git status` would otherwise refresh and rewrite
+      // Arc21's index. Arc21 is read-only to this harness (D3.31).
+      const { stdout } = await run("git", ["-C", SUT_REPO, ...args], { env: READ_ONLY_GIT_ENV });
       return stdout.trim();
     } catch {
       return null;

@@ -110,6 +110,12 @@ export interface Wp3Plan {
   readonly tests: readonly PlannedTest[];
   readonly notApplicable: readonly NotApplicable[];
   readonly f3Applicability: readonly F3Applicability[];
+  /**
+   * The state that must exist beyond the standing seed before any of this can
+   * execute. Derived from the plan, not declared beside it. See
+   * `buildSeedExtensions`.
+   */
+  readonly seedExtensions: readonly SeedExtension[];
 }
 
 const ALICE = "authenticated:alice";
@@ -117,6 +123,25 @@ const BOB = "authenticated:bob";
 const CAROL = "authenticated:carol";
 const ANON = "anon";
 const OWNER = "owner(postgres)";
+
+/**
+ * The execution identity an F5 attempt names — "as carol, call …",
+ * "… then as alice call …", "as anon, call …".
+ *
+ * Exactly one caller may be named; an attempt naming two would be two probes
+ * and is refused here rather than resolved by picking one. An attempt naming
+ * none runs as alice, the planner's default subject.
+ */
+export function callerNamedBy(attempt: string): string {
+  const named = [
+    ...new Set([...attempt.matchAll(/\bas (alice|bob|carol|dave|anon)\b/gi)].map((m) => m[1]!.toLowerCase())),
+  ];
+  if (named.length > 1) {
+    throw new Error(`an F5 attempt names more than one caller (${named.join(", ")}): "${attempt}"`);
+  }
+  const who = named[0] ?? "alice";
+  return who === "anon" ? ANON : `authenticated:${who}`;
+}
 
 /** Identity linkage column to use in a statement, or null. */
 function ownerCol(f: RiskInput): string | null {
@@ -130,13 +155,81 @@ const FIXTURE_DEFAULT =
   "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave";
 
 /**
- * Extra seeded state a probe needs beyond the standing seed. Collected so the
- * plan states exactly what has to exist before execution, rather than leaving
- * a fixture hypothetical.
+ * Extra seeded state a probe needs beyond the standing seed.
+ *
+ * This used to be a `string[]` that `needSeed()` appended to and **nothing ever
+ * read** — the accumulator was written on every planning run and dropped on the
+ * floor, so a plan that depended on 19 fixtures the standing seed does not
+ * create never said so anywhere a reader or an implementer would look. D3.18
+ * claimed "the plan now lists explicitly"; it did not. D3.23 is the fix.
+ *
+ * Each requirement now carries a stable key, which fixture references it
+ * materializes, and how it is set up, and the plan carries the set. The
+ * executor's preflight refuses to run unless every required key has an
+ * implementation, so a fixture can no longer be silently assumed.
  */
-const SEED_EXTENSIONS: string[] = [];
-const needSeed = (what: string): string => {
-  if (!SEED_EXTENSIONS.includes(what)) SEED_EXTENSIONS.push(what);
+export type SeedExtensionKind =
+  /** Rows inserted into application tables before the suite runs. */
+  | "rows"
+  /** Roles created and dropped inside the run. */
+  | "roles"
+  /** Signed tokens and service reachability, not database state. */
+  | "credentials"
+  /** A value deliberately chosen NOT to exist; setup verifies the absence. */
+  | "absence";
+
+export interface SeedExtension {
+  /** Stable key. The implementation is looked up by this and must match exactly. */
+  readonly key: string;
+  readonly kind: SeedExtensionKind;
+  /** What state must hold, in the plan's own words. */
+  readonly state: string;
+  /** Fixture references from rubric/fixtures.ts that this requirement materializes. */
+  readonly provides: readonly string[];
+  /** How it comes into existence. */
+  readonly setup: string;
+  /** Test IDs that cannot execute without it. */
+  readonly requiredBy: readonly string[];
+  readonly families: readonly string[];
+  /** Other requirements this one is built on top of. Their `requiredBy` includes this one's. */
+  readonly dependsOn: readonly string[];
+}
+
+/**
+ * Which declared fixture each F4 falsifying row materializes.
+ *
+ * The planner derives the falsifying predicate from the policy, but the row it
+ * inserts has to be a specific one, and that id is declared in
+ * `rubric/fixtures.ts` so the executor and the seeder agree on it.
+ */
+const ANON_FALSIFYING_FIXTURE: Readonly<Record<string, readonly string[]>> = {
+  "public.career_nodes": ["inactiveCareerNode"],
+  "public.cosmetics": ["inactiveCosmetic"],
+  "public.rulesets": ["inactiveRuleset"],
+  "public.tournaments": ["cancelledTournament"],
+};
+
+interface SeedNeed {
+  readonly key: string;
+  readonly kind: SeedExtensionKind;
+  readonly state: string;
+  readonly provides: readonly string[];
+  readonly setup: string;
+  readonly dependsOn: readonly string[];
+}
+
+const SEED_NEEDS = new Map<string, SeedNeed>();
+/** Declare a required state and return its description unchanged, so the
+ *  planned row's `fixture` text is exactly what it was before. */
+const needSeed = (
+  key: string,
+  what: string,
+  provides: readonly string[] = [],
+  kind: SeedExtensionKind = "rows",
+  setup = "seed extension — attest seed-extensions, applied server-side after the standing seed",
+  dependsOn: readonly string[] = [],
+): string => {
+  if (!SEED_NEEDS.has(key)) SEED_NEEDS.set(key, { key, kind, state: what, provides, setup, dependsOn });
   return what;
 };
 
@@ -199,7 +292,9 @@ export function planWp3(
           }
           if (p.combinator === "mixed" && ownerDrivers.length) {
             posOp += ` restricted to a row whose visibility = 'public'`;
-            posFix = needSeed(`one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id`);
+            posFix = needSeed("game_events_visibility_pair",
+              `one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id`,
+              ["publicGameEvent", "bobScopedGameEvent"]);
             negFix = posFix;
             why += `. The predicate is a conjunction of participation AND (public OR recipient), so the positive uses a public row and the negative falsifies the participation conjunct`;
           }
@@ -207,13 +302,32 @@ export function planWp3(
           negIdentity = CAROL;
           posOp = `select from ${f.resource} for fixtures.roomAliceBob.id`;
           negOp = `select from ${f.resource} for that same room fixtures.roomAliceBob.id`;
-          posFix = negFix = needSeed("one private room hosted by alice with alice and bob as joined room_members, and carol NOT a member");
+          posFix = negFix = needSeed("room_alice_bob",
+            "one private room hosted by alice with alice and bob as joined room_members, and carol NOT a member",
+            ["roomAliceBob"]);
           why = `access is decided by ${membership.detail} — shared room membership, not ownership. host_user_id does not appear in this predicate`;
         } else if (membership?.kind === "tournament_membership") {
           negIdentity = CAROL;
           posOp = `select from ${f.resource} for fixtures.tournamentAliceBob.id`;
           negOp = `select from ${f.resource} for that same tournament fixtures.tournamentAliceBob.id`;
-          posFix = negFix = needSeed("one tournament with alice and bob holding tournament_entries rows, and carol holding none");
+          posFix = negFix = needSeed("tournament_alice_bob",
+            "one tournament with alice and bob holding tournament_entries rows, and carol holding none",
+            ["tournamentAliceBob"]);
+          // A read of tournament_matches returns MATCH rows. The tournament and
+          // its entries alone leave that table empty for this tournament, so
+          // the positive could not return its "at least 1 row" and the
+          // negative's "no data" would be true for the wrong reason. The stated
+          // fixture was thinner than its own test (D3.23); D3.34 names the
+          // match as a requirement of its own, on top of the tournament.
+          if (f.resource === "public.tournament_matches") {
+            posFix = negFix = needSeed("tournament_alice_bob_match",
+              "one tournament with alice and bob holding tournament_entries rows, and carol holding none, " +
+                "plus one pending round-1 tournament_matches row in that tournament (fixtures.tournamentAliceBobMatch.id) " +
+                "pairing alice's entry against bob's, with carol in neither slot",
+              ["tournamentAliceBobMatch"], "rows",
+              "seed extension — attest seed-extensions, applied server-side after tournament_alice_bob",
+              ["tournament_alice_bob"]);
+          }
           why = `access is decided by ${membership.detail} — shared tournament membership`;
           if (ownerDrivers.length && p.combinator === "or") {
             negOp += ` — reading alice's entry, so carol falsifies both disjuncts (${ownerDrivers.map((d) => d.detail).join(", ")} is not carol, and carol is not in that tournament)`;
@@ -233,7 +347,9 @@ export function planWp3(
           negOp = cols.length > 1
             ? `select from ${f.resource} for a row where NONE of ${cols.join(", ")} is ${FIXTURES.alice.ref} — the bob↔carol row`
             : `select from ${f.resource} where ${cols[0]} = ${FIXTURES.bob.ref}`;
-          if (cols.length > 1) negFix = needSeed(`one ${f.resource} row linking bob and carol, with alice named in neither ${cols.join(" nor ")}`);
+          if (cols.length > 1) negFix = needSeed(`pair_row_bob_carol:${f.resource}`,
+            `one ${f.resource} row linking bob and carol, with alice named in neither ${cols.join(" nor ")}`,
+            f.resource === "public.friend_requests" ? ["bobNotSentRequest"] : f.resource === "public.friendships" ? ["bobCarolFriendship"] : []);
           why = cols.length > 1
             ? `ownership on ${cols.join(" OR ")}; a row naming alice in either column is legitimately visible to her, so the negative must name neither`
             : `ownership on ${cols[0]}`;
@@ -442,7 +558,9 @@ export function planWp3(
             control: `${f.resource}#policy:${anonPolicy.name}`, tier, polarity: "negative", identity: ANON,
             operation: `select from ${f.resource} for the seeded row where ${falsify}`,
             expected: `no data — ${anonPolicy.name} USING is \`${flag.detail}\`, which that row does not satisfy`,
-            fixture: needSeed(`one ${f.resource} row with ${falsify}, inserted server-side, so the anon-admitting predicate has a concrete falsifying subject`),
+            fixture: needSeed(`anon_falsifying_row:${f.resource}`,
+              `one ${f.resource} row with ${falsify}, inserted server-side, so the anon-admitting predicate has a concrete falsifying subject`,
+              ANON_FALSIFYING_FIXTURE[f.resource] ?? []),
             covers: `the unsatisfied branch of ${anonPolicy.name}. The predicate is exactly \`${flag.detail}\` and the fixture sets ${falsify}`,
             plumbing: "extend WP1", verdictWhenPredicted: "effective", authorIntent: null,
           });
@@ -734,6 +852,12 @@ export function planWp3(
   // attempt and exact safe result. The generic "pass Bob's resource" template
   // is gone: it faked a target argument on functions that have none, and it
   // expected "no data" from functions that are cross-user by design.
+  //
+  // The identity is the caller the spec's own attempt names. It used to be
+  // `ALICE` for every row, while the attempt — and so the approved operation
+  // and expectation — named carol on sixteen rows and anon on one. That was
+  // contradiction C1 (D3.26); reading the caller from the same record the
+  // operation and expectation come from is its resolution (D3.33).
   for (const spec of F5_SPECS) {
     // A spec whose predicted safe result is itself a recorded fact rather than
     // a refusal is a characterization, and carries no AUTHOR INTENT.
@@ -743,7 +867,7 @@ export function planWp3(
       resource: `public.${spec.fn}(${spec.args})`,
       control: `public.${spec.fn}#security_definer`, tier: "High",
       polarity: isCharacterization ? "characterization" : "negative",
-      identity: ALICE,
+      identity: callerNamedBy(spec.attempt),
       operation: spec.attempt,
       expected: spec.expectedSafe,
       fixture: FIXTURE_DEFAULT,
@@ -761,10 +885,13 @@ export function planWp3(
       testId: id("F5", spec.fn.split("(")[0] ?? spec.fn), family: "F5 SECURITY DEFINER escalation",
       resource: `public.${spec.fn}`,
       control: `public.${spec.fn.split("(")[0]}#security_definer`, tier: "High", polarity: "negative",
-      identity: spec.fn.startsWith("latest_verifiable") ? ANON : ALICE,
+      // Same rule as F5_SPECS. For these five it reproduces what was here
+      // before exactly — anon for latest_verifiable_daily_challenge, alice for
+      // the rest — but from the attempt rather than from a function-name test.
+      identity: callerNamedBy(spec.attempt),
       operation: spec.attempt,
       expected: spec.expectedSafe,
-      fixture: needSeed(`state for ${spec.fn}: ${spec.attempt}`),
+      fixture: needSeed(`f5_state:${spec.fn.split("(")[0]}`, `state for ${spec.fn}: ${spec.attempt}`, []),
       covers: `[no_target] ${spec.purpose}. Identity: ${spec.identitySource}. Reaches: ${spec.privileged}. LEGITIMATE shared effects: ${spec.legitimateSharedEffects}. Escalation would be: ${spec.escalationWouldBe}`,
       plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
     });
@@ -810,7 +937,9 @@ export function planWp3(
       testId: id("F7m", "mechanism"), family: "F7 forced RLS / owner bypass", resource: F7M,
       control: "FORCE ROW LEVEL SECURITY vs BYPASSRLS", tier: "suite", polarity, identity,
       operation, expected, covers,
-      fixture: needSeed("a scratch schema and table holding exactly 2 rows, one admitted by its policy and one not, owned by a purpose-made NOSUPERUSER NOBYPASSRLS role; plus a second purpose-made NOSUPERUSER BYPASSRLS role that is neither the owner nor a member of the owner role. Both created and dropped inside the run"),
+      fixture: needSeed("f7_scratch_roles",
+        "a scratch schema and table holding exactly 2 rows, one admitted by its policy and one not, owned by a purpose-made NOSUPERUSER NOBYPASSRLS role; plus a second purpose-made NOSUPERUSER BYPASSRLS role that is neither the owner nor a member of the owner role. Both created and dropped inside the run",
+        [], "roles", "created and dropped inside the run by the F7 mechanism executor"),
       plumbing: "reuse WP1", verdictWhenPredicted: polarity === "positive" ? "effective" : "characterized",
       authorIntent: polarity === "negative" ? null : "n/a (mechanism demonstration)",
     });
@@ -867,7 +996,9 @@ export function planWp3(
       testId: id("F8", RT), family: "F8 realtime channel authorization", resource: RT,
       control: `${RT}#policy:${policy}`, tier: tiers.get(RT) ?? "Medium", polarity, identity,
       operation, expected, covers,
-      fixture: needSeed("one realtime.messages row on topic 'game:fixtures.session.id' and one on 'presence:players', inserted server-side so a read has something to return"),
+      fixture: needSeed("realtime_seed_rows",
+        "one realtime.messages row on topic 'game:fixtures.session.id' and one on 'presence:players', inserted server-side so a read has something to return",
+        ["gameTopicMessage", "presenceMessage"]),
       plumbing: polarity === "negative" && policy.includes("only_presence") ? "reuse WP1" : "extend WP1",
       verdictWhenPredicted: "effective",
       authorIntent: polarity === "negative" ? null : "n/a (positive)",
@@ -898,7 +1029,9 @@ export function planWp3(
       testId: id("F8i", RT), family: "F8 realtime channel authorization", resource: RT,
       control: `${RT}#realtime-socket`, tier: tiers.get(RT) ?? "Medium", polarity, identity,
       operation, expected, covers,
-      fixture: needSeed("signed JWTs for alice and carol against the local stack's JWT secret, and the local Realtime service reachable on its published port"),
+      fixture: needSeed("realtime_client_jwts",
+        "signed JWTs for alice and carol against the local stack's JWT secret, and the local Realtime service reachable on its published port",
+        ["aliceJwt", "carolJwt"], "credentials", "signed in-run from the local stack's JWT secret; the Realtime service must be reachable on its published port"),
       plumbing: "new", verdictWhenPredicted: "effective",
       authorIntent: polarity === "negative" ? null : "n/a (positive)",
     });
@@ -1056,5 +1189,101 @@ export function planWp3(
     }
   }
 
-  return { tests, notApplicable: na, f3Applicability: f3rows };
+  return {
+    tests,
+    notApplicable: na,
+    f3Applicability: f3rows,
+    seedExtensions: buildSeedExtensions(tests),
+  };
+}
+
+/**
+ * The seed-extension requirement set, derived from the plan rather than
+ * declared beside it.
+ *
+ * Two sources, because neither alone is complete:
+ *
+ *   The declared states. Every `needSeed()` call names a state some row cannot
+ *   run without, and the rows carrying that state are its `requiredBy`.
+ *
+ *   A reference scan. A row can name `fixtures.roomBobHosts.id` in its
+ *   operation while its `fixture` text says only "the standing seed" — and
+ *   several F5 rows do exactly that. Scanning every row for every declared
+ *   fixture reference catches the ones the `needSeed()` calls miss, which is
+ *   the half that would otherwise reach the executor as a silent assumption.
+ *
+ * Anything declared `extension` in `rubric/fixtures.ts` that neither source
+ * reaches is still emitted, marked as required by no test, so that a fixture
+ * nobody uses is visible rather than quietly carried.
+ *
+ * `requiredBy` for a declared state is every row that states it as its fixture,
+ * every row that references a fixture it provides, and every row that needs a
+ * requirement built on top of it (`dependsOn`). The first version counted only
+ * the first of those, so `tournament_alice_bob` did not list the F5 rows that
+ * call `sprint_standings(fixtures.tournamentAliceBob.id)` — the reference scan
+ * skipped them because the fixture was already claimed (D3.34).
+ */
+function buildSeedExtensions(tests: readonly PlannedTest[]): SeedExtension[] {
+  const out = new Map<string, SeedExtension>();
+  const textOf = (t: PlannedTest) => `${t.operation} ${t.expected} ${t.fixture}`;
+  const refsOf = (provides: readonly string[]) =>
+    provides.map((k) => (FIXTURES as Record<string, { ref: string }>)[k]?.ref).filter((r): r is string => !!r);
+  const references = (t: PlannedTest, refs: readonly string[]) =>
+    refs.some((r) => new RegExp(`${r.replace(/\./g, "\\.")}\\b`).test(textOf(t)));
+
+  // --- source 1: the declared states -------------------------------------
+  // Direct consumers first, then fold each requirement's consumers into the
+  // requirements it depends on.
+  const direct = new Map<string, Set<string>>();
+  for (const need of SEED_NEEDS.values()) {
+    const refs = refsOf(need.provides);
+    direct.set(
+      need.key,
+      new Set(tests.filter((t) => t.fixture === need.state || references(t, refs)).map((t) => t.testId)),
+    );
+  }
+  const consumers = new Map([...direct].map(([k, v]) => [k, new Set(v)]));
+  const fold = (key: string, ids: ReadonlySet<string>, seen: Set<string>) => {
+    for (const dep of SEED_NEEDS.get(key)?.dependsOn ?? []) {
+      if (seen.has(dep)) continue;
+      seen.add(dep);
+      for (const id of ids) consumers.get(dep)?.add(id);
+      fold(dep, ids, seen);
+    }
+  };
+  for (const [key, ids] of direct) fold(key, ids, new Set([key]));
+
+  for (const need of SEED_NEEDS.values()) {
+    const ids = consumers.get(need.key) ?? new Set<string>();
+    const rows = tests.filter((t) => ids.has(t.testId));
+    out.set(need.key, {
+      ...need,
+      requiredBy: rows.map((t) => t.testId),
+      families: [...new Set(rows.map((t) => t.family))],
+    });
+  }
+
+  // --- source 2: fixture references the declared states did not cover -----
+  const claimed = new Set([...out.values()].flatMap((e) => e.provides));
+  for (const [fxKey, fx] of Object.entries(FIXTURES)) {
+    if (fx.seed !== "extension" || claimed.has(fxKey)) continue;
+    const rows = tests.filter((t) => textOf(t).includes(fx.ref));
+    const absence = fxKey === "nonexistentRoomCode";
+    out.set(`fixture:${fxKey}`, {
+      key: `fixture:${fxKey}`,
+      kind: absence ? "absence" : fxKey.endsWith("Jwt") ? "credentials" : "rows",
+      state: `${fx.ref} = ${fx.value} — ${fx.note}`,
+      provides: [fxKey],
+      setup: absence
+        ? "no row is created; setup asserts that nothing carries this value"
+        : fxKey.endsWith("Jwt")
+          ? "signed in-run from the local stack's JWT secret"
+          : "seed extension — attest seed-extensions, applied server-side after the standing seed",
+      requiredBy: rows.map((t) => t.testId),
+      families: [...new Set(rows.map((t) => t.family))],
+      dependsOn: [],
+    });
+  }
+
+  return [...out.values()].sort((a, b) => a.key.localeCompare(b.key));
 }

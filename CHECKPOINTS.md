@@ -1,0 +1,180 @@
+# CHECKPOINTS
+
+The brief (§9) puts five checkpoints in the way of the work and says to stop at each,
+present, and wait for explicit approval. §10 makes "all five checkpoints were reached,
+presented, and approved" a condition of done.
+
+Those approvals happened in conversation. **They were never written down.** A takeover review
+on 2026-09-22 reconstructed project state from the repository alone and found that nothing on
+disk recorded them — the only evidence that CP1, CP2 and CP3 had been cleared was that work
+had visibly proceeded past them, which is an inference, not a record.
+
+This file is that record. It exists so the next reader does not have to make the same
+inference.
+
+## What is being claimed, and what is not
+
+**These approvals are reaffirmed by the author on 2026-09-22, in the continuation session that
+followed the takeover review.** They are not transcriptions of contemporaneous notes, because
+no contemporaneous notes exist.
+
+**Original approval timestamps are not reconstructed and must not be inferred from this file.**
+Each checkpoint was approved at some point before the work that followed it; when, exactly, is
+not recorded anywhere and is not recoverable. The commit dates of the work that followed a
+checkpoint are an upper bound on when that checkpoint was cleared, and nothing in this
+repository establishes a lower bound.
+
+Dating a reaffirmation honestly is worth more than a plausible-looking timestamp. An evidence
+harness that fabricated its own approval dates would be making exactly the error it exists to
+detect.
+
+## State
+
+| Checkpoint | Gate | State | Recorded |
+|---|---|---|---|
+| **CP1** | after WP0 — control inventory and uncontrolled resources | **approved** | reaffirmed 2026-09-22 |
+| **CP2** | after WP1 — deliberate-break validation | **approved** | reaffirmed 2026-09-22 |
+| **CP3** | after WP2 — rubric and tier assignments | **approved** | reaffirmed 2026-09-22 |
+| — | WP3 **planning**: the 345-row test matrix | **approved** | reaffirmed 2026-09-22 |
+| — | WP3 **execution**: running the 345 tests | **NOT APPROVED — blocked** (author intents, and structural blockers: see below) | — |
+| **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | not reached | — |
+| **CP5** | after WP6 — framework mapping and limitations | not reached | — |
+
+WP3 planning is not one of the brief's five checkpoints. It is recorded here because the
+matrix is frozen in the same sense the tiers are: the executor implements it rather than
+re-deciding it, so what was approved needs to be written down somewhere the executor's
+reviewer can find.
+
+## Scope change — 2026-09-22: Arc21 is a read-only assessment target
+
+**The author changed the remediation boundary on 2026-09-22, before WP3 was executed.** Attest
+never modifies Arc21 — no source, migration, policy, function, trigger, grant, role, test, seed,
+configuration, dependency or git history — and makes no commits there. Findings remain open
+recommendations; WP5 is now *Findings, Risk Prioritization, and Remediation Guidance*, and ends
+with remediation guidance and verification procedures, never a fix. Every fixture Attest needs
+lives in Attest. The brief's amendment is A1 (`PROJECT_BRIEF.md`, which is not version-controlled);
+the reasoning is `DECISIONS.md` D3.31.
+
+**Enforced, not promised.** Every `attest` command fingerprints the Arc21 checkout before and after
+it runs and exits 3 — a harness safety violation — if anything differs (D3.32). The checkout is
+dirty with the author's own work and is allowed to be: what is checked is that Attest changed
+nothing. Recorded at the time of this entry: branch `phase14-s2-security`, HEAD `58dcf39`, 36
+tracked files differing from HEAD, 23 untracked files.
+
+## The WP3 execution gate
+
+*As recorded before 2026-09-22's structural pass — still true, and no longer the only gate; see
+"What else is blocking" below.*
+
+WP3 execution is blocked on one thing, and it is not an engineering task.
+
+Brief §1.1 reserves the intent statement for each negative test to the author. The matrix has
+**240 negative tests**, and each needs one sentence naming the attack it simulates. Until those
+sentences are the author's, executing the suite would produce 240 evidence records whose
+"what attack does this simulate" field was written by the harness — the harness agreeing with
+itself, which is the failure the reservation exists to prevent.
+
+As of this record, all 240 carry **AI-generated drafts marked `ai_draft` / `unreviewed`** in
+`rubric/author-intents.json`. They are there to be reviewed, corrected or replaced, not to be
+adopted by default. `attest preflight-wp3 --for-execution` refuses to pass while any of them is
+still unreviewed, and `attest execute-wp3` refuses to start on that refusal.
+
+Nothing about that gate is advisory. It is a non-zero exit.
+
+## One thing besides the intents is blocking
+
+> **Resolved 2026-09-22 (D3.33).** Each F5 row's identity is now read from the caller its own
+> attempt names: sixteen rows run as carol and one as anon, and nothing else in any row changed.
+> Preflight proves, for all 345 rows, that the operation's caller, the expected result's caller,
+> the structured identity and the executor's caller are the same. No intent draft changed. The
+> text below is the record of the contradiction as it stood.
+
+**Contradiction C1 — 17 F5 rows whose `identity` contradicts their own `operation`.**
+
+The planner hard-codes `identity: authenticated:alice` on every `F5_SPECS` row, while the
+`operation` and `expected` text — which came from `rubric/f5-escalation.ts` — name a different
+caller on 17 of them. The approved expectation is only reachable as the caller the operation
+names. Measured: run as alice, four of those probes would record a **deficient** verdict against
+controls that are working correctly.
+
+It is left blocked rather than worked around, because the executor may not reinterpret an
+approved row. `DECISIONS.md` D3.26 has the evidence and the minimal proposed resolution; the
+decision is the author's. `attest preflight-wp3 --for-execution` names all 17 and refuses.
+
+## What else is blocking — structural, found 2026-09-22
+
+Resolving C1 meant reconstructing the executor's state from disk, and that showed it is not ready
+to produce verdicts that mean what they say, for reasons that have nothing to do with Arc21 or with
+the intents. `attest preflight-wp3` now computes each class and refuses on it (`DECISIONS.md`
+D3.36, `src/wp3-readiness.ts`):
+
+| | Rows | In one line |
+|---|---:|---|
+| column / compile | 3 | three `private.game_commands` probes name columns that do not exist |
+| R1 | 4 | custom expectations with no implemented assertion |
+| R2 | 40 | empty subject sets — twelve empty tables, missing friend-request and queue rows, and an F8 topic parser that keeps a trailing comma |
+| R3 | 4 | F3 INSERT positives that omit NOT NULL columns or hit a unique key |
+| R4 | 8 | "refusal or no effect" judged by a row count that a single-row function can never satisfy |
+| R5 | 18 | premises that do not hold: two contradicted by the shared bob↔carol fixture, one request and one non-friendship that do not exist, and 14 deleted-user rows run with dave's account live |
+| R6 | 12 | state claims in an expectation that no state guard checks |
+| R7 | 48 | no isolation between probes: 48 commit changes when their control holds, and later probes depend on the state they change |
+
+**All of it is Attest-side.** None of it requires changing Arc21, and none of it was fixed in the
+2026-09-22 pass: the largest class, R7, needs an isolation design, and Arc21 grants `service_role`
+no table privileges, so the obvious rollback-per-probe design cannot evaluate a state guard without
+changing Arc21's grants, which the scope change forbids. Choosing among the remaining designs is a
+decision, not a correction. D3.36 lays out the options.
+
+**Also resolved on 2026-09-22.** The tournament-match fixture discrepancy D3.23 recorded: the
+match is its own requirement, `tournament_alice_bob_match`, and seed extensions went from 22 to 23
+(D3.34). The approved matrix is now frozen in `rubric/wp3-approved-matrix.json`, with the nineteen
+corrections to it listed (D3.35).
+
+## One candidate finding is already on the table
+
+Proving the executor's plumbing on 23 probes surfaced a result the author should see before the
+real run: `F5.register_push_token.269` failed its post-probe state guard. Alice calling
+`register_push_token` with bob's token string left that row attributed to alice. The mechanism is
+`on conflict (token) do update set user_id = v_me` inside a `SECURITY DEFINER` function.
+
+**It is not a WP3 result.** It is one probe from a plumbing smoke set, run before the suite is
+authorised. `DECISIONS.md` D3.30 records it as a candidate for WP5's findings narrative, which is
+the author's to write, and it needs confirming in the real run.
+
+**After the scope change it stays exactly that.** `register_push_token` and its migration are not
+touched. If the authorised run reproduces the behaviour, it becomes a finding candidate for WP5's
+reporting and remediation *guidance* — never a fix made by Attest.
+
+## What the frozen WP3 plan is
+
+Preserved so that a later regeneration can be checked against it rather than trusted:
+
+| | |
+|---|---:|
+| Unique Test IDs | **345** |
+| Positive | 63 |
+| Negative (each requiring one AUTHOR INTENT sentence) | **240** |
+| Characterization (requiring none) | 42 |
+| **63 + 240 + 42** | **345** |
+
+Schema version under test: `5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec`
+(59 migrations). The planning run that produced the approved matrix is
+`20260922T071548Z-5695a4c3df2d`.
+
+Since 2026-09-22 the approved matrix is also frozen as `rubric/wp3-approved-matrix.json`: the same
+345 Test IDs in order, with the nineteen corrections made to it — seventeen C1 identities and two
+tournament-match fixtures — listed inside the file, each with its reason. Preflight refuses a plan
+that differs from it in any other way. The first planning run under the corrected planner is
+`20260923T042007Z-5695a4c3df2d`; the counts above are unchanged.
+
+These counts are a machine-checked invariant (D3.21) and are re-verified by preflight on every
+run. If a regeneration changes them, that is a contradiction to surface, not a number to
+update quietly.
+
+## Related
+
+- `DECISIONS.md` — the judgment calls behind each work package. This file records *state*;
+  that file records *reasoning*.
+- `RUBRIC.md` — the risk rubric, authored by the author, frozen at CP3.
+- `rubric/author-intents.json` — the canonical intent store and the review state of each of
+  the 240 sentences.

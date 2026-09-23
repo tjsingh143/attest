@@ -1,0 +1,3286 @@
+{
+  "WARNING": "FROZEN INPUT. The approved WP3 matrix: every Test ID, its frozen fields, its identity and its fixture. Nothing regenerates this file. A change to an approved row is the author's decision and needs a new correction entry here and a DECISIONS entry. Preflight refuses a plan that differs from it.",
+  "sourceRunId": "20260922T071548Z-5695a4c3df2d",
+  "sourceMatrixSha256": "13810305762c240fd42b39999a8b360ca5d7579fa52dd2d20a18b317a796cc7c",
+  "frozenFields": [
+    "testId",
+    "family",
+    "resource",
+    "control",
+    "tier",
+    "polarity",
+    "operation",
+    "expected",
+    "covers",
+    "plumbing",
+    "verdictWhenPredicted",
+    "authorIntent"
+  ],
+  "counts": {
+    "total": 345,
+    "positive": 63,
+    "negative": 240,
+    "characterization": 42
+  },
+  "corrections": [
+    {
+      "testId": "F1.public_tournament_matches.212",
+      "field": "fixture",
+      "from": "one tournament with alice and bob holding tournament_entries rows, and carol holding none",
+      "to": "one tournament with alice and bob holding tournament_entries rows, and carol holding none, plus one pending round-1 tournament_matches row in that tournament (fixtures.tournamentAliceBobMatch.id) pairing alice's entry against bob's, with carol in neither slot",
+      "reason": "The approved fixture creates a tournament and two entries but no tournament_matches row, so this row's own expectation was unsupported: the positive's 'at least 1 row' was unreachable and the negative's 'no data' would have been true because the set was empty. The match is now named as a requirement of its own (tournament_alice_bob_match). Operation, expected and covers are unchanged.",
+      "decision": "D3.34"
+    },
+    {
+      "testId": "F1.public_tournament_matches.213",
+      "field": "fixture",
+      "from": "one tournament with alice and bob holding tournament_entries rows, and carol holding none",
+      "to": "one tournament with alice and bob holding tournament_entries rows, and carol holding none, plus one pending round-1 tournament_matches row in that tournament (fixtures.tournamentAliceBobMatch.id) pairing alice's entry against bob's, with carol in neither slot",
+      "reason": "The approved fixture creates a tournament and two entries but no tournament_matches row, so this row's own expectation was unsupported: the positive's 'at least 1 row' was unreachable and the negative's 'no data' would have been true because the set was empty. The match is now named as a requirement of its own (tournament_alice_bob_match). Operation, expected and covers are unchanged.",
+      "decision": "D3.34"
+    },
+    {
+      "testId": "F5.get_room_state.246",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call get_room_state(fixtures.roomAliceBob.id)\") and the approved expectation (\"error PT404 — the body raises 'you are not at that table'. N…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.set_room_ready.247",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call set_room_ready(fixtures.roomAliceBob.id, true)\") and the approved expectation (\"refusal or no effect; carol's absence from room_members must…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.invite_friend_to_room.248",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call invite_friend_to_room(fixtures.roomAliceBob.id, fixture\") and the approved expectation (\"refusal; no room_members row is created for bob…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.leave_room.249",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call leave_room(fixtures.roomAliceBob.id)\") and the approved expectation (\"refusal or no effect; no other member's row is altered…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.caller_is_room_member.252",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call caller_is_room_member(fixtures.roomAliceBob.id)\") and the approved expectation (\"returns FALSE. This function does not raise; false is the sa…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.is_session_participant.253",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call is_session_participant(fixtures.session.id)\") and the approved expectation (\"returns FALSE…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.sprint_standings.254",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call sprint_standings(fixtures.tournamentAliceBob.id)\") and the approved expectation (\"error 42501, message 'you are not in that tournament'. Not a…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.viewer_is_in_tournament.256",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call viewer_is_in_tournament(fixtures.tournamentAliceBob.id)\") and the approved expectation (\"returns FALSE…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.accept_friend_request.257",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call accept_friend_request(fixtures.alice.id) when no reques\") and the approved expectation (\"refusal or no effect; no friendships row appears between ali…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.decline_friend_request.258",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call decline_friend_request(fixtures.alice.id) for a request\") and the approved expectation (\"no effect on the alice→bob request…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.unblock_player.261",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call unblock_player(fixtures.dave.id) when the alice→dave bl\") and the approved expectation (\"no effect; the alice→dave block survives…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.remove_friend.262",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call remove_friend(fixtures.bob.id) when the friendship is a\") and the approved expectation (\"no effect; the alice↔bob friendship survives…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.viewer_is_friend_of.265",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call viewer_is_friend_of(fixtures.bob.id) when the friendshi\") and the approved expectation (\"returns FALSE…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.viewer_has_blocked.266",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call viewer_has_blocked(fixtures.dave.id) when the block is \") and the approved expectation (\"returns FALSE — carol has blocked nobody…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.viewer_is_blocked_by.267",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call viewer_is_blocked_by(fixtures.alice.id) when the block \") and the approved expectation (\"returns FALSE…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.join_private_room.270",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "authenticated:carol",
+      "reason": "C1. The approved operation names carol as the caller (\"as carol, call join_private_room('fixtures.nonexistentRoomCode')\") and the approved expectation (\"refusal that does not distinguish a non-existent room from a…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    },
+    {
+      "testId": "F5.leaderboard_weekly_xp.272",
+      "field": "identity",
+      "from": "authenticated:alice",
+      "to": "anon",
+      "reason": "C1. The approved operation names anon as the caller (\"as anon, call leaderboard_weekly_xp(10, 0)\") and the approved expectation (\"error 42501 — EXECUTE is granted to authenticated and must n…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
+      "decision": "D3.33"
+    }
+  ],
+  "rows": [
+    {
+      "testId": "F2.private_career_drill_seeds.001",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "224a60f89c2de89dbe992d788df56628ce5f9f1d92bbea6ed5c6be55efbad6e8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_career_drill_seeds.002",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "51e51ec9b3e7935460cfb8add4a8f778897ec58ac77700edaffff66eed5ead36",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_career_drill_seeds.003",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "23aebfa27d78997e7959ffddfeb81aff6f4638ff474e17898c19c0862506c257",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.private_career_drill_seeds.004",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "a5ee9cf58088ffdcbc13c3b093cef9842c64ed963ad6037ddcac27d3a9cce32e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.private_career_drill_seeds.005",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "a4788e2b5d2d262577b53a0eec4a8326bd0357ddb659363564ed596c4458d83a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.private_career_drill_seeds.006",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "272948204918cd5987961283f14e334e2448ce09bc5a797b33e9b15c8de58fac",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_game_commands.007",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "451c238e24c2d213ed6bc1562a3f1814908f8c052984c48ee500dfe5d7b58f3b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_game_commands.008",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "c5591baa3b081e4ce592575c6c3253efa47fed3b62c7c8b78d84d49764f804c6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_game_commands.009",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "23910f66b2cbcbdbd573d66d71d62a7e9c48150d8cc4f10f03c779bf4a692f47",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.private_game_commands.010",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "54cf94c5238c63528c0f641c6346097c8a5eeee41cf773148d3bf0da72b49640",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.private_game_commands.011",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "262065f032171e8c3e28b4554b62ee874f0e402175892e777fd7c8284dfa2251",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.private_game_commands.012",
+      "family": "F10 audit trail",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "server-side (admin) — no client role holds USAGE on the private schema",
+      "frozenSha256": "b6d7ce728521fb628976b074cf981d2718e44522da0114763a85db9a14ee42e4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.private_game_commands.013",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "7b4f7a60093b7bd434046867b6c2d611d5ab24e6157d798466c69f48d16bf3b7",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.private_game_commands.014",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "bc11b73afb35eb5c2e5fb15758f1c8482b6188da7897f8baef9c17e5b1bbfcc3",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.private_game_commands.015",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "932fcafdd8041720ba7a63a7f75089fb3573b54d4f15f59253d1e8e46c263785",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_game_state_private.016",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "cc52e7d2368d4e50922ddb7388a9b6091e96045ed42275f485994fcf781cb29f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_game_state_private.017",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "de9e010afafd8dc6c25fd4da6f8da6c21d7f568d34c847530ce47b606bb84f3f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.private_game_state_private.018",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "d8e2ba989337d82de653bca46f408b3d9d04342cbdd8d81df5dbf217b3f25fa5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.private_game_state_private.019",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "6ba840eef11bb8a229ab226c0e5dec686ca32e018f4dc512c9285ae59116a2cc",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.private_game_state_private.020",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "e0c983698aad5fceb958dd7fee46fbbf2c6d8cbf0bbc662e52cf88ec336d3fb2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.private_game_state_private.021",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "78cedb9e3d55b24c0144795e7ae41ae6962266354e4ccf96111fa83f10757b98",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_blocks.022",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "6d2931fed0f3657b21bb950eec3d9df25a3c438d19edc1b670e82fc1e15b341f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_blocks.023",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "eb8e64dc0eaab08a35e444185801b127d330bf7b5dfea37dc10c4fa0395f4b2b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_blocks.024",
+      "family": "F2 write isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "0504606721e1e09dc49b85ed0a5ad18821f205b5d2c4bd1b4d80cb596e06563c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_blocks.025",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b6a3cff89952aaa8b196945ae5015d02ee49f6eb265d47cdfd88890ec28714af",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_blocks.026",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "81a0c78cfe75aeb42d4f6ec5f2c8c348e881c484556731764a9eff14448f21a0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_blocks.027",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "7475a9108bc361aa9fe14ff606edf3b231e542fe2828880a663da934ee5b02fb",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_blocks.028",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "ff6f7c9618c8464fb35e1d057af7091ef0408f6dd2ecaa057cb4a3f1e6de84d6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_blocks.029",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "0f101f7505fdeb59033f9d757f1e22476b69b7963e8d2632ed8a25237dfe6ed9",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_blocks.030",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "e97f38db79cb3b36ea9a7595ee6375076cf02441a821e04d9a70a6c4644b8f79",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_career_attempts.031",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "8711ab4dc7760c5656c1fdb1997e407a1a2698ebef96daa1a9a185d6b8e98c15",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_career_attempts.032",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "a541bdd4754d235f7add0afde29d7946ef6c525fda5b9f688ba53dde66735451",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_career_attempts.033",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "be63f8d866b56907d12736f1a12420384f66ae08438136a86ee49a11b99e15ae",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_career_nodes.034",
+      "family": "F4 anonymous exposure",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "e380246fcce9e76d37b98e698078cf003206018b92cf11d96d25aa40bb05880e",
+      "fixtureSha256": "1dbed633b75611384aaeac8a9db6898c28c1a05001b19c027b8ac04244932707"
+    },
+    {
+      "testId": "F4.public_career_nodes.035",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "4613c77b0826bc347d68ff6e8ac8cfb1a876b95d1efb546f9f81708f2e21a4d5",
+      "fixtureSha256": "c499faeba707854f3e5e8c9e9463ef0f398569d31d015350c3a94b155003c198"
+    },
+    {
+      "testId": "F1.public_career_progress.036",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1920f47179ed93152bbc6b659dc2e784c98c8831c435247d853b54721e6d27b2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_career_progress.037",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "8d24d7b8575b647b3a2f0aa47b0d914f503bd6a5ca8fd504f762a497ecb2df0c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_career_progress.038",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "81885c3eec454dd6012b95cc6086dacfb18d3f2f9603d1ec227e7a9d8744dc68",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_cosmetics.039",
+      "family": "F4 anonymous exposure",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "521a406c58c265d2dd62e5b5b6aa4639e1a7b14fe45874c0bb59f004823381c3",
+      "fixtureSha256": "1dbed633b75611384aaeac8a9db6898c28c1a05001b19c027b8ac04244932707"
+    },
+    {
+      "testId": "F4.public_cosmetics.040",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "b57b971bc2bfc200ed6630a9e66488dd610e1db141aa786d10d377711ae99614",
+      "fixtureSha256": "f2e77c5eb7c5847f3c4cd55d465b23cc00f0a815b120fcabe7ecb591d3dde150"
+    },
+    {
+      "testId": "F2.public_daily_challenges.041",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "edfb7458b207dad724cb7faa7db43aeadbc9a71f234a812029d93f55871ed6ed",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_daily_challenges.042",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "9b9856f21caaead71ebd337c903d45cd87b0639cf2aca10b7ceee6e18ac1c20c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_daily_challenges.043",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "9c3cb81f35edb3ab8377043df99629429374ca8bbc026034a4999324a8c4c54d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_daily_challenges.044",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "1daeed15ee8c657da0542f9dc3a4c9d699863bba48ea7d2459b4e0ec48965df9",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_daily_challenges.045",
+      "family": "F6 column-level leakage",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "99d5d73d2b981aee98a25fb227d3ca618c687f52777823db7f2abe00cf861898",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_daily_challenges.046",
+      "family": "F6 column-level leakage",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ffa2e7c08ccf9d6893f2ce505090ee636614a7bfae3c017b3c37ba3549749c40",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_daily_challenges.047",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "5ec4ab8a2cfe88cd86817bf5f1ef94117b1b602901aa50c4c1cc164f30b53bb8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_daily_challenges.048",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "7b36ece7db5521eb1c5c1f41b91cecd1f4d0a2a600ef91299d8cde661f39d47a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_daily_challenges_public.049",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "c017cb82ff55e27d9fae6819efd2dc65cc62fd04635d3b16274d664b7f27b333",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_daily_entries.050",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "e8503c2f31d31715eb2318f6828142a2db8f59333d88e45ee1fbdddc3ec955a5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_daily_entries.051",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1bfc07ff1c3e763987c37219f45e76bb0fd9338843954b6ca05b16f623ad4e77",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_daily_entries.052",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "978595470e943b06832d6b19e0c0e0ddb886678838f500d5c5ffe3d16310074c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_friend_requests.053",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5dbdf76de9df1c604ea58fff2c75b8be89d3484d80ba7577f09423a8c9c15c13",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_friend_requests.054",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "6333ae2c8df866805aeb46b4b0a835ca4592779bb16794331e17bdda2c769fc7",
+      "fixtureSha256": "7f7c5431dac9589722cd9aac352ca28d82a95cb82482f5073311d754df3580fe"
+    },
+    {
+      "testId": "F2.public_friend_requests.055",
+      "family": "F2 write isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "076791afcacfcf6c92d99688c1b7c341ed434f526b9a50d57729beac5b26d923",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_friend_requests.056",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "acc1a5dfb1e31447ad22633cbedb79e0fb5f4a3391714597c80bd8a9b41876f1",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_friend_requests.057",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "74645fa1a0d669b8792d0a861631a1225551a5c6e82a30c8e4badbaa4580ec7e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_friend_requests.058",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "e8230308e2a7f8f28f468ee9c526972be72d81456b1d9366ceb2f1b325a4591e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_friend_requests.059",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4e3a201bed979c58ffead533decc16e5ad96aeef40372df949b64277c472a6c3",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_friend_requests.060",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "863950e16113f608aa674e3cebe6a96c2aeefcc71587bc5bb99f333439298f55",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_friend_requests.061",
+      "family": "F6 column-level leakage",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ecbc1c624644ee8a4a814202833ed0bbe762f9ce07e9041adcd7604021791e4b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_friend_requests.062",
+      "family": "F6 column-level leakage",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1dfb6ca0e7174b0c38fa57bbbd134dc52a375371bd7f970c37bd66637b6d7eda",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_friend_requests.063",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "285ef187902c922e4a3368d05147043c01201a64e01b37c0bfc7421d64c99d09",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_friend_requests.064",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "53a9234f744e22ec6c1ba92168848f095bc4325ece21d29095ac3954ec45b871",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_friendships.065",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "bd73fcbe58956160cf8ed6b8ab837885bf36c6546abeb4234362b12889262017",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_friendships.066",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "00be6ce135032a0704a7d3bcfd0a7a161aee6ddb37dabe732979525a71a057c6",
+      "fixtureSha256": "7562911622020170cb1974532abd2aa741aa2f81e2a28ebf6dbf6938365f1bef"
+    },
+    {
+      "testId": "F2.public_friendships.067",
+      "family": "F2 write isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "350e8e4298fd3cdd0c27720d36148810fedaf097879fc024462571be0fc601c2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_friendships.068",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5a3d56a539aae6cfdf3bb8c2bde9a24c005e0cb3c19ddd49875c23505d6a6f84",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_friendships.069",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "a10859ff9777ecd65a759a07613d244a7f879b6780cd746b62dd306c62b29c73",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_friendships.070",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "de440b2d455b82d601b4101740f776fcc0b22934d47ef0c0fe9d12c736f4001e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_friendships.071",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "922e1cfc879ee213edc346ba64d1801cb238f772bf9bb3848ecb7cde6810a7a5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_game_events.072",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4de85d0a8b9f57555cdf935df6771b911bc906fd0ec2ebca4ce1f0b8c3a04184",
+      "fixtureSha256": "b8cbeccb019a7a08e4dd1c01a5299f1cc01547af528e72744aeed9e3ff5a4199"
+    },
+    {
+      "testId": "F1.public_game_events.073",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "58a674b97251ecd0da4b6e1461c319d855ce3aaaceec717d06ac5466af274a57",
+      "fixtureSha256": "b8cbeccb019a7a08e4dd1c01a5299f1cc01547af528e72744aeed9e3ff5a4199"
+    },
+    {
+      "testId": "F2.public_game_events.074",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b6d2f884588bfe1460301541606ba4ef513196c54c135157091544340e568e1f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_events.075",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "709b65d819b31b03c1068f74f0470df8432076a6a224de100d4f6501db156b20",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_events.076",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b3b41c3cb82ed442815c513e553efbfad4422216e870786d8232547d3faffa68",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_game_events.077",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "0f93106b1730814812296f6d3bf98b43f34eb8ea0c80383ea7a87225961cecba",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_game_events.078",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "223a418c987267181f931b2a6a4132208236ccdafea4d9d881e90ac16e17ddad",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_game_events.079",
+      "family": "F10 audit trail",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "0191721840f1116ef621386d89dc14ac5040cdf991939e23ae6a04bd56a9d1d4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_game_events.080",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "593184f4a030f8d9975715475464489870795b3730b775a9040ec35dfcd693ed",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_game_events.081",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "60a6a7b89232a1e1ee33429e1f47c1ae85d70db23461f418b2d13f3edbc9f3c2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_game_events.082",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "346813c4a8f24e7875c0437e5fb3df5e664cad24c37f3488df25f5bd97b819ec",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_game_session_seats.083",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "cc17b23c4125481cf5aee52acb3238fd6dda732046dcfa75c37266b9c2acf7ff",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_game_session_seats.084",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "deb0ca539ec695b14a980c0f8b6b9e187b0666c7789e56d0a9170b566353252e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_session_seats.085",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "de631f4c23869a9323c2c8bcba8b4eb24a12cdb70ce13663201e9554ac835421",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_session_seats.086",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "06d97f2d18ec7f17bd532bd93c55e3469d54437c8f0601316b57610619eab50e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_session_seats.087",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "22ccbe7b8d8f6fc7015dc7e47ed943f8de7cae5bb0212711111d4d710e8ca705",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_game_session_seats.088",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "4dfb0072e764d8902058e90bd8dfe5a16c4f91c6ec70a3c30c2b8b2729463e97",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_game_session_seats.089",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "3eb0869b3281777aa8e4ce58d66aff1a96fa641d76c02eae7f30f7aa4d33ae2b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_game_session_seats.090",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "ac4c57275f5a1406f12cde4817b982b877035820c0fae76788fb6f9acbeed3df",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_game_sessions.091",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5525ab8b5417dca2b40b45332604c15c11a43930b9e994ea469d1bbf2930330e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_game_sessions.092",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "880c58f56be9a80b15e491bc2cd75c5ac2a5516b5fe28a75119166c51440f602",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_sessions.093",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b99cdf7037d0bd4b15c4b34137aad646b4631b3b6573a39a3b74cd71a7503591",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_sessions.094",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "09037f10c8c6eb111461c85a7b2db88e2963ba0d2ecff09176a9f385c5d9402c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_game_sessions.095",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "909e77cd4647777b891276ae39774a9a6fee97c1b08cf85b7845c3b5b2880b15",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_game_sessions.096",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "c865423eacefa585a7846b4066ec83a245d649b84ab38bf074171726e9d87985",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_game_sessions.097",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "6c3fb373fe03e9da6ba73cd8548cc5f8aa32d05ef9e82004971f6700c8089564",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_game_sessions.098",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "d482b5b71dd9e13c3cfc4b9b90aa7d9d43071ce0c646bf8718175a6e3a3aba10",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_hand_players.099",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "135ac02504eafcd971bbce15ac7b12b3dafea2d13acff65205bdcf45d281ea46",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_hand_players.100",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:carol",
+      "frozenSha256": "b12518291459b9b6692c8215e1f9d3dd6ca1cddd4670ccff5e9a1a985188c681",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_hand_players.101",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "5b7ec0ee50c525c03546978f8e42cb69ad830dd1cb92edeb155682a9e93b9035",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_hand_records.102",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "40344848d8a382e81dc1275da705df6a3e3468536ee3b146ebc957d64f6cbf4f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_hand_records.103",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "8d347163ff16986050047c33156298f17483bd0ba314c2658a41bbd5048ad767",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_hand_records.104",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "c9e492833124e333622b4407a10a51ab73a336954a3983d59324b114f047b963",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_hand_records.105",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "3f2acbe73b56c2995bbcf983e6763756b00204a81689434a99b75a2c2a017fab",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_hand_records.106",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "440db676354809876af512651366d73c6a01d70e1630ed1cd606d21ca39027dd",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_hand_records.107",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "6fb8431a2fd0d0a3335cd6fb73a42d49f4270800a6cc00ec6f79eeee52266b83",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_hand_records.108",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "6f3bd2d17d533480ab9f0a07074568bb05776c7722a646e0c1f775a7e70df3f4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_hand_records.109",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "dee1dfe965e8703f71b9ae785f61bfec0829732757e9d2832fcd4ebf396f5b89",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_loadouts.110",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "eb257103d46ea1a12a061965455e7c9697ad3976b39ed667a3853885004acf8a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_loadouts.111",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "21a189d0d6c63a9ddb957c494592ebbe57f3313459093b1e89bdfdb405acbbdc",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_loadouts.112",
+      "family": "F2 write isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "0759923a7dfdea419bf29e8854a3e78063c3c1ec943d5a704115e2cd4230488c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_loadouts.113",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "fde909fecdc57127873a92644534d4e06d328667cc468657833fb5d0dd899be8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_loadouts.114",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "62167c346d9dd45fed10bbe5519c04978e3807674f2bb9c6d986c1b4f01accb7",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_loadouts.115",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5634e8cadb89e332063d9edabcec241b8749c2f14811240b89937b2882c0bdb5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_loadouts.116",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "d9af7e6565e4fa1a48ba008ede744e92513eaf8268cc058765608708f29346b8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_loadouts.117",
+      "family": "F6 column-level leakage",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "58bd8b17a8fc51e6316877cd869ea39ccda579a037f00d2b78229de60145e78d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_loadouts.118",
+      "family": "F6 column-level leakage",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "11b4542cb383dac1c369450d6477ef76cc2b5c2459efd22418ae18a3c6e6f16c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_matchmaking_queue.119",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "bc414b177cfb6637b0a55889966e0ad803bd7a2013912541cd17848fe8feacb4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_matchmaking_queue.120",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ee10a2509ca1b4c2319005d9ee068e9bcc510ae156db5034889fe781a81990ca",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_matchmaking_queue.121",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "f297163b7bd18cd0ddf14acd07dc7177693f8640c29383dc3b6883f9ea3e43e0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_notifications.122",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5e3adbb4c54ba874ea56034dd8d2cb904c1964e07819ad8f5d4ac65ef713df19",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_notifications.123",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5dadf590b59731acdb3e2ddb6c6bfcf1f9fd2ade2326755bf3289d87b5543f93",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_notifications.124",
+      "family": "F2 write isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "24879f4dc8abbbe0c7ea4db3ff5264574a027b0281b0d60423c9fb1200735629",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_notifications.125",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5b946b9c48a4b0e155f9b89174c2b9f9b9920b1e53962affa5d78cde1a6506f6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_notifications.126",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ed3c190dca6423b10e67b6df760318c40a945c05d6b3cc19b7dde25c3634fbfb",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_notifications.127",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "0ddfc8a406ec997239f950420237f00ebd4fa777204d2d49ebb3c4446254dacb",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_notifications.128",
+      "family": "F6 column-level leakage",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b9710126c1ff179a9c9d05788dcb54d55a62e791e8b510dffa54431cfcfab73a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_notifications.129",
+      "family": "F6 column-level leakage",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1c0df58c08c1c1f41d886d5e992b63e14fc09af4a476269a21960428c99fc3b0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_actions.130",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "d372d61c56644022519c64a5ff5f7cbadde22a04b6409ee7f25bc07cd0c41a7b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_actions.131",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "bbc9ea8cbf4087ddc223dbeb147b3ce75c282d6b4db66c48ba677f4e427b29a6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_player_actions.132",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "5d9792960dee956694eddb0ba289adf2fd28d0d85808aa0af0ad01f1387e9e60",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_daily_xp.133",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "9197535c7f3baa2ca6d6aebfd1ff8b102b0f331567307d5a6e6afb0afe45d575",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_daily_xp.134",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "00af6505945a93322e92bf0859a5871f93b1bdb206e6cb18e99a37faf1e5b9db",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_player_daily_xp.135",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "717ee9c725e04ad29578b52fafc429b8ac985c90c12ffad38b040b73b7a6e867",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_decision_periods.136",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "6379ffffe5a776dc367f727e7895cc86fe03d6ad3d8358f2b9049023a476909b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_decision_periods.137",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "01585109567f66bf24ad0a5a945be61d857fe46b12c090cef28f6ef73f280a44",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_player_decision_periods.138",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "602a8adfb50d351cd4d06e5a2062e97665e03548dec1a4399e49d9d1647504a2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_mode_stats.139",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "3ac64b912badec8b004cd4f96e0d1cf14a9729e68a88228ebd0f514da2378a23",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_mode_stats.140",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ee3ae91b2311b0040e5c874b20d689d5f258f9e32c027d6fe410fa28b3b510eb",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_player_mode_stats.141",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "d8d2286e8d1e931671267655979255bddbce479e7a8384e1644c58503214a996",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_stats.142",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "e1ce4a47d753dd5ee2fe22588ecb3b3013bc2826394ebddda7884387942e4a57",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_player_stats.143",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ddbf9bc056cb9912d9073b70bc7a40b5beff5251e0e83e9b6a76643334a0d364",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_player_stats.144",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "529486f1c5180ca0e504850da793da776df7babdc2cf24f1922893c88637517b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_profiles.145",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "87c65b16842726fdb5bcb1bdfff1fd01ffc82d183cc9a4f103df25fa27afe89b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_profiles.146",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "2527a4dda22f497580227a9738c29a60e49b29186787a418123713fc33117f7a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_profiles.147",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "f4666193941c7680206f6bb37b07aa6da8d0c840320cb953c6742439bcd731e6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_profiles.148",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "743e04e7319235603be0709dd31a9f20b179d29a03c971b71266f72e44054407",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_profiles.149",
+      "family": "F2 write isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5c7b011188ad96e1c9d6bd7f59bb932ba33ba85b3e1a8f04ae4f62390c94d3b3",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_profiles.150",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "adbc2ab3475a6b82043982c1c35241800cd42bbef0dcbe4e1b66130f872d611f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_profiles.151",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "19743315a6ad394f6d54c03fa0ded611bed93ded0f07816145fcd80b2c3af63d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_profiles.152",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "2a083af45c7545d1dd482b565ba985dcebe153de7a777ed444b0c59fa617fb71",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_profiles.153",
+      "family": "F6 column-level leakage",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "6b4fea26e4ea019a353e60be0f7835cdd4e1894914bc715da4f997e28b5dc111",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_profiles.154",
+      "family": "F6 column-level leakage",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "2affc50d7e1c295c3c5bf198fdf560dbdedd3a62573a7db834fa95e8ee0466c4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_profiles.155",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "ad4fc5e7732c7c69f7771893402fea05b577377a45a88466c333a9a9be5a50ad",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_profiles.156",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "f5275f222534b3fcddb6074cefe4076e918f23a24f05a446e17ee345a6940a0b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_push_tokens.157",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "bb030867a8d2ba3a0e245be763c3894e334848959b217845e380ed0c6beceaa1",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_push_tokens.158",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "f6aedc0b28cbcaa6c85f99e64abf263d6f7af6dd5bec8b19a998bf19904ae04c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_push_tokens.159",
+      "family": "F2 write isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "7d43130780e5334a019f446e9700e357b8453beee48c437296bd01aaf4ca2191",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_push_tokens.160",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "9ef780a7ee24bdb9eb43cd87ebe65b638009bf58f6f0e01571b7e6b10c203645",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_push_tokens.161",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1395c274f9a386541ca4fa03702d991f72d261fa7bd37018a06becbe5609879d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F3.public_push_tokens.162",
+      "family": "F3 WITH CHECK enforcement",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b048410cdd65b68c0929b670741e22c47e6fbe554f32f609f80c857af1f65a83",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_push_tokens.163",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "50f73bb3599f40a2d207c710634a002ce3bade2c1610449fa3bd4a6b8319f9fa",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_push_tokens.164",
+      "family": "F6 column-level leakage",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "da63a6ffe3af89995b1ee3a9a83a375a50ced0f298cec30c7612c04fdb7e87b4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F6.public_push_tokens.165",
+      "family": "F6 column-level leakage",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "f302e3eaba98b3514aa0ea3d7004c7db64121d6ebba3c20bc904a778a40116f8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rate_limit_events.166",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5bc240a3938c1bc1d09157c3a16a052fc45463279bccd3b4c9fc0da2cac779a5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rate_limit_events.167",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "fa8cc3869a5caaf39190f259d491f935a164f524ae0556dc4fda415cee8ab5a2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rate_limit_events.168",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "bba182cda22a2c0fb1f3821dbbbf7d4fb2ab7505cce3497242c96cd8f0e3c939",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_rate_limit_events.169",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "ac4781fbf8211ed1e870e9bd6eac0115925c47386e14f7137be667a56b22f06d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_rate_limit_events.170",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "8edb6ffc9308c3eb9c3502e8a28445593540e4cb37c06722c727f1c8544a716a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_rate_limit_events.171",
+      "family": "F10 audit trail",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "server-side (admin) — RLS is enabled with no policy and no client grant exists",
+      "frozenSha256": "14027770b8566037f2a9a890042b05d1ed00b253609e09c329fc964fb27b6b9d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_rate_limit_events.172",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ab20668a4dbaf23042421d225bbe7d2a6e4f85c84bb4306147365ca6653c05f9",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_rate_limit_events.173",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5141f7d7e7b6a5424acc15b96557461e128729d982bad8817a1b504761621739",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_rate_limit_events.174",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "6b1c49aff8073d0f71d0a0b8af6195f4ffede662fc7d7b33f0d20667c7a8a847",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rate_limit_policies.175",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "56900d0104c713b77f6ebb8e6e3f7e3b22def829e733d6ceff949af7706c921c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rate_limit_policies.176",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "eddd45f0029aed350a1174002493bf502c99148dd2d9f9fb8b3806cee7ac780a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rate_limit_policies.177",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "501d187128294a6e621c2034ba745fb076db89fb3eebb2910f89ad95e964edeb",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_rate_limit_policies.178",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "e138804ad133829275fb2c53bbf8660db7fefe62206e3587d4a0cdcea0ac1f9c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_rate_limit_policies.179",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "9984f12fa90f7cfe98215b51c72012c333ec3c0c9443f8e9b54cb6a20622a922",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_rate_limit_policies.180",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "fbc37f13596c7c1218a78e9399fb635626ea5d7bd1f73a4c63e58111b5fbc105",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_room_members.181",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "d9eb543d290b73c9f3eb8bb53edfe62db0c743444d586ec508c779bb4225f1e5",
+      "fixtureSha256": "e776c9efef3eb01a3862b559bd0df8a51dac3f2e2bebd67dc4a211d4c13492fc"
+    },
+    {
+      "testId": "F1.public_room_members.182",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "8e872f35998634a9e58e915179527e300314b719ce5d258ed6ba2272242c76cc",
+      "fixtureSha256": "e776c9efef3eb01a3862b559bd0df8a51dac3f2e2bebd67dc4a211d4c13492fc"
+    },
+    {
+      "testId": "F2.public_room_members.183",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "e061707bfea2bf421f0d693ec1ed7c061d38308fc60a67c2e27332777c1ae687",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_room_members.184",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1039f3f255b13da7b963144bbe8853e8c90eea75161def44d016eb36b8dd0a41",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_room_members.185",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4172399841a16a51eec7fbf5ccc02023f643e43a6ed11338a822d03bb94262e8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_room_members.186",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "cd836d997299632152a7ba0985a120ef26120029bcc1ee597ce14a7030c7e472",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_room_members.187",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "a131adb644662a76694f94c24d2044ef76a7bf6c5747e3c607f90d35e06722b0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_room_members.188",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "b71421ad7da47d3e1ae4767255e5ec83f377fb2e4bb090eba803dfa6cfc868f2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_rooms.189",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "71fbaadc0ba11d041283362a7ecbeeea65b09792e5ac3dcc0c5bb672a685072e",
+      "fixtureSha256": "e776c9efef3eb01a3862b559bd0df8a51dac3f2e2bebd67dc4a211d4c13492fc"
+    },
+    {
+      "testId": "F1.public_rooms.190",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "f1c769c41e3e72cba6121ace18bce228836df7c6b8f9cef35b7a98f01d852ad0",
+      "fixtureSha256": "e776c9efef3eb01a3862b559bd0df8a51dac3f2e2bebd67dc4a211d4c13492fc"
+    },
+    {
+      "testId": "F2.public_rooms.191",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "be0278a4df6b631f274ec3ca150dc748cb82e3a97d849a7fecef74996f502673",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rooms.192",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "65f7140985078cba79ead32320d6ad56357abdf6d9c7b1af2a110a08ffafbdda",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rooms.193",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "a324057c65a04c091d9929558be4e814040676fd330d0845c4641883d0dc61f6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_rooms.194",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "d132f04aad3b5696fbc75d254587f3cf53fa51474a318c47197f22f6632b90ae",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_rooms.195",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "9035c97841af800e06774dbe40fd3fee9dbd3c2261bdf1bfbd1f763751326903",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_rooms.196",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "d233015a6191b132b1389fc88a0f437cde300e8046f3904fab7ad38244315ae1",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rulesets.197",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1b8fea33ad9e48166d895d3e84486dfcd59c8037ec9d289ddf0bcbd9de8b9fe6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rulesets.198",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "d929a4697cc2d3b67ffd87f57857cf17b253f6cf12b6aa3927a701b2b0317911",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_rulesets.199",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1517868974144ece7a3a6228fc61a6069205b6d518d78ce195fc761c7ed44d8b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_rulesets.200",
+      "family": "F4 anonymous exposure",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "b6f60b2ee75348794eef301bac0169e0aa76bfe8e1316d3cc866e4a7241f3322",
+      "fixtureSha256": "1dbed633b75611384aaeac8a9db6898c28c1a05001b19c027b8ac04244932707"
+    },
+    {
+      "testId": "F4.public_rulesets.201",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "0ad852378a0d933e3c31d16ea0ae72b4b10845ec621a2f3c58c0de4c7a56ddd6",
+      "fixtureSha256": "b0c5ccba996e75aff20aebb1f94aa77ce0c9ca859c3af4f5aee5d3c6bf8b80cf"
+    },
+    {
+      "testId": "F7.public_rulesets.202",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "61186815a152a1b4ad19c3ea74e6a4d3bb6f75ae89160ffba1ce0b9446e78596",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_rulesets.203",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "a8a0d796ccb51b13d1777c7ca21c8c3a226e246fa2bc039b9f23e00df76c942c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_tournament_entries.204",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "2741d427ba98dd6023c5a83847fa51e7f09d40a612e184d1a1ad938f91b15e0d",
+      "fixtureSha256": "dd7e0535b73745834ecd3ab01eb671569e9b08da7f781e692afdc02217cf3af4"
+    },
+    {
+      "testId": "F1.public_tournament_entries.205",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "f0514a36b66d291a5fbd09cce5921e732ceecf7145b4534777a003ce7cb44275",
+      "fixtureSha256": "dd7e0535b73745834ecd3ab01eb671569e9b08da7f781e692afdc02217cf3af4"
+    },
+    {
+      "testId": "F2.public_tournament_entries.206",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "37bdd1e931c81ae167a3f1efe84456603c46e2ad4986aa23bcb758d884200744",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_tournament_entries.207",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "a9deec1a669d27aaf5f8e1941b96ee6d667fb68f886c7b20dce4227d46eed71d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_tournament_entries.208",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "9fba8b6e412c90e83dab57783c30ddf41518338572b55a382787675c5f9c5243",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_tournament_entries.209",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "ff8cd3fab3f24dd052146ef21ff8757be6a723fd242f49abb6ad1c7ad28942c7",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_tournament_entries.210",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "fd65db56dab83aa3c23c61173872899d7b6cbfadb7d88d264d1a33ed82c8e6a8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_tournament_entries.211",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "c92ae4f83a8a2ee3a0b1e1622e76421e422aaa07f485a265bc2f14c1eb9fb6c1",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_tournament_matches.212",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "55a3583eee164a6b4ce7beefa6f17352dbdadd52989113cf4c37d809045c6d12",
+      "fixtureSha256": "a883b0be42eec22609957fbab76d2173255da18e6a3b2859a6c392b0473d39d6"
+    },
+    {
+      "testId": "F1.public_tournament_matches.213",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "a08ee95d2bb978bf9887311e2abb4064ea7adc6ce359e30d886e7810ff63873f",
+      "fixtureSha256": "a883b0be42eec22609957fbab76d2173255da18e6a3b2859a6c392b0473d39d6"
+    },
+    {
+      "testId": "F2.public_tournament_matches.214",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "57f9b0666d14f465c267926f5974c91a708830162bf35cc049f2627c5a794608",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_tournament_matches.215",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "167ba877bdb8fcf25abd3a6c9aede3dee5f3c0458f7663808a4f0392a2bf9ddc",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_tournament_matches.216",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "db9a14c8da16abb6547d07b6ed12b051893a00de49a13886604efe4c4d1973f4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_tournament_matches.217",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "ef251442b4a7ef4ef429c5487d70acaaddd8c83e7eb47a3ba48185e616020c01",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_tournament_matches.218",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "acd9fab6b7c9b61b32e2d6671cafbfe0afbb59d9f1343d2d1fde91c227bc4bd8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_tournament_matches.219",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "6dd856fac76be26df84a0ab517fb043fc39d11f882e19db3eaf35a5baf6fdef8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_tournaments.220",
+      "family": "F4 anonymous exposure",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "c00c98711d8ccf94a5265f983ce6707d11c7b4d7519b25af070333f90ef7126f",
+      "fixtureSha256": "2b2cfd51b0bf96386ebb325f31b9a6458c7817934203080edcda5b57b2abd2e0"
+    },
+    {
+      "testId": "F4.public_tournaments.221",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "77175d3465f6710ebd8640118f6d191bb67474ea9fca21a99fd234801756ef62",
+      "fixtureSha256": "4d37df0c78892e1369aaccd1cd5f038eef1b6d12e538f70a7d965d3477ed3275"
+    },
+    {
+      "testId": "F1.public_user_cosmetics.222",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "c7b232369ec53cdc7fffcf849f101f624b1633a4eebfba2e5a432e70ddcff91d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_user_cosmetics.223",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "c1637a7ab5a67ccdb35ac9bbd281173a8c86086453176a87bade2b40881517dc",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_user_cosmetics.224",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "274599c1dbda45cf30491f0284a5e9156f25fbf0c37322ec7feeeca9ecc78b69",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_wallet_ledger.225",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "fd1ef7c352441eff9a92cf67a877285c3222015b42f3f53b96a820b8dad77b12",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_wallet_ledger.226",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4740b357b1b6f88cab63cd5ab7e3f6932fbcda08b1d262ec6c0cf8c5d7e6490a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_wallet_ledger.227",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "58dc887afafeb0489d858e9c27046db0475a6d854014c4f228fb99114662f0bf",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_wallet_ledger.228",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "47d2bdaa1a480f9a91560eb5fba88eebb8ed7751601ca90d44546c6ac5e30b67",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_wallet_ledger.229",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "37184f577aace85f582fa635b00f7328c4ff634887bc536a40bb649366861333",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_wallet_ledger.230",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "41c1800fea0c12db3a6ed9902a326d3b3bec225d1d60b078b7e84addc6444149",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_wallet_ledger.231",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "be8dbba307a682e256548599344f22ee3a2aef3deec3c6ea121d736dcc57d296",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_wallet_ledger.232",
+      "family": "F10 audit trail",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "46bdc282d371534d0e6aa2a5745a6e9bf2b929796b65b70ea0b73b41cbc78e4c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_wallet_ledger.233",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4cf5336a5931f742d41042cc03ad3ab3e0b0b9ac041af229638a9e5c31c2f708",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_wallet_ledger.234",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "356be25bbea5aecd622a89adf3fb72a97db3b0dd1ae22804ed3b42f73094fad9",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_wallet_ledger.235",
+      "family": "F10 audit trail",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "0cd761069eca2a2a16940012837ab36d7a15659a04fc1a87da885e09ace0158b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_wallets.236",
+      "family": "F1 read isolation",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4072ba3d3a63f1cde235688d27479959153984e1612fcd9a71a803beb73225c2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F1.public_wallets.237",
+      "family": "F1 read isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "d9dc2005eaa4ca4eb80ad1561c055ccaa9659985538cce2924c0b706a91c307e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_wallets.238",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "199d1ab0626374ce0948cb475f0538519176b5c2ca5c3f14a3de6446fab28a54",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_wallets.239",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "7e09eb18f58159237495c76747fbf15dc8e94fd323ba668b037f9e1636684eeb",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F2.public_wallets.240",
+      "family": "F2 write isolation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "93fd75541bc4257ccc0b6557c69f75b6a3be636d18367e38f3f8b29796eed64a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.public_wallets.241",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "7392fa3cf2256ebb3fc14fb8876720983a84c92a4233fe213540fa843bc09440",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7.public_wallets.242",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "server-side catalog read (no control is exercised)",
+      "frozenSha256": "264fa005da61d09d34cd624e1737d8074a67d89d7406532f10c60fa047bf781f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F10.public_wallets.243",
+      "family": "F10 audit trail",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "owner(postgres)",
+      "frozenSha256": "a5415089be39ed2cdebac336ce50b5fdbbed2e5290b2796c7ffb31733a9464a6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F4.realtime_messages.244",
+      "family": "F4 anonymous exposure",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "234b0c47b598215783fdffdb79327115b251568f080ceff6cabdcd1022cf3aba",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.remove_room_member.245",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "a2de8c613bc16082323911f42603e52668120e96a494b88aaae013820b80c76a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.get_room_state.246",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "cf32992365bdc62e823cd4a64621afae300b0f404411b52a94f4d122f8d1d8f6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.set_room_ready.247",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "55918aba283d67ca8ac42757c420ac5105128175ed73c21c644697d01218cbbb",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.invite_friend_to_room.248",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "f4a99023adfb46f383447b7dcb6199abe91b1866ffeade3d9cef25cf79154706",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.leave_room.249",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "fa105e96948fae81982919918fee3a107baf63d3d4f48f60c12bc8c0866f98cf",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.equip_cosmetic.250",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "552f77a29f39a8f590448c236edae8c3e249cd1feb56f5b39b462daf19d8e233",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.mark_notifications_read.251",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "f1d7de99fb68d489168539e0561e0a1e6fc3d56e39ea894a19cc3e76e4c22aae",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.caller_is_room_member.252",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "c1b4175d98dc4593b3210852af3e5c57da9cdfacc02d12ba8f33bf866c8f8301",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.is_session_participant.253",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "df197f4ab908a9c596598a039b0a33f375d7b2de41737ee9b3ccebe65067e1f0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.sprint_standings.254",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "4933bb90bc3b7b3a7f54001a6b02a7b0fcb2107784ea8b534b1e7bb115c33320",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.sprint_standings.255",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "characterization",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "f6a6a9de2e6a7a3091df114678bc3cbb6d03e1f65e22d9488b4f79f96704efa6",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.viewer_is_in_tournament.256",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "d61d2df144b2010a011cc99b45c563b421ac3875894359ea14528a6d69edbad7",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.accept_friend_request.257",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "b3c48a1dd150b51aa570413ee37d6b0f502e27681b002110737caed0ef9b71c4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.decline_friend_request.258",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "c272aeeecc2bac51640489cb43c742878e8e9abf8b1dfad9b674e63a124ea4fc",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.send_friend_request.259",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "e7dd5e7f21f08da2202c99d60ac835769b4a3c0c749f3701c985c4911c54edba",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.block_player.260",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "f810face37cf471db1dec7264f99ff53704881026929dfdd32c50cc0ad8fd2bd",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.unblock_player.261",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "a6afce33d36d4a1a7d7e3bafa493db4bd44db5bcaee6f755e52c4782c655184c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.remove_friend.262",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "9c90de6718ac264c1614ba96713def1539c391c41103b318973f9565148c246c",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.player_public_profile.263",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "35cf8ed1bc81a7daf46222f4ac29c5ea6c35a18338f477286d5e86e837cf2ea4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.player_public_profile.264",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "64fb5881d618393951881340c12b491627aac552dcb1feca1b9971f49f78e38b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.viewer_is_friend_of.265",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "d05adfa42d01c2d47e2651880a79e0c14c2b0b0bf6715a9b2e3b16a30022b9b0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.viewer_has_blocked.266",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "c2539e8ed027cad1457c5049d920f6bcc888ffd9cb33205b4956eb47c5097a89",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.viewer_is_blocked_by.267",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "d3c65a313358a10ca146fb4dfcd88eded7c387c0bc00615a1780925d0a871a45",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.retire_push_token.268",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "cb8e6c4fd46facaef2c2516754d89ae1e28817a50faefadbe4505066adc21dc8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.register_push_token.269",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "d710de589c59259ad822fa7fb4269f4c9238ba33d3da153c54b0b8b939a6f0e4",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.join_private_room.270",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:carol",
+      "frozenSha256": "001c803dab631d5457ff591173af857b55a0e43b9f4d587fed91964ee3368e4d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.leaderboard_weekly_xp.271",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "6096dffc4f3dcae3c1b90c9602fc944549fe30bf22e88542488708349937d09b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.leaderboard_weekly_xp.272",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "4b59cc34fe7a8ef40fadb2a338b6fc9ff43bb5aff6a54e1d7c5731c5dbbcd54b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.leaderboard_daily_challenge.273",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "eebfb8a135764489289c3bddd8488e8027fed4a31edd40a04ffdc4a5ea08fbdd",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.leaderboard_strategy_accuracy.274",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1ce51348e7551a96ff0bb7fa37636d858fa91e4b8fe517ef92ac55399d3aded3",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.leaderboard_tournament_wins.275",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "d867bfb7219ba7131f0c333626d231e77dd7e626ae22ef3d1bbc94cb86164cc2",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.search_players.276",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "ae2cde3bed81446e8328559244c808d7169cab178afa39dfdba380aa7e13537a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.ensure_todays_daily_challenge.277",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "9e0030bd14fd08cc54d9f92e44850f921d4e43e7ec097932473dd12320ca0761",
+      "fixtureSha256": "cb8d1010206c626ba4f6c76129b057146635d2d411f8b50193449f5f96bed133"
+    },
+    {
+      "testId": "F5.latest_verifiable_daily_challenge.278",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "anon",
+      "frozenSha256": "37a98522d2ee8d9e54197f8a9b2d6893175d7d91b256538b0a6fbba9569beb23",
+      "fixtureSha256": "499b6fad875d3c0be2552876d6aed6f52a5a825227b44c75b3442de76a13e42f"
+    },
+    {
+      "testId": "F5.join_matchmaking.279",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "a98a8c21f258fe985b7c435bd49caf2b21c3b216680ad4163c0acc97d172557c",
+      "fixtureSha256": "be10e27c4f6f57773954a282516ae226c4f6459315751b8508c44007cdecb35b"
+    },
+    {
+      "testId": "F5.poll_matchmaking.280",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "53ce93267754e7c30e0e3abba582a152c92725f47074de579bdfc8efb4322b81",
+      "fixtureSha256": "a0d790ddd5a321609fd914c0083263f1801ad438fa1b3d9a6d6e2fdc4cb545ce"
+    },
+    {
+      "testId": "F5.create_private_room.281",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "c4f6c20708b5185a483087bc8ea0c04f768059d8b0b577e3576b5cc630989166",
+      "fixtureSha256": "94d170fb14c4ec51101d71b566ef641d0aaaa30fcf168340dd22808d2b79e8da"
+    },
+    {
+      "testId": "F5.claim_recovery_grant.282",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "f39b13288598739a7c25fe24dff1692e3f44d978b2efa3759fe30990fee95a4d",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.delete_own_account.283",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "daeebaf0fa14b27a7c95f5523ce517c1467b2f5424ff965c9794f5938303e419",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.grant_earned_cosmetics.284",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "88e737cd0820931de182d7e76adb5e30b0ff47df672af02c2374713005048e4a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.leave_matchmaking.285",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b67d0bf6b10a1d9aa2f32039a556824ca0ed2d633d043c336a45dcea936c5428",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.list_blocked.286",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "07e7c2dcc09e18ceb3ccce1c6da7d4d82a3b6bc2924963be8632dc86cbcc7095",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.list_friend_requests.287",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "75e6ab0322df270adc6ed6d3badaa9f640cb6eab77bd20e9f813561a4958c3fa",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.list_friends.288",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "2e8662715a4e0f45dda3a2770fa2d5a8e0429f1d87bd19cd02596b8363b0aeb3",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_active_session.289",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1788216b8cd1c1e45ec7cb79f982003a15d6c4ac5fc48f62589a14b9b094c67e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_career_progress.290",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "6146a0d5dd7ed5a4a471be9b24c063c1323497ac8f637fe44e45e0de8d3b3538",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_competition_record.291",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "c202cd1f5b207d52d44479f4b9f143fc1f57c68f110b36a64dff73bc0b161ab9",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_daily_entry.292",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "e62c72070fd457f55043b8f2744afd6a8cf74bbd23883b2510632b9baf3a2dc7",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_inventory.293",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "99fc685ac260d603314cc2cdc165bba8884908af17733232a2988fd4172e1e32",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_level_progress.294",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "b4bd513847283d620ea0bf31925795aec06b46aa3f0e9902376918254ec0161f",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_loadout.295",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "c3552c7a701db809bace5c3b00726ea03f563a00572107d06c5315e29b00bc46",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_sprint_entry.296",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "56f479d76fda8665564b48a6abb3d0f123f7dbc41a3acdd4a58980b129d96656",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_strategy_accuracy_progress.297",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "905af9bb89902ea8801fb3bd8b2f35ad2027f15a2fb8438c5789dc32ad02c523",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.touch_last_seen.298",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "fee42961c18fc0a5bd767e877372cbb7507d4d1a86a6c7a1589d3f3236a7b8ba",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.unread_notification_count.299",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "0f1c0895a6ba2306e539afa907f48cd7fc7a0982b94db9c8179c48c92118d7d3",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.enforce_rate_limit.300",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "a565bd8b7cb0e3060307edb248ecca273599a33edbc7f8f4d31021dd32c8d759",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_leaderboard_position.301",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "1e3442d2f11c1d501a0d97ae30158fed1f2eab0de8b7fcde4938926c9229b73e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F5.my_notifications.302",
+      "family": "F5 SECURITY DEFINER escalation",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4db1f0dc59ef209f88893caca3221433a975ecaf93519639ac64a53d3199d723",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F7m.mechanism.303",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "suite",
+      "identity": "scratch owner (owns the table, no BYPASSRLS, not a superuser)",
+      "frozenSha256": "4ab426631fcd8f4d137833845dd02c48c3c979ff38325e961075e0e7235c14b6",
+      "fixtureSha256": "cd4c473142216edec3ebea1ae129941637214903c9cd6ff6e5b71198d7ff8df2"
+    },
+    {
+      "testId": "F7m.mechanism.304",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "positive",
+      "tier": "suite",
+      "identity": "the same scratch owner, same statement",
+      "frozenSha256": "d8620edd62ceda245fdb0cb8dbf73b8266498d866891cfed69ecb39e2345db2f",
+      "fixtureSha256": "cd4c473142216edec3ebea1ae129941637214903c9cd6ff6e5b71198d7ff8df2"
+    },
+    {
+      "testId": "F7m.mechanism.305",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "suite",
+      "identity": "a SECOND scratch role: NOSUPERUSER, BYPASSRLS, NOT the owner, and NOT a member of the owner role",
+      "frozenSha256": "fe8433a818308129aa1ace14820568771ae3698342fe25b39061aa1d307df274",
+      "fixtureSha256": "cd4c473142216edec3ebea1ae129941637214903c9cd6ff6e5b71198d7ff8df2"
+    },
+    {
+      "testId": "F7m.role_properties.306",
+      "family": "F7 forced RLS / owner bypass",
+      "polarity": "characterization",
+      "tier": "suite",
+      "identity": "server-side catalog read",
+      "frozenSha256": "40d845a31b7083a57175c526e4021bc2a84a10baa3747365c0c25642e09bb63b",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "F8.realtime_messages.307",
+      "family": "F8 realtime channel authorization",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "2d51d234bc3744fed988060e471247e3ae6c86155a431c2df0f01e71f775f620",
+      "fixtureSha256": "c7c8a38867c0d2bde4e7de16c710dbc90d656a9c6b51f3fe5bc93b258d4ffcd3"
+    },
+    {
+      "testId": "F8.realtime_messages.308",
+      "family": "F8 realtime channel authorization",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:carol",
+      "frozenSha256": "61a94506a641a0b55147cdeaa07349a082c4a6abface796d14917ebd203bf7e7",
+      "fixtureSha256": "c7c8a38867c0d2bde4e7de16c710dbc90d656a9c6b51f3fe5bc93b258d4ffcd3"
+    },
+    {
+      "testId": "F8.realtime_messages.309",
+      "family": "F8 realtime channel authorization",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "252768afd88bafcccf4d0bd2e73dc2ab5de04101dec5abc67906998fc26411bc",
+      "fixtureSha256": "c7c8a38867c0d2bde4e7de16c710dbc90d656a9c6b51f3fe5bc93b258d4ffcd3"
+    },
+    {
+      "testId": "F8.realtime_messages.310",
+      "family": "F8 realtime channel authorization",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "anon",
+      "frozenSha256": "40166da6747c1c7d1fbe2a22a4e4ca2ac7ecba50686ca052239a26e6aeb89d47",
+      "fixtureSha256": "c7c8a38867c0d2bde4e7de16c710dbc90d656a9c6b51f3fe5bc93b258d4ffcd3"
+    },
+    {
+      "testId": "F8.realtime_messages.311",
+      "family": "F8 realtime channel authorization",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "e6b7b8208d6f34e3ecb19d5fdc66f42ff5830444006a69b309b80c29213331df",
+      "fixtureSha256": "c7c8a38867c0d2bde4e7de16c710dbc90d656a9c6b51f3fe5bc93b258d4ffcd3"
+    },
+    {
+      "testId": "F8.realtime_messages.312",
+      "family": "F8 realtime channel authorization",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:carol",
+      "frozenSha256": "bdcdf8290b3dac5760eabffdebfd68aa3ee600562b36c22a45668cec0ebdd8c0",
+      "fixtureSha256": "c7c8a38867c0d2bde4e7de16c710dbc90d656a9c6b51f3fe5bc93b258d4ffcd3"
+    },
+    {
+      "testId": "F8i.realtime_messages.313",
+      "family": "F8 realtime channel authorization",
+      "polarity": "positive",
+      "tier": "Medium",
+      "identity": "authenticated:alice",
+      "frozenSha256": "2e8047563aacac6b3b70c4e3fefbc5d4665900fa3e9c8ab9c2ca85e5de220678",
+      "fixtureSha256": "13599f1d27fa6e97c669f8b56de0998ca5b3bafd1d17f0496ebcd3e89b7436ab"
+    },
+    {
+      "testId": "F8i.realtime_messages.314",
+      "family": "F8 realtime channel authorization",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:carol",
+      "frozenSha256": "4743aff2958c6d4c60b1ada2bdf168969b69a60bef59c717b1ec1013b4c2998f",
+      "fixtureSha256": "13599f1d27fa6e97c669f8b56de0998ca5b3bafd1d17f0496ebcd3e89b7436ab"
+    },
+    {
+      "testId": "F8i.realtime_messages.315",
+      "family": "F8 realtime channel authorization",
+      "polarity": "negative",
+      "tier": "Medium",
+      "identity": "authenticated:carol",
+      "frozenSha256": "1bc73463f9c14c6bc6dcaf6e39f6d1b1d68a6a7589209af921571bb619a532e0",
+      "fixtureSha256": "13599f1d27fa6e97c669f8b56de0998ca5b3bafd1d17f0496ebcd3e89b7436ab"
+    },
+    {
+      "testId": "F9.public_wallets.316",
+      "family": "F9 wallet / concurrency integrity",
+      "polarity": "positive",
+      "tier": "High",
+      "identity": "server-side (apply_wallet_delta under two concurrent sessions)",
+      "frozenSha256": "1d80c8623571664c6f59c9e906d853976406ae225718db470f58a651b5103c18",
+      "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
+    },
+    {
+      "testId": "F9.public_wallets.317",
+      "family": "F9 wallet / concurrency integrity",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "server-side (apply_wallet_delta, same key twice)",
+      "frozenSha256": "57cbdcf1eedcb2d5a2f8aa614fc7f0dd31a148136125f17ac9493d5d2dfb7301",
+      "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
+    },
+    {
+      "testId": "F9.public_wallets.318",
+      "family": "F9 wallet / concurrency integrity",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "server-side (apply_wallet_delta over-debit)",
+      "frozenSha256": "e6909ae36e7ab9be1d5096303efa430c1cd49f32050527e99cd836e7901febe8",
+      "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
+    },
+    {
+      "testId": "F9.public_wallets.319",
+      "family": "F9 wallet / concurrency integrity",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "320034e1979c9801dd9c23d6ab40b31d842fbbe2526db0428eca74fa7d47eb4e",
+      "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
+    },
+    {
+      "testId": "F9.public_wallets.320",
+      "family": "F9 wallet / concurrency integrity",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "server-side (direct Postgres connection)",
+      "frozenSha256": "166346dc9d6df5bac46f12cdfd7ccddbfc9f90d780b267bafe950dce91d5ed2d",
+      "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
+    },
+    {
+      "testId": "F9.public_wallets.321",
+      "family": "F9 wallet / concurrency integrity",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated:alice",
+      "frozenSha256": "5fcf498f89ea00568c79bcf2af55b03bdef2d7dda3a551f1c961c28da5f740c6",
+      "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
+    },
+    {
+      "testId": "F9.public_wallets.322",
+      "family": "F9 wallet / concurrency integrity",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "server-side (direct Postgres connection)",
+      "frozenSha256": "54dd679f4f8fdf494f57dee3ae1e3f71e601474fbacea5f9df0afd832fbb114f",
+      "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
+    },
+    {
+      "testId": "B.private_game_commands.323",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "b722d40886dd50db926d54c68f7bea3745ca188914a2964661d4af09f61871dd",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_blocks.324",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "93f0f66118a7c3cf29cb13904d7c67bd77b0baa71eac429a0fdbc9725d86926a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_blocks.325",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "9a9f327e3cce70a13335b9cd17d274993922a34f52e86a28138d610e3991e24e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_friend_requests.326",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "a70f766f45bdee12e3950449537d728343b11899c59f9e3c64ce2889a0d8b4ff",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_friend_requests.327",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "fa11eb9197a482eb3225d893da32a4a46947e48914424e10df696b463083709a",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_friendships.328",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "a614e142eed8feea07bf32b0b8a559226740e5ff84e9a5449ac962f8b93a3d51",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_friendships.329",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "9887448f080b71cb76b9ae5e44f02802ed5d708706c18d2d4ecb116245d31cf5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_game_events.330",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "3450acc8c84aae1cfa60e8640ffc2ace93db8b0b6c2e0b5675dbc5356bcc7f16",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_game_events.331",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "614b99fd7a0ac819d3e342826f376714b6eda915305b75a58b5c8e4542b6e4e0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_game_session_seats.332",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "56189ab46a939278450bbf3b616f7bd6616f3a1f54e5f596470990e045cabfb5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_game_sessions.333",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "a1fc4031485c302d3de972731b7739c13ec1c06f589d78422cc61e05b9c15ed8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_profiles.334",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "c46ceaf8de98cbad426c76d18b7f93e73960509ab08d9e8256c9d66f0d28c591",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_profiles.335",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "8644c75059b3276bad8f7e4b49a1c67b4d73cb3e7f66539418ca3e44968285fd",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_rate_limit_events.336",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "837b503e89161eb97369f0440a791cb4f0fcfd964a819547702701f5c2dd90f7",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_room_members.337",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "8f042f77778a7a0f3b45e9099b7897557b59d9f9949314bd7ce019971fd2fe07",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_rooms.338",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "cef9e97b3c2c2bc411f0d811689dfc852506bfae48ff7999efd5002e3235d383",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_tournament_entries.339",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "d5ba40998b4e1efd856ba7e0387fce2da93db32bfa394808f36fab86cb0f4cd8",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_tournament_entries.340",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "eb5735a89fb96827cfae2ac433e712b81a3e57550528b15b8a469d81475f23b5",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_wallet_ledger.341",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "a7c8c6ce9f70b7ed7d2d0d53ca8f76119de02ce3370ba34c8c4f187f5ab74780",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_wallet_ledger.342",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "74b43857e09c46a44e467a8d945aef0613df187a28f6a4684df0e45dcc440bb9",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_wallets.343",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with NO claims set (auth.uid() is null)",
+      "frozenSha256": "ba85e77839218227af5b6b97a2d637a584b1273d47b8022eb88f74cc5524ba2e",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.public_wallets.344",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "High",
+      "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
+      "frozenSha256": "32f7461f17cf03c1582f521c3f9e3cc032029ea63b3f0b377bcf7327fc869dcc",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    },
+    {
+      "testId": "B.suite.expired-session",
+      "family": "B boundary cases",
+      "polarity": "negative",
+      "tier": "suite",
+      "identity": "an expired JWT presented over HTTP",
+      "frozenSha256": "d11a7300c47081e9d765d8c7921e5b946c10fa3108e46c8315a3bf9c6bb70bc0",
+      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+    }
+  ]
+}

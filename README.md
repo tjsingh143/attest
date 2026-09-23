@@ -1,9 +1,17 @@
 # Attest — access control assurance harness
 
-**Status: work in progress. WP0 and WP1 of eight are complete; WP2's scaffold is built and
-awaiting the author's rubric.** Numbers below are from a real run and
-are reproducible; the project is not finished and nothing here should be read as a completed
-audit.
+**Status: work in progress. WP0, WP1 and WP2 of eight are complete; WP3's test matrix is
+planned and approved but has not been executed.** Checkpoints CP1, CP2 and CP3 are approved —
+see `CHECKPOINTS.md`, which also records what WP3 execution is gated on: the author writing the
+intent statement for each of the 240 negative tests, and a set of structural blockers in the
+executor that preflight now detects and refuses on. Numbers below are from a real run and are
+reproducible; the project is not finished and nothing here should be read as a completed audit.
+
+**Arc21 is a read-only assessment target.** Attest reads it and rebuilds a disposable database
+from its migrations; it never modifies Arc21's code, migrations, policies, grants, tests, seed,
+configuration or history, and findings end as remediation *guidance*, never as fixes. This was a
+scope change by the author on 2026-09-22, before WP3 ran (`DECISIONS.md` D3.31), and every
+`attest` command enforces it by fingerprinting the Arc21 checkout before and after (D3.32).
 
 ---
 
@@ -48,10 +56,21 @@ deterministic seed, and writes a control inventory to `evidence/runs/<run-id>/`.
 | `npm run attest validate` | break five controls on purpose, confirm the harness notices, put them back |
 | `npm run attest risk-inputs` | assemble the per-resource facts a risk rubric needs — no scores |
 | `npm run attest rubric` | report what is still unauthored in `RUBRIC.md` |
+| `npm run attest score` | apply the authored rubric, compute tiers, check the CP3 arithmetic |
+| `npm run attest plan-wp3` | generate and validate the WP3 test matrix — plans, executes nothing |
+| `npm run attest seed-extensions` | build the extra fixture state the WP3 matrix requires |
+| `npm run attest preflight-wp3` | check everything that must hold before WP3 may execute |
+| `npm run attest prove-gates` | inject 37 defects (copies, rolled-back transactions, a throwaway git repo) and require each gate to fire |
+| `npm run attest execute-wp3` | run the approved WP3 suite — **refused until preflight passes** |
 
-**This is destructive.** `bringup` drops and rebuilds the database. The harness refuses to
-run against anything but a loopback address, and deliberately attempts unauthorized reads and
-writes, so it may only ever be pointed at an instance that can be thrown away.
+**This is destructive — to the disposable database, and only to it.** `bringup` drops and
+rebuilds the database. The harness refuses to run against anything but a loopback address, and
+deliberately attempts unauthorized reads and writes, so it may only ever be pointed at an
+instance that can be thrown away. It never writes to the Arc21 checkout: every command exits 3
+as a harness safety violation if the checkout differs afterwards in any way — tracked files,
+the index, refs, untracked files or new ignored paths. The one tool that writes inside the Arc21
+tree is the Supabase CLI, which `bringup` runs there and which maintains its own gitignored
+`supabase/.temp/`.
 
 ## What it found
 
@@ -70,8 +89,10 @@ Against 59 migrations:
 
 The enabled-versus-forced split is the one to read twice. Row-level security that is enabled
 but not forced does not apply to the table's owner — and on this instance every application
-table is owned by `postgres`, which also holds `BYPASSRLS`. Whether that matters is a question
-for the risk rubric, which is not written yet.
+table is owned by `postgres`, which also holds `BYPASSRLS`. The risk rubric answers whether
+that matters: `RUBRIC.md` §4.6 treats it as a cross-cutting privileged-role fact rather than a
+per-resource risk dimension, and WP3's F7 family demonstrates the mechanism on purpose-made
+scratch roles rather than asserting it against Arc21's own tables.
 
 Full inventory: `evidence/runs/<run-id>/inventory.md`, with the machine-readable form beside
 it in `inventory.json`.
@@ -103,6 +124,8 @@ Full transcript: `evidence/runs/<run-id>/wp1-validation.md`.
 | `evidence/runs/` | One directory per run. Never hand-edited. |
 | `DECISIONS.md` | Every judgment call, with its alternatives and its reasoning. |
 | `RUBRIC.md` | The risk rubric. Written by hand; the harness supplies facts, not scores. |
+| `CHECKPOINTS.md` | Which checkpoints are approved, and what WP3 execution is still gated on. |
+| `rubric/` | The author's inputs the harness reads: ratings, F5 invariants, fixtures, intents, and the frozen approved WP3 matrix. |
 
 ## Limitations
 
@@ -138,6 +161,13 @@ These are not caveats added at the end. They bound what the output means.
 - **Scope is the application and data layer only.** No network, host, container or
   infrastructure security. Authentication itself is assumed to work; what is tested is what
   happens *given* an identity.
+- **Nothing found will be fixed here.** Arc21 is a read-only assessment target. A finding is
+  reported with its evidence, a recommended remediation and the exact Test IDs that would verify
+  a future fix; it is never remediated or re-verified by Attest, and no closure is claimed.
+- **The read-only guard sees git-visible state.** It fingerprints tracked files, the index, refs,
+  untracked files (with their contents) and the names of ignored paths. It does not hash the
+  contents of already-ignored directories such as `node_modules/` or the Supabase CLI's
+  `supabase/.temp/`.
 - **Platform-owned surface is reported but not assessed.** The anonymous-reach probe covers
   the whole instance, so Supabase's own defaults appear in the output. They are flagged as
   platform-owned and no finding is raised against them — they are not the author's code.
@@ -153,7 +183,17 @@ borrowed from those tools is cited where it is used.
 
 ## Not yet done
 
-WP2's rubric itself — `RUBRIC.md` is scaffolded with the facts filled in and the judgments
-blank, because the rubric is one of four artifacts the author writes rather than the harness.
-Then WP3 control testing, WP4 drift detection, WP5 remediation cycle, WP6 framework
-mapping, WP7 reporting.
+**WP3 execution.** The matrix is planned, approved and frozen — 345 tests across the ten
+control families plus the boundary cases — and every row derives an executable probe. It has not
+been run, and `attest execute-wp3` refuses to run it for two reasons:
+
+- the intent statement for each of the 240 negative tests is one of the four artifacts the author
+  writes rather than the harness (brief §1.1); all 240 currently hold AI-generated drafts marked
+  `ai_draft` / `unreviewed` for the author to review, correct or replace;
+- the executor is not yet able to produce verdicts that mean what they say: empty fixture
+  subjects, assertions that cannot judge a returned no-op, premises the shared fixture
+  contradicts, and no isolation between probes that commit changes. Preflight computes each class
+  and names every affected Test ID (`DECISIONS.md` D3.36).
+
+Then WP4 drift detection, WP5 findings, risk prioritization and remediation guidance, WP6
+framework mapping, WP7 reporting.

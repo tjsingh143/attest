@@ -4,10 +4,24 @@ One entry per judgment call that could reasonably have gone another way: what wa
 what else was on the table, why this one, and what would be different if the other had been
 chosen.
 
-Entries are appended as work packages land. Entries about the **risk rubric**, **tier
-assignments**, the **tier-to-assurance-activity mapping**, **which gap was remediated**, and
-**arguable framework mappings** are the author's to write and are not present yet — they
-belong to WP2, WP5 and WP6.
+Entries are appended as work packages land, and a dated entry is left as it was written. Where
+a later pass changed the thing an entry describes, the correction is a **new** entry or a
+marked current-state note inside the old one — never a silent rewrite, because an entry that
+quietly acquires today's numbers stops being a record of what was decided when.
+
+The **risk rubric** itself lives in `RUBRIC.md`, and the **tier-to-assurance-activity mapping**
+is its Part 5; both are the author's and both are written. Tier assignments that were not
+obvious are D2.12. Still outstanding and still the author's: the **findings narrative** and
+**which gap was remediated** (WP5), and the **framework mapping rationales** (WP6).
+
+Checkpoint approval state is not here — it is `CHECKPOINTS.md`. This file records *reasoning*;
+that file records *state*.
+
+> **Current-state note, 2026-09-22.** The paragraph above names "which gap was remediated" as
+> outstanding WP5 work. The author withdrew that on 2026-09-22, before WP3 was executed: Arc21
+> is a read-only assessment target and no gap is remediated by Attest (D3.31). WP5's
+> author-reserved artifact is still the findings narrative; what replaces the remediation is
+> remediation *guidance* and verification procedures.
 
 ---
 
@@ -933,6 +947,11 @@ exactly the failure the CP3 transcription error demonstrated. Generating it mean
 tiers and the inventory cannot disagree, and the 147 not-applicable rows each carry a reason that
 was computed rather than asserted.
 
+> **Current state (noted 2026-09-22).** 147 was the count when this entry was written, against
+> a 263-test matrix. The planner was corrected repeatedly afterwards (D3.6 through D3.20) and
+> the approved matrix now has **345 tests and 137 not-applicable rows**, each still carrying a
+> computed reason. The claim this entry makes is unchanged; only the number moved.
+
 ### D3.2 — Isolation is scoped by ownership OR by session participation
 
 **Decided.** Read-isolation applicability tests for an owner column **or** a policy that scopes by
@@ -1014,7 +1033,10 @@ boundary tested by writing.
 
 **3. F5 was 37 copies of one template.** Replaced with `rubric/f5-escalation.ts`: 29
 function-specific specifications plus 26 functions correctly classified as having no
-user-controlled target. Five classes, derived from catalog signals and body reads. The safe
+user-controlled target. *(Current state, noted 2026-09-22: 32, not 29. The count was right when
+written; D3.9 resolved `sprint_standings` into two cases and D3.14 split `player_public_profile`
+and `leaderboard_weekly_xp` into two probes each. 32 + 5 + 21 = the 58 F5 rows in the approved
+matrix.)* Five classes, derived from catalog signals and body reads. The safe
 outcomes genuinely differ — `remove_room_member` returns `false`, `get_room_state` raises
 **PT404** rather than 42501, `mark_notifications_read` returns a count of 0, the boolean helpers
 return `false` — and `player_public_profile` and the four leaderboards are cross-user **by
@@ -1278,12 +1300,24 @@ resource is that `authenticated` holds no write privilege, and INSERT, UPDATE an
 three separate privilege bits, so the frozen High-tier rule ("every applicable branch") makes
 them three probes. Each is now its own Test ID with its own statement and evidence record.
 
-**2. Parameter and column placeholders.** `rubric/fixtures.ts` holds 47 deterministic
-references, each mapping to exactly one value, of which **23 are seed extensions** the plan now
-lists explicitly. Every `<value>`, `<a client-granted column>`, `<a room hosted by bob>` and
+**2. Parameter and column placeholders.** `rubric/fixtures.ts` holds 32 deterministic
+references, each mapping to exactly one value, of which **19 are seed extensions**.
+Every `<value>`, `<a client-granted column>`, `<a room hosted by bob>` and
 `<bob's notification id>` is replaced by a reference such as `fixtures.bobNotification.id`, and
 `<value>` specifically by a literal derived from the column's own type via `literalFor()`. An
 implementer can now build the exact SQL or RPC call without a fresh judgment.
+
+> **Two corrections to this paragraph, made 2026-09-22.** As written it said "47 deterministic
+> references … of which 23 are seed extensions the plan now lists explicitly". Both halves were
+> wrong, and unlike D3.1 neither was ever right: `rubric/fixtures.ts` has had exactly one
+> commit — the one that introduced this entry — and held **32 references (13 standing + 19
+> extension)** then and now. The counts above are corrected in place rather than annotated,
+> because there is no earlier state they described.
+>
+> The second half was a claim about behaviour, not a count, and it was **false**: nothing
+> listed the extensions. `SEED_EXTENSION_LIST` and the planner's `SEED_EXTENSIONS` accumulator
+> were both written and never read, so the plan depended on 19 fixtures it never named as a
+> requirement. A takeover review found it. D3.23 is the fix.
 
 **3. Multi-identity rows.** Two F9 rows read `server-side and as alice (both must be refused)` —
 two privilege levels, one Test ID. Both are necessary evidence and they make different claims:
@@ -1387,3 +1421,505 @@ of roughly 25 under `batches/`, with the canonical complete worksheet kept whole
 family boundaries: a family shorter than a batch is never split across two, so a review session
 covers one kind of control rather than straddling several. The batch files are a convenience —
 `author-intent-worksheet.md` is the document of record.
+
+---
+
+## WP3 — implementation preparation
+
+### D3.23 — The seed-extension requirement set is derived from the plan, not declared beside it
+
+**Decided.** `plan.seedExtensions` is computed inside `planWp3` and rendered in
+`wp3-matrix.md` §5. `src/seed-extensions.ts` holds one implementation per key, and preflight
+refuses to run unless the two key sets are equal and every requirement verifies live.
+
+**Why.** `SEED_EXTENSION_LIST` and the planner's `SEED_EXTENSIONS` accumulator were both
+written and never read, so the plan depended on 19 fixtures the standing seed does not create
+and said so nowhere. D3.18 claimed "the plan now lists explicitly"; it did not.
+
+**Two sources, because neither is complete on its own.** The `needSeed()` calls name the state a
+row declares as its fixture. A reference scan catches the other half: several F5 rows name
+`fixtures.roomBobHosts.id` in their *operation* while their *fixture* text says only "the
+standing seed", so the requirement is invisible to the first source. The scan found 5 such
+fixtures. The union is 22 requirements covering all 19 declared extensions.
+
+**What the matrix rows did not change.** Adding the field left every one of the 345 planned
+rows byte-identical — verified by regenerating and comparing `JSON.stringify(plan.tests)`
+against the approved artefact.
+
+**One fixture description is thinner than its own test.** `tournament_alice_bob` says "one
+tournament with alice and bob holding tournament_entries rows", but
+`F1.public_tournament_matches.212` is a positive expecting at least one row from
+`tournament_matches`, which that state does not create. The seeder adds one pending match and
+records the discrepancy in `FIXTURE_COMPLETENESS_NOTES` rather than absorbing it silently. No
+test semantics change.
+
+> **Current state (2026-09-22).** Resolved by D3.34: the match is now its own requirement,
+> `tournament_alice_bob_match`, stated by the planner and verified by preflight, and
+> `FIXTURE_COMPLETENESS_NOTES` is empty. The count here — 22 requirements — is now 23.
+
+### D3.24 — AUTHOR INTENT gets a persistent store outside `evidence/`, with provenance
+
+**Decided.** `rubric/author-intents.json`, keyed by frozen Test ID, each entry carrying
+`intent`, `provenance` (`ai_draft` / `user_reviewed_ai_draft` / `user_authored`) and
+`reviewStatus`. Regeneration never overwrites an entry whose provenance is not `ai_draft`.
+
+**Why outside `evidence/`.** The worksheet under `evidence/runs/<run-id>/` is generated output
+and is replaced on every run. A sentence written there would be destroyed by the next
+`attest run`. The store is an *input*, beside `RUBRIC.md` and `rubric/ratings.ts`.
+
+**Why provenance is a field and not a convention.** The whole point of brief §1.1 is that the
+harness must not write these sentences. An evidence record whose "attack simulated" field was
+written by the thing doing the simulating is not evidence, so the record carries the provenance
+alongside the sentence and `isAdopted()` refuses `ai_draft` whatever `reviewStatus` says. An
+`ai_draft` marked `approved` is an error, not a promotion.
+
+### D3.25 — 240 AI drafts are generated, and they are drafts
+
+**Decided.** `rubric/intent-drafts.ts` composes one sentence per negative from the row's own
+facts plus a per-resource lexicon grounded in the author's `rubric/ratings.ts` characterizations.
+All 240 are stored `ai_draft` / `unreviewed`. `attest execute-wp3` refuses while any remains.
+
+**Why generate them at all.** Reviewing 240 concrete sentences is a different task from writing
+240 from a blank page, and the author asked for the former. The reservation has not moved: the
+harness cannot promote its own drafts, and only an edit to the store adopts one.
+
+**Quality is checked against the row, not read.** `src/intent-quality.ts` validates each draft
+against its matrix row — the actor matches the effective caller, a membership-gated read is not
+called "another player's row", an escalation claim appears only on F5, F6 talks about a column
+and not a row, an F4 predicate row is about withdrawn content rather than anonymous reading as
+such, no two probes share a sentence.
+
+**It found what reading found, and reading found what it missed.** The first generation pass
+reported 4 issues, then 0 — and reading the output by eye then found five more: a stuttered
+clause ("a player holding no seat reads … at a table where they hold no seat"), a doubled word
+("gets someone in in that room"), a generic F5 phrase that said "naming a room, session,
+tournament or account" where the argument was a cosmetic, a leaderboard phrase applied to
+`search_players`, and a garbled tail on the boundary rows. Two new checks — a repeated-trigram
+check and a doubled-word check — now catch that class, and the doubled-word check caught the
+last one before it reached the store.
+
+### D3.26 — CONTRADICTION C1: 17 F5 rows whose `identity` contradicts their own `operation`
+
+**Surfaced, not fixed.** The planner sets `identity: ALICE` for every `F5_SPECS` row. The
+`operation` and `expected` come from `rubric/f5-escalation.ts`, whose per-function `attempt`
+names a different caller on 17 of them — "as carol" on 16, "as anon" on one.
+
+**The approved expectation is only reachable as the caller the operation names.** Measured on
+the instance:
+
+| Probe | Expected | as alice | as the named caller |
+|---|---|---|---|
+| `caller_is_room_member(roomAliceBob)` | FALSE | **true** | carol: false |
+| `viewer_has_blocked(dave)` | FALSE | **true** | carol: false |
+| `is_session_participant(session)` | FALSE | **true** | carol: false |
+| `leaderboard_weekly_xp(10,0)` | error 42501 | **0 rows, no error** | anon: 42501 |
+
+Run as `authenticated:alice`, those four would record `not_as_predicted` and therefore verdict
+`deficient` — **four findings against controls working exactly as designed**. That is worse than
+a missing test, because it reads as evidence. Same class as the error D3.8 corrected.
+
+**Why it is blocked rather than worked around.** The executor may not reinterpret an approved
+row. `effectiveActor()` computes the caller the expectation requires, so drafting and quality
+checking are correct, but `findContradictions()` reports all 17 and preflight refuses. The
+resolution is the author's.
+
+**Minimal proposed resolution.** In `src/wp3-plan.ts`, set the `F5_SPECS` row's identity from
+the `as <who>` prefix of `spec.attempt`, falling back to alice where it names none, then
+regenerate. That changes only the identity column. If alice is the intended caller instead, then
+`spec.attempt` and `spec.expectedSafe` are what need editing.
+
+> **Current state (2026-09-22).** Resolved as proposed, by the author's decision: D3.33.
+
+### D3.27 — The executor derives from the approved row; it never re-decides
+
+**Decided.** `src/wp3-exec.ts` derives one `ExecSpec` per Test ID by strict parsers over the
+templates the planner emitted, then cross-checks each against the catalogs: the relation exists,
+the function exists with that identity argument list, every fixture reference resolves, no
+placeholder survives. A row that will not parse is a named hard failure, never a guess. All 345
+derive.
+
+**Why derivation rather than a second suite.** An executor written beside the matrix would be a
+second description of the same 345 tests, free to drift, with the drift invisible because both
+would look right alone.
+
+**An unrecognised expectation fails.** Fifty-odd rows predict something a row count cannot
+express. `src/wp3-assertions.ts` keys each on the plan's own `expected` text, and an expectation
+it does not recognise is recorded as **unmet** — a custom expectation nobody implemented would
+otherwise be a silent green.
+
+### D3.28 — Four executor bugs found by running probes, not by reading code
+
+Each was caught by the smoke set of 17 and each would have produced wrong evidence:
+
+| Bug | What it would have produced |
+|---|---|
+| `ledger_reason` has no `'adjustment'` value | every F9 wallet probe a harness error |
+| F9 committed the wallet lock winner only after awaiting *both* calls | a deadlock; the probe hung. Which connection wins is not ours to choose, so the winner is now whichever call returns first |
+| F9's ledger probes forced the admin connection | the client and server Test IDs — split deliberately in D3.18 #3 — both recorded as the server probe |
+| `DROP OWNED BY` without membership | "permission denied to drop objects" on a leftover scratch role, so the F7 mechanism could never re-run |
+
+The concurrency probe now records its own interleaving: both transactions open, one call
+returns, the winner commits, the blocked call proceeds. The overlap is evidenced rather than
+asserted.
+
+**A nuance for WP5, not a defect.** `F9.public_wallets.322` (server-side TRUNCATE) is refused
+with `0A000` — a foreign-key constraint — before `wallet_ledger_deny_truncate` is reached. The
+statement is refused, so the row's expectation ("error") is met, but the named trigger is not
+the thing that refused it.
+
+### D3.29 — Every gate is proven by breaking it
+
+**Decided.** `attest prove-gates` injects 19 defects into isolated copies and requires each to
+produce a failure. All 19 are caught and the real plan, store and instance are untouched.
+
+**Why.** Twice in this project a validator passed while the defect it existed to catch was
+present (D3.17's keyword scan, D3.18's "then" exemption). A green check is not evidence that
+the check works. The injections cover a missing and a duplicate Test ID, an unsupported
+polarity, a bundled multi-probe row, a surviving placeholder, an unresolvable fixture, an
+identity/operation contradiction, an unimplemented seed extension, a missing / blank / extra /
+still-draft / mislabelled intent, two draft-quality defects, an inverted F7 role property, an
+unreachable Realtime service, and — the one that matters most — a harness exception presented as
+a database refusal.
+
+> **Current state (2026-09-22).** Three of these nineteen — the wrong fixture value, the inverted
+> role property and the unreachable Realtime service — recorded `caught: true` without injecting
+> anything. They are real injections now, and the set has grown to 37 plus 2 controls: D3.37.
+
+### D3.30 — Three soundness holes the smoke set found, and one candidate finding it surfaced
+
+Twenty-three probes were run to prove the executor's plumbing — one per executor kind, not the
+suite. They found three ways a probe could have passed without testing anything:
+
+**1. A syntax error satisfied an expected refusal.** The realtime SQL probes were built as
+`select set_config('realtime.topic', $1, false); select * from realtime.messages where topic = $1`
+— a multi-statement query carrying a bind parameter, which PostgreSQL rejects with **42601**. The
+row's expectation is `no data`, and `no_data` is satisfied by *any* raise, so a malformed probe
+scored as a working control. The set-up statement is now issued separately, and
+`MALFORMED_PROBE` treats 42601, 42703, 42P01, 42883 and friends as harness defects rather than
+refusals. **42501 is deliberately not in that set** — insufficient_privilege is a real refusal
+and is the expected outcome of most of this suite.
+
+**2. Twelve expectations are two claims, and only the first was checked.**
+"returns 0 **and** bob's notification `read_at` stays null" is a return value *and* a state
+assertion. `STATE_GUARDS` adds a post-probe check for each of the twelve, run as admin and ANDed
+with the probe's own assertion, so a probe that returns the right thing while changing state it
+should not have touched is not recorded as effective.
+
+**3. An unimplemented custom assertion could have been a silent green.**
+`src/wp3-assertions.ts` returns **unsatisfied** for an expectation it does not recognise, rather
+than defaulting to pass.
+
+**And one candidate finding, which is the author's to judge.**
+`F5.register_push_token.269` failed its state guard. The approved row predicts "refusal, or a
+row attributed to alice that does **not** displace bob's. Bob's row must still exist with
+`user_id = bob`." Measured: after alice called
+`register_push_token('ExponentPushToken[attest-bob]', …)`, the row carrying bob's token string
+had `user_id = alice`. The mechanism is visible in the function body — it is `SECURITY DEFINER`
+and its upsert reads `on conflict (token) do update set user_id = v_me` — so the caller's
+policies never apply and the conflicting row is reassigned to the caller. That is precisely the
+escalation the row's `covers` names: "registering a token string already belonging to another
+account".
+
+**This is not a WP3 result and must not be reported as one.** It is one probe from a 23-probe
+plumbing smoke set, run before the suite is authorised and before its intent sentence is the
+author's. It is recorded here as a candidate for the WP5 findings narrative — which the author
+writes — and it needs confirming in the real run. The instance's state was restored afterwards.
+
+The observation does say something about the harness, though, and that part is not tentative:
+the state guard is what caught it. The return value alone was "1 row", which the row's own
+expectation permits.
+
+> **Current state (2026-09-22), after the scope change (D3.31).** The observation stands exactly
+> as recorded above and remains a **pre-assessment candidate**, not a WP3 result and not a
+> verdict. `register_push_token` and the migration that defines it are not modified — Arc21 is a
+> read-only assessment target. The authorised WP3 run must reproduce or disprove it through the
+> normal evidence path; if it is reproduced, it becomes a finding candidate for WP5's reporting and
+> remediation *guidance*, with the author's narrative, a recommendation, and a verification
+> procedure naming `F5.register_push_token.269` as the Test ID to rerun after any future fix.
+> Attest will not implement that fix.
+
+---
+
+## Scope change — Arc21 is a read-only assessment target
+
+### D3.31 — The author changed the remediation boundary: Attest never modifies Arc21
+
+**Decided by the author on 2026-09-22, before WP3 was executed.** Recorded prospectively. The
+brief as originally written (§4, §5 WP5, §6, §8, §9 CP4, §10) required one gap to be remediated in
+Arc21 and its closure verified. That requirement is withdrawn. Nothing earlier in this file is
+rewritten to look as though this had always been the rule; the entries above were written under
+the original brief and are left that way.
+
+**The rule.** Arc21 is the system under assessment, not a codebase Attest is authorized to
+change. Attest never modifies Arc21's application code, migrations, RLS policies, PostgreSQL
+functions, triggers, grants or permanent role configuration, tests, seed files, configuration,
+package or dependency files, or git history, and makes no commits in the Arc21 repository. A
+weakness is preserved as evidence, not patched.
+
+**What Attest still does.** Reads and analyses Arc21's source; rebuilds a disposable local
+database from Arc21's existing migrations; creates Attest-owned fixture data in that database
+(D0.12's rule that the seed lives in Attest, extended to every WP3 fixture); creates temporary
+Attest-owned scratch roles and objects where a mechanism must be isolated (D3.8, D3.15); mutates
+disposable test data where a probe inherently requires it and restores it; collects evidence;
+ranks and explains findings; recommends remediation; and writes the exact procedure — by Test ID
+where possible — that would verify a future fix.
+
+**What changes downstream.**
+
+- **WP5** becomes *Findings, Risk Prioritization, and Remediation Guidance*. It consolidates WP3's
+  findings, ranks them against the frozen WP2 risk context and the observed evidence, documents
+  the highest-priority ones in depth, recommends remediation with its tradeoffs, gives the
+  post-remediation verification procedure using existing Test IDs, and says plainly that no
+  remediation was implemented or independently verified. The findings narrative is still the
+  author's (brief §1.1).
+- **A finding's status** is *open*, *informational / characterization*, or *accepted /
+  design-intent* where the evidence supports that. Never *remediated by Attest*, never *fixed*,
+  and no closure claim — so WP4's drift view will show no closure transition caused by Attest.
+- **CP4** presents ranked findings, remediation guidance and verification procedures.
+- **The candidate finding from the smoke set (D3.30, `register_push_token`) stays unrepaired.**
+  Its function and migration are not touched; it is reproduced or disproved only by the
+  authorised WP3 run, and if reproduced it becomes a finding candidate for reporting and
+  remediation *guidance*.
+
+**Alternatives.** (1) Keep the original single-remediation cycle. (2) Remediate in a fork or a
+patched copy of the migrations, leaving the author's tree alone.
+
+**Why this one.** It is the author's decision about the system they own. It also removes a
+standing risk from the assessment itself: a harness that is permitted to edit the system it
+measures can make a failing control pass by changing the control, and the evidence would not
+show it. Option (2) would reintroduce that risk one step removed, because the assessed schema
+would no longer be the author's.
+
+**What would change.** The brief's "detection → remediation → verified closure" arc is not
+demonstrated end to end. What is demonstrated instead is detection → risk ranking → remediation
+guidance → a verification procedure someone else can execute. The resume and README must not
+claim closure.
+
+### D3.32 — The read-only boundary is enforced by fingerprinting Arc21 around every command
+
+**Decided.** `src/arc21-guard.ts` fingerprints the Arc21 checkout, and `src/cli.ts` brackets
+every `attest` command with it: a fingerprint before the command, another after, and any
+difference is reported as a **harness safety violation** with exit code 3. Nothing is reverted
+automatically, because reverting could destroy the author's own uncommitted work.
+
+**The checkout is allowed to be dirty.** At the time of this entry it is on
+`phase14-s2-security` at `58dcf39`, with 36 tracked files differing from HEAD and 23 untracked
+files — one of them the uncommitted migration D0.2 describes. The guard does not ask whether
+Arc21 is clean; it asks whether it is exactly as it was before Attest ran.
+
+**What the fingerprint covers:** branch, HEAD, every ref (so a commit, branch, tag or stash
+would show), the index (`ls-files -s`), the unstaged and staged diffs, `git status`, every
+untracked file with a hash of its content (so the uncommitted migration cannot change unseen),
+and the names of ignored entries (so a stray credential or token file written into the tree
+would appear).
+
+**What it does not cover, stated rather than implied.** The contents of already-ignored
+directories are not hashed (`node_modules/` alone would make that slow). The one known writer
+of that kind is the Supabase CLI: `bringup` runs `supabase db reset --local` with Arc21 as its
+working directory, and the CLI maintains `supabase/.temp/` there. That is gitignored tool
+metadata, not Arc21 source, and it is the only process that writes inside the Arc21 tree. No
+Attest code writes there: every file Attest writes goes to `evidence/runs/` or
+`rubric/author-intents.json`, the JWTs for the Realtime and expired-session probes are signed in
+memory and never persisted, and every database object Attest creates lives in the disposable
+instance.
+
+**Reading without writing.** `git status` refreshes the index stat cache and writes it back when
+it can. That changes no content, but it is still a write into Arc21's `.git`, so every git
+command Attest points at Arc21 — here and in `schema-version.ts`, which previously did not —
+runs with `GIT_OPTIONAL_LOCKS=0`.
+
+**Alternatives.** (1) Require a clean Arc21 checkout. (2) Trust the code: Attest has no path
+that writes to `SUT_REPO`. (3) Snapshot and restore the checkout around each run.
+
+**Why this one.** (1) would force someone to clean the author's work in progress, which is
+exactly what the rule forbids. (2) was true before this entry and would remain true — but it is
+an argument from reading code, and this project has twice found a check that passed while its
+defect was present (D3.17, D3.19); a boundary this important should be measured. (3) would mean
+Attest writing to Arc21 in order to undo writes to Arc21.
+
+**Proven by breaking it.** `attest prove-gates` builds a throwaway git repository, fingerprints
+it, changes a tracked file, and requires the comparison to fail — and repeats that for a new
+untracked file, an edited untracked file, a staged change, a commit, and a new ignored file.
+The injections never touch Arc21 itself: deliberately modifying the system under assessment to
+prove the guard works would be the violation the guard exists to catch.
+
+---
+
+## WP3 — structural corrections before execution (after the scope change)
+
+### D3.33 — C1 resolved: an F5 row's identity is the caller its own attempt names
+
+**Decided by the author on 2026-09-22** (the resolution D3.26 proposed), and applied at the
+test-specification layer only. `src/wp3-plan.ts` now sets each F5 row's `identity` from the "as
+<who>" its `rubric/f5-escalation.ts` attempt names (`callerNamedBy`), the same record its
+operation and expectation come from. Seventeen identities change — sixteen from
+`authenticated:alice` to `authenticated:carol`, one (`F5.leaderboard_weekly_xp.272`) to `anon` —
+and nothing else in any row does: Test ID, family, tier, polarity, operation, expected and covers
+are byte-identical to the approved run, and no non-F5 row changed as a consequence. F5 now runs
+as 40 alice, 16 carol, 2 anon.
+
+**Each of the seventeen reconciles**: the caller the operation names, the caller the expected
+result is stated for, and the corrected identity are the same, and the fixture relationship
+that makes that caller the refused one is checked live (`src/wp3-readiness.ts`, premises):
+
+| Test ID | Operation names | Expected result holds for | Fixture relationship (checked live) |
+|---|---|---|---|
+| `F5.get_room_state.246` | carol | a non-member ("you are not at that table", PT404) | carol not in `roomAliceBob` |
+| `F5.set_room_ready.247` | carol | carol ("carol's absence from room_members") | carol not in `roomAliceBob` |
+| `F5.invite_friend_to_room.248` | carol | a caller not at the table | carol not in `roomAliceBob` |
+| `F5.leave_room.249` | carol | a non-member — as alice, leaving is a legitimate effect the guard would count | carol not in `roomAliceBob` |
+| `F5.caller_is_room_member.252` | carol | a non-member (FALSE; measured alice → true) | carol not in `roomAliceBob` |
+| `F5.is_session_participant.253` | carol | a non-participant (FALSE; measured alice → true) | carol holds no seat |
+| `F5.sprint_standings.254` | carol | a non-entrant (42501 "you are not in that tournament") | carol has no entry |
+| `F5.viewer_is_in_tournament.256` | carol | a non-entrant (FALSE) | carol has no entry |
+| `F5.accept_friend_request.257` | carol | carol ("no friendships row … between alice and carol") | no alice→carol request or friendship |
+| `F5.decline_friend_request.258` | carol | a caller who is not the request's receiver | **premise not satisfied** — see D3.36 |
+| `F5.unblock_player.261` | carol | a caller other than alice — as alice, unblocking is legitimate | the alice→dave block exists; carol blocks nobody |
+| `F5.remove_friend.262` | carol | a caller outside the friendship — as alice, removal is legitimate | **premise contradicted by a shared fixture** — D3.36 |
+| `F5.viewer_is_friend_of.265` | carol | a caller who is not bob's friend (FALSE; alice → true) | **premise contradicted by a shared fixture** — D3.36 |
+| `F5.viewer_has_blocked.266` | carol | carol ("carol has blocked nobody"; measured alice → true) | carol blocks nobody |
+| `F5.viewer_is_blocked_by.267` | carol | a caller alice has not blocked (FALSE) | alice blocks only dave |
+| `F5.join_private_room.270` | carol | any caller — the code exists nowhere | no room carries `ZZZZZZ` |
+| `F5.leaderboard_weekly_xp.272` | anon | anon ("must not be reachable by anon"; measured alice → 0 rows) | — (no identity) |
+
+The identity correction is right for all seventeen. For three of them it is not sufficient: their
+premises fail for fixture reasons, not identity reasons (D3.36), and those rows stay blocked.
+
+**The executor no longer re-decides who a probe runs as.** `callerFor` read `effectiveActor`,
+which substitutes the caller an operation names when it disagrees with the identity. Preflight
+blocked every contradicted row, so the substitution never reached a real run, but it meant the
+executor *could* run a row as someone its structured identity did not say. It now runs the
+structured identity and nothing else; a disagreement is a contradiction for preflight to refuse.
+
+**Proven, not asserted.** `checkIdentityConsistency` checks every one of the 345 rows: one
+identity, the operation's callers equal it, any caller the expected result names in an actor
+position equals it, and the executor derives exactly it. `prove-gates` reverts `.246` to alice,
+runs `.272` as alice, and injects an executor derivation that ignores the identity; all three are
+caught. The contradiction detector also now reads every "as <who>" in an operation rather than
+only a leading one.
+
+**The intent drafts did not change.** They were composed against `effectiveActor`, the caller the
+expectation requires, so regenerating all seventeen produces the same sentences; the store was
+not rewritten, and all 240 entries remain `ai_draft` / `unreviewed`.
+
+**Smoke, not evidence.** Six probes were run to validate the corrected plumbing — `.252`, `.253`,
+`.266` as carol, `.272` as anon, and the two tournament-match reads (D3.34). The carol session read
+back `current_user = authenticated`, `session_user = authenticator`, `auth.uid()` = carol's id,
+`bypassrls = false`; the anon session `current_user = anon` with a NULL `auth.uid()`. Each
+returned what its row predicts (FALSE, FALSE, FALSE, 42501, one row, no rows), no application
+table's contents changed, and Arc21's fingerprint was identical before and after. **These are
+not WP3 results**: the suite is not authorised, and no intent sentence is the author's yet.
+
+### D3.34 — The tournament match is a fixture of its own
+
+**Decided.** `F1.public_tournament_matches.212` (alice, "at least 1 row") and `.213` (carol, "no
+data") read **match** rows for `fixtures.tournamentAliceBob.id`. The approved fixture for both
+was "one tournament with alice and bob holding tournament_entries rows, and carol holding none",
+which creates no match: the positive could not have succeeded, and the negative's refusal would
+have been true because the set was empty. D3.23 found this and the seeder quietly added a match
+under the tournament's key; that absorbed the gap instead of stating it.
+
+The match is now its own requirement, with the planner stating it and the seeder and preflight
+checking it:
+
+| | |
+|---|---|
+| Stable key | `tournament_alice_bob_match`, built on `tournament_alice_bob` |
+| Fixture reference | `fixtures.tournamentAliceBobMatch.id` = `bbbb0000-0000-4000-8000-000000000001` (the id the row already had) |
+| Tournament | `fixtures.tournamentAliceBob.id` = `22220000-0000-4000-8000-000000000001`, not cancelled |
+| Participants | slot A = alice's entry, slot B = bob's entry, both in that tournament; carol in no slot of that tournament's bracket |
+| State | `pending`, round 1, slot 0, no winner (the policy under test reads only `viewer_is_in_tournament`, so any status would serve; the default is the deterministic choice) |
+| Setup | `src/seed-extensions.ts`, as admin, in the disposable database; `on conflict (id)` restores a drifted row, and a different row in the same slot is refused rather than adopted |
+| Consumers | `F1.public_tournament_matches.212`, `F1.public_tournament_matches.213` |
+
+The two rows' `fixture` text now names the match, which is the only change to them; it is listed
+as a correction in the approved manifest (D3.35). **Seed extensions: 22 → 23**, the difference
+being exactly this key. Required keys equal implemented keys, and all 23 verify live. `prove-gates`
+deletes the match, moves it to the wrong tournament, empties bob's slot, and completes it with a
+winner — each inside a rolled-back transaction — and preflight's fixture check fails for every
+one.
+
+**A consumer-list correction alongside it.** `requiredBy` for a declared fixture used to count
+only rows that stated it as their fixture; rows that *reference* it in their operation were
+skipped whenever the fixture was already claimed. So `tournament_alice_bob` did not list
+`F5.sprint_standings.254` or `F5.viewer_is_in_tournament.256`, and `room_alice_bob` did not list
+the five F5 room rows. Both lists are now complete; no key changed.
+
+### D3.35 — The approved matrix is frozen in a manifest, with every correction listed
+
+**Decided.** `rubric/wp3-approved-matrix.json` holds the approved matrix: every Test ID in order,
+a hash of the twelve fields that define the question each row asks, its identity and a hash of
+its fixture. It was built from the approved planning run `20260922T071548Z-5695a4c3df2d`
+(sha256 `13810305762c…`) with nineteen corrections applied — the seventeen C1 identities and the
+two tournament-match fixtures — and each correction is listed inside the file with its approved
+value, its corrected value, why the approved value contradicted its own row, and its decision.
+
+Preflight compares the plan about to run against it: the same Test IDs in the same order, no
+frozen field changed, identities and fixtures equal to the manifest, and the manifest itself
+reproducible from the approved run plus its listed corrections.
+
+**Why.** "345 Test IDs" is a count, and a count cannot distinguish the approved 345 from 344 of
+them plus a substitute — `prove-gates` now demonstrates exactly that case. It also cannot see an
+approved operation or expectation drift when the planner is edited, and this pass edited the
+planner. With the manifest, the claim "no unaffected row changed" is checked on every run rather
+than asserted once.
+
+### D3.36 — What else stands between the plan and a run that means anything
+
+**Found while resolving C1, and not resolved here.** The previous record said the executor,
+fixtures and preflight were built and that the author's intent sentences were the only remaining
+gate apart from C1. Reconstructing the state from disk showed that a full run today would record
+dozens of verdicts that do not mean what they say — findings against working controls, and
+"effective" refusals of rows that do not exist. None of it came from Arc21. `src/wp3-readiness.ts`
+now computes each class and preflight fails on it, so the gate reflects the harness as it is:
+
+| Check | Rows | What is wrong |
+|---|---:|---|
+| column / compile | 3 | Three derived statements do not compile: the executor names `actor_user_id` (twice) and `command_id` on `private.game_commands`, which has `user_id` and no `command_id`. Preflight's catalog check was named "…relation, column and function…" and checked no column; it now compiles every SQL and RPC probe with `PREPARE`, which resolves every name without executing anything |
+| R1 | 4 | `F5.277`–`.280` have custom expectations no assertion recognises, so each would be recorded `deficient` whatever the control did |
+| R2 | 40 | The probe's subject set is empty. Twelve application tables hold no rows at all, so nine F1 positives cannot succeed and their negatives' refusals are vacuous; alice has sent and received no friend request and holds no queue entry; bob and dave hold none of several rows their negatives refuse; and **the F8 topic parser keeps a trailing comma** (`"game:…001,"`, `"presence:players,"`), so `F8.307`–`.310` query a topic that does not exist and `.311` would publish to one |
+| R3 | 4 | The F3 INSERT positives insert only the predicate column: `blocks.blocked_id`, `friend_requests.receiver_id`, and `push_tokens.token`/`platform` are NOT NULL, and alice already has the one loadout `loadouts_user_id_key` allows |
+| R4 | 8 | "Refusal or no effect" is judged as "raised or 0 rows", but `select * from f()` returns one row whenever a non-set-returning function does not raise — so `decline_friend_request`'s `'none'`, `retire_push_token`'s void and `join_private_room`'s by-design NULL all read as effects |
+| R5 | 18 | A row's stated premise does not hold. `F5.262` and `.265` need carol to have no tie to bob, but F1's approved negatives need "the bob↔carol row", which the shared fixture therefore contains; `F5.258` names "a request alice sent to bob" that exists nowhere; `F5.264` calls bob "a non-friend" while the standing seed makes alice and bob friends; and **the 14 deleted-user boundary rows run with dave's account live** — nothing in the executor deletes him |
+| R6 | 12 | An expectation claims something about state ("still attributed to alice afterwards", "no bob or carol row … changes") that no state guard checks — D3.30 #2's class, on rows it did not reach; the six caller-scoped functions that are VOLATILE among them |
+| R7 | 48 | Every probe runs in autocommit on one shared instance with nothing restored between probes, and 48 commit changes when their control *holds*. `F2.public_blocks.024` deletes the seeded alice→dave block before `F1.public_profiles.146`/`.148`, `F5.259`, `.261`, `.263` and `.276`, which all depend on it; `F2.public_friendships.067` deletes the alice↔bob friendship before `F5.262`'s guard checks it survives; `F5.260` blocks bob before `.264` expects bob's profile |
+
+One more is known from reading a function body rather than from a check:
+`delete_own_account()` refuses alice with P0001 because she holds an active seat, and the
+caller-scoped assertion requires the call not to raise, so `F5.283` would be recorded `deficient`
+for a precondition refusal that says nothing about escalation. Whether such a refusal satisfies
+the caller-scoped invariant is a question about the approved expectation, and so the author's.
+
+**Why detect rather than fix.** Each class needs an implementation choice this pass was not asked
+to make and should not make silently. The largest is R7: the obvious isolation — one transaction
+per probe, rolled back — cannot evaluate a state guard, because the guard needs a privileged view
+of uncommitted state and Arc21 grants `service_role` no table privilege at all; granting one
+would change Arc21's grants, which D3.31 forbids. The remaining options (commit, check, then
+restore by rebuild or by verified compensation; or run probes under `SET LOCAL ROLE` from the
+admin connection, which reverses D0.4) are each a decision with a cost. Everything in the table
+is fixable on the Attest side and nothing requires touching Arc21; the premises of `.258`, `.262`,
+`.264`, `.265` and the deleted-user rows need probe-scoped fixture state, and `.283` needs the
+author's reading of its expectation.
+
+**Why it matters that the gate says so.** Without these checks preflight would have passed every
+structural check once the intents were adopted, and `execute-wp3 --confirm` would have written
+those verdicts into the evidence store as results. That is the failure this project exists to
+prevent, one level up.
+
+### D3.37 — Three gate proofs were assertions; all of them are injections now
+
+**Correction to D3.29.** "All 19 are caught" was true only because three of the nineteen recorded
+`caught: true` as a literal with nothing injected: a fixture carrying the wrong value, an
+inverted role property, and an unreachable Realtime service. Each is now a real injection — the
+falsifying cosmetic made active inside a rolled-back transaction, each role property inverted
+through the same pure function preflight uses, and the health check pointed at a closed port. The
+"Realtime reachable" check itself was also weaker than its name: it accepted any HTTP answer,
+including the 403 the health route returns to a request with no key, so it now requires HTTP 200
+and `healthy: true` with an anon key signed in memory.
+
+`prove-gates` now runs 37 injections and 2 controls, all caught or held, with real state intact:
+the nineteen, plus the C1 identity and executor-wiring cases, the four tournament-match defects,
+a substituted and an edited approved row, R1, R2 and R5 shown to fail and then clear when the
+defect is removed in a rolled-back transaction, the harness-exception case extended to the
+structured assertion path and to a malformed probe's 42601, and six Arc21 source-state changes
+made in a throwaway git repository.

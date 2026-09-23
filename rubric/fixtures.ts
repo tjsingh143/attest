@@ -44,6 +44,11 @@ export const FIXTURES = {
   roomBobHosts: F("fixtures.roomBobHosts.id", "11110000-0000-4000-8000-000000000001", "extension", "a private room hosted by BOB, with bob and carol joined and alice not a member"),
   roomAliceBob: F("fixtures.roomAliceBob.id", "11110000-0000-4000-8000-000000000002", "extension", "a private room hosted by alice, with alice and bob joined and carol NOT a member"),
   tournamentAliceBob: F("fixtures.tournamentAliceBob.id", "22220000-0000-4000-8000-000000000001", "extension", "a tournament with alice and bob entered and carol not"),
+  // D3.34. The two tournament_matches probes read MATCH rows, which the
+  // tournament fixture above does not create. This used to be a row the seeder
+  // added silently under the tournament's key (D3.23); it is now a fixture of
+  // its own, with the id it already had.
+  tournamentAliceBobMatch: F("fixtures.tournamentAliceBobMatch.id", "bbbb0000-0000-4000-8000-000000000001", "extension", "a pending round-1, slot-0 tournament_matches row in fixtures.tournamentAliceBob.id pairing alice's entry against bob's; carol is in neither slot"),
   tournamentAliceDave: F("fixtures.tournamentAliceDave.id", "22220000-0000-4000-8000-000000000002", "extension", "a tournament with alice and dave both entered, for the sprint_standings block-bypass characterization"),
   unownedCosmetic: F("fixtures.unownedCosmetic.id", "33330000-0000-4000-8000-000000000001", "extension", "a cosmetic alice holds no user_cosmetics row for"),
   bobNotSentRequest: F("fixtures.bobCarolRequest.id", "44440000-0000-4000-8000-000000000001", "extension", "a friend_request from bob to carol, naming alice in neither column"),

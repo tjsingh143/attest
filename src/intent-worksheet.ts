@@ -18,9 +18,16 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { PlannedTest, Wp3Plan, Family } from "./wp3-plan.ts";
+import type { AuthorIntent, IntentStore } from "./author-intents.ts";
+import { isAdopted } from "./author-intents.ts";
+import { effectiveActor } from "./plan-contradictions.ts";
 
 export interface WorksheetRow {
   readonly testId: string;
+  /** The entry in the canonical store, when one exists. */
+  readonly proposal?: AuthorIntent;
+  /** The caller the probe must actually run as; see plan-contradictions C1. */
+  readonly runsAs?: string;
   readonly family: Family;
   readonly control: string;
   readonly identity: string;
@@ -57,25 +64,22 @@ export function requiresIntent(t: PlannedTest): boolean {
 }
 
 /**
- * A plain-English prompt. Phrased so the author supplies the attack, and
- * deliberately not phrased as "confirm that …", which would invite agreement
- * with the planner's own rationale rather than an independent sentence.
+ * A neutral prompt.
+ *
+ * It used to interpolate the caller — "If alice could actually do this…" —
+ * which read oddly on the many rows whose caller is carol, anon, the server, or
+ * a token for a deleted account. One neutral question asked of every row also
+ * avoids nudging the answer toward the identity rather than the objective.
  */
-function question(t: PlannedTest): string {
-  const who = t.identity.startsWith("anon")
-    ? "a signed-out caller"
-    : t.identity.includes("server-side")
-      ? "the server itself"
-      : t.identity.includes("owner")
-        ? "the table owner"
-        : t.identity.split(":")[1] ?? t.identity;
-  return `If ${who} could actually do this and it succeeded, what would they have got away with? Name the attack or the mistake in one sentence.`;
+function question(_t: PlannedTest): string {
+  return `What attack or misuse is this negative test trying to prevent? Describe it in one sentence.`;
 }
 
 const TARGET_BATCH = 25;
 
-export function buildWorksheet(plan: Wp3Plan): Worksheet {
+export function buildWorksheet(plan: Wp3Plan, store?: IntentStore | null): Worksheet {
   const needed = plan.tests.filter(requiresIntent);
+  const proposals = new Map((store?.intents ?? []).map((e) => [e.testId, e]));
 
   const rows: WorksheetRow[] = FAMILY_ORDER.flatMap((family) =>
     needed
@@ -89,6 +93,8 @@ export function buildWorksheet(plan: Wp3Plan): Worksheet {
         expected: t.expected,
         covers: t.covers,
         question: question(t),
+        proposal: proposals.get(t.testId),
+        runsAs: effectiveActor(t),
       })),
   );
 
@@ -169,14 +175,26 @@ export function buildWorksheet(plan: Wp3Plan): Worksheet {
       detail: forbidden.length ? `offenders: ${forbidden.slice(0, 5).map((r) => r.testId).join(", ")}` : "none present",
     },
     {
+      // A total alone would pass if one row were duplicated and another
+      // dropped, which is exactly the shape "exactly once" is meant to exclude.
       check: "batches account for every row exactly once",
-      passed: batchTotal === rows.length,
-      detail: `${batches.length} batches totalling ${batchTotal} of ${rows.length}`,
+      passed:
+        batchTotal === rows.length &&
+        new Set(batches.flatMap((b) => b.rows.map((r) => r.testId))).size === rows.length,
+      detail: `${batches.length} batches totalling ${batchTotal} of ${rows.length}, ${new Set(batches.flatMap((b) => b.rows.map((r) => r.testId))).size} distinct`,
     },
     {
-      check: "no intent sentence was pre-filled",
-      passed: true,
-      detail: "every AUTHOR INTENT field is emitted blank; the generator has no path that writes one",
+      // Computed, not asserted. The old version hard-coded `passed: true`.
+      check: "no AI draft is presented as the author's",
+      passed: rows.every((r) => !r.proposal || !isAdopted(r.proposal) || r.proposal.provenance !== "ai_draft"),
+      detail: (() => {
+        const withP = rows.filter((r) => r.proposal);
+        const drafts = withP.filter((r) => r.proposal!.provenance === "ai_draft").length;
+        const adopted = withP.filter((r) => isAdopted(r.proposal!)).length;
+        return withP.length === 0
+          ? "no proposals rendered; every AUTHOR INTENT field is blank"
+          : `${drafts} still ai_draft, ${adopted} adopted by the author, of ${rows.length}`;
+      })(),
     },
   ];
 
@@ -196,14 +214,22 @@ function renderRow(r: WorksheetRow, n: number): string[] {
     `| | |`,
     `|---|---|`,
     `| Control | \`${cell(r.control)}\` |`,
-    `| Runs as | ${cell(r.identity)} |`,
+    `| Runs as | ${cell(r.identity)}${r.runsAs && r.runsAs !== r.identity ? ` **— must actually run as ${cell(r.runsAs)}; see contradiction C1**` : ""} |`,
     `| Operation | ${cell(r.operation)} |`,
     `| Expected safe result | ${cell(r.expected)} |`,
     `| Covers | ${cell(r.covers)} |`,
     ``,
     `> ${cell(r.question)}`,
     ``,
-    `**AUTHOR INTENT:** \\_\\_\\_\\_\\_`,
+    ...(r.proposal
+      ? [
+          `**PROPOSED (${r.proposal.provenance}${r.proposal.provenance === "ai_draft" ? " — NOT YET ADOPTED BY AUTHOR" : ""}, ${r.proposal.reviewStatus}):**`,
+          ``,
+          `> ${cell(r.proposal.intent)}`,
+          ``,
+          `**AUTHOR INTENT:** ${isAdopted(r.proposal) ? cell(r.proposal.intent) : "\\_\\_\\_\\_\\_  *(accept the draft above, or write your own)*"}`,
+        ]
+      : [`**AUTHOR INTENT:** \\_\\_\\_\\_\\_`]),
     ``,
   ];
 }
@@ -312,4 +338,19 @@ export async function writeWorksheet(
       renderBatchMarkdown(b, w.batches.length, meta),
     );
   }
+  // A compact two-column pass, for reading all 240 sentences end to end without
+  // the surrounding detail. Tab-separated so it opens in a spreadsheet and the
+  // sentences can be edited in a column.
+  const tsv = [
+    "test_id\tprovenance\treview_status\tproposed_intent",
+    ...w.rows.map((r) =>
+      [
+        r.testId,
+        r.proposal?.provenance ?? "none",
+        r.proposal?.reviewStatus ?? "none",
+        (r.proposal?.intent ?? "").replaceAll("\t", " ").replaceAll("\n", " "),
+      ].join("\t"),
+    ),
+  ].join("\n");
+  await writeFile(join(runDir, "author-intent-review.tsv"), tsv + "\n");
 }

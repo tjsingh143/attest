@@ -6,6 +6,15 @@
  *   node src/cli.ts validate     WP1: deliberate-break validation of the harness
  *   node src/cli.ts run          all of the above, in order  (the one command)
  *
+ * WP3, in the order they must happen:
+ *
+ *   seed-extensions              build the fixture state the matrix requires
+ *   plan-wp3                     generate and validate the 345-row matrix
+ *   draft-intents                draft the 240 attack sentences for the author to review
+ *   prove-gates                  break every gate on purpose and require each to fire
+ *   preflight-wp3 --for-execution   everything that must hold before a real run
+ *   execute-wp3 --confirm        run it. Refused until the author has adopted all 240.
+ *
  * The brief's standard is that one command reproduces every number in the
  * report from a fresh database. `run` is that command. As work packages land it
  * grows; today it brings up the instance and inventories it.
@@ -24,7 +33,21 @@ import { buildRiskInputs } from "./risk-inputs.ts";
 import { renderRiskInputsMarkdown } from "./report-risk-inputs.ts";
 import { formatRubricStatus, readRubricStatus } from "./rubric.ts";
 import { runCp3 } from "./cp3.ts";
-import { runWp3Planner } from "./wp3-planner-run.ts";
+import { runWp3Planner, buildPlanInProcess } from "./wp3-planner-run.ts";
+import { applySeedExtensions, verifySeedExtensions, FIXTURE_COMPLETENESS_NOTES } from "./seed-extensions.ts";
+import { buildIntentPackage } from "./wp3-intents-run.ts";
+import { preflight, renderPreflight, renderReadiness, REALTIME_HEALTH_URL } from "./wp3-preflight.ts";
+import { loadApprovedManifest } from "./wp3-approved.ts";
+import { findContradictions, summarizeContradictions } from "./plan-contradictions.ts";
+import { runInjections, renderInjections } from "./wp3-fault-injection.ts";
+import { loadIntentStore } from "./author-intents.ts";
+import {
+  ARC21_GUARD_EXIT_CODE,
+  captureArc21State,
+  compareArc21State,
+  describeArc21State,
+  type Arc21SourceState,
+} from "./arc21-guard.ts";
 
 /**
  * Sortable, unique, and it says what it is: when, and against which schema.
@@ -121,8 +144,61 @@ async function cmdRiskInputs(fixedRunId?: string): Promise<void> {
   console.log(`  written to evidence/runs/${runId}/`);
 }
 
+/**
+ * Arc21 is a read-only assessment target (D3.31), so every command is
+ * bracketed: the checkout is fingerprinted before the command runs and again
+ * after, and any difference is a harness safety violation with its own exit
+ * code. The checkout may already be dirty; what is checked is that Attest did
+ * not change it. Nothing is ever reverted automatically — reverting would risk
+ * destroying the author's own uncommitted work.
+ */
 async function main(): Promise<void> {
   const cmd = process.argv[2] ?? "run";
+  let arc21Pre: Arc21SourceState;
+  try {
+    arc21Pre = await captureArc21State();
+  } catch (err) {
+    console.error(
+      `attest: REFUSED — the Arc21 checkout could not be fingerprinted, so the read-only guard cannot run: ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
+    process.exitCode = ARC21_GUARD_EXIT_CODE;
+    return;
+  }
+  try {
+    await dispatch(cmd, arc21Pre);
+  } finally {
+    await checkArc21Unchanged(arc21Pre);
+  }
+}
+
+async function checkArc21Unchanged(pre: Arc21SourceState): Promise<void> {
+  let post: Arc21SourceState;
+  try {
+    post = await captureArc21State();
+  } catch (err) {
+    console.error(
+      `\nattest: HARNESS SAFETY CHECK FAILED — the Arc21 checkout could not be re-read after the command: ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
+    process.exitCode = ARC21_GUARD_EXIT_CODE;
+    return;
+  }
+  const cmp = compareArc21State(pre, post);
+  if (cmp.identical) {
+    console.log(`\n  arc21 read-only guard: source state unchanged — ${describeArc21State(post)}`);
+    return;
+  }
+  console.error("\nattest: HARNESS SAFETY VIOLATION — the Arc21 checkout changed while this command ran:");
+  for (const d of cmp.differences) console.error(`    - ${d}`);
+  console.error(
+    "  Arc21 is a read-only assessment target (DECISIONS D3.31). Nothing has been reverted.\n" +
+      "  Investigate before trusting any output of this command.",
+  );
+  process.exitCode = ARC21_GUARD_EXIT_CODE;
+}
+
+async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> {
   switch (cmd) {
     case "bringup":
       await cmdBringup();
@@ -147,6 +223,117 @@ async function main(): Promise<void> {
         console.error("\nattest: CP3 FAILED — the estimate is not internally consistent, or a resource is unrated.");
         process.exitCode = 1;
       }
+      break;
+    }
+    case "seed-extensions": {
+      console.log("seed extensions (WP3 fixtures)");
+      await withSession(adminSession("seed-extensions"), async (a) => {
+        await applySeedExtensions(a, (m) => console.log(m));
+        const res = await verifySeedExtensions(a);
+        const bad = res.filter((r) => !r.ok);
+        for (const r of res) console.log(`  ${r.ok ? "ok  " : "FAIL"} ${r.key.padEnd(44)} ${r.detail}`);
+        console.log(`\n  ${res.length - bad.length}/${res.length} verified`);
+        for (const n of FIXTURE_COMPLETENESS_NOTES) console.log(`\n  note on ${n.key}: ${n.note}`);
+        if (bad.length) process.exitCode = 1;
+      });
+      break;
+    }
+    case "draft-intents": {
+      console.log("draft AUTHOR INTENT sentences (drafts only — the author adopts them)");
+      const { plan, runId, schemaVersion } = await buildPlanInProcess();
+      const r = await buildIntentPackage(plan, runId, schemaVersion, (m) => console.log(m));
+      if (r.qualityIssues.length > 0 || !r.worksheetValid) {
+        console.error("\nattest: the draft package did not validate.");
+        process.exitCode = 1;
+      } else {
+        console.log(`\n  ${r.aiDraft} sentence(s) await the author. Nothing may execute until that is 0.`);
+      }
+      break;
+    }
+    case "prove-gates": {
+      console.log("prove the WP3 gates by breaking them (copies, rolled-back transactions and a throwaway repo; nothing real is changed)");
+      const { plan, resources } = await buildPlanInProcess();
+      const store = await loadIntentStore();
+      if (!store) { console.error("attest: no canonical intent store; run draft-intents first."); process.exitCode = 1; break; }
+      const manifest = await loadApprovedManifest();
+      if (!manifest) { console.error("attest: rubric/wp3-approved-matrix.json is missing."); process.exitCode = 1; break; }
+      const rs = await withSession(adminSession("prove-gates"), async (a) => {
+        const { rows } = await a.query(
+          "select rolname, rolsuper, rolbypassrls from pg_roles where rolname in ('postgres','authenticator')",
+        );
+        const m = new Map(rows.map((r) => [r.rolname as string, r]));
+        return runInjections(plan, resources, store, {
+          admin: a,
+          manifest,
+          liveRoleProps: {
+            postgresBypassRls: m.get("postgres")?.rolbypassrls === true,
+            authenticatorBypassRls: m.get("authenticator")?.rolbypassrls !== false,
+            authenticatorSuperuser: m.get("authenticator")?.rolsuper !== false,
+          },
+          realtimeUrl: REALTIME_HEALTH_URL,
+        });
+      });
+      const missed = rs.filter((r) => !r.caught);
+      const controls = rs.filter((r) => r.defect.startsWith("(control)"));
+      console.log(renderInjections(rs));
+      console.log(
+        `\n  ${rs.length - controls.length - missed.filter((r) => !controls.includes(r)).length}/${rs.length - controls.length} injected defects were caught, ` +
+          `${controls.filter((r) => r.caught).length}/${controls.length} controls held; real state restored: ${rs.every((r) => r.restored)}`,
+      );
+      if (missed.length || !rs.every((r) => r.restored)) {
+        console.error(`\nattest: ${missed.length} injected defect(s) produced no failure, or state was not restored — a gate that does not fire is a finding.`);
+        process.exitCode = 1;
+      }
+      break;
+    }
+    case "preflight-wp3": {
+      const forExecution = process.argv.includes("--for-execution");
+      console.log(`preflight WP3${forExecution ? " (for execution)" : " (planning)"}`);
+      const { plan, resources, schemaVersion } = await buildPlanInProcess();
+      const r = await preflight(plan, resources, { forExecution, expectedSchemaSha: schemaVersion, arc21Pre });
+      console.log(renderPreflight(r, forExecution));
+      if (r.readiness.some((c) => !c.passed)) {
+        console.log("\n  STRUCTURAL BLOCKERS — a probe below could not produce a verdict that means what it says (D3.36):");
+        console.log(renderReadiness(r));
+      }
+      const cs = findContradictions(plan);
+      if (cs.length) {
+        console.log("\n  UNRESOLVED PLAN CONTRADICTIONS — these Test IDs are blocked:");
+        for (const g of summarizeContradictions(cs)) {
+          console.log(`    ${g.id}: ${g.count} row(s)`);
+          console.log(`      ${g.testIds.join(", ")}`);
+          console.log(`      proposed resolution: ${g.proposedResolution}`);
+        }
+      }
+      console.log(`\n  PREFLIGHT ${r.passed ? "PASSED" : "FAILED"}`);
+      if (!r.passed) process.exitCode = 1;
+      break;
+    }
+    case "execute-wp3": {
+      console.log("execute WP3");
+      const { plan, resources, schemaVersion } = await buildPlanInProcess();
+      const r = await preflight(plan, resources, { forExecution: true, expectedSchemaSha: schemaVersion, arc21Pre });
+      console.log(renderPreflight(r, true));
+      if (r.readiness.some((c) => !c.passed)) {
+        console.log("\n  STRUCTURAL BLOCKERS (D3.36):");
+        console.log(renderReadiness(r));
+      }
+      if (!r.passed) {
+        console.error(
+          "\nattest: REFUSED — preflight did not pass, so the WP3 suite was not run.\n" +
+            "         Nothing was executed and no evidence was written.",
+        );
+        process.exitCode = 1;
+        break;
+      }
+      console.error(
+        "\nattest: preflight passed, but execution is gated behind an explicit flag.\n" +
+          "         Re-run with --confirm once you intend the full 345-probe assessment.",
+      );
+      if (!process.argv.includes("--confirm")) { process.exitCode = 2; break; }
+      const { executeWp3 } = await import("./wp3-execute-run.ts");
+      const ex = await executeWp3(plan, r.specs, (m: string) => console.log(m), undefined, arc21Pre);
+      if (!ex.arc21Unchanged) process.exitCode = ARC21_GUARD_EXIT_CODE;
       break;
     }
     case "plan-wp3": {
@@ -180,16 +367,42 @@ async function main(): Promise<void> {
         console.error("\nattest: CP3 FAILED — the estimate is not internally consistent, or a resource is unrated.");
         process.exitCode = 1;
       }
+      // The matrix depends on state the standing seed does not create, so the
+      // fixtures are built here — before planning, and before anything reads
+      // the instance expecting them.
+      console.log("seed extensions (WP3 fixtures)");
+      await withSession(adminSession("seed-extensions"), async (a) => {
+        await applySeedExtensions(a, (m) => console.log(m));
+        const bad = (await verifySeedExtensions(a)).filter((r) => !r.ok);
+        for (const r of bad) console.error(`  FAIL ${r.key}: ${r.detail}`);
+        console.log(`  ${bad.length === 0 ? "all seed extensions verified" : `${bad.length} seed extension(s) NOT satisfied`}`);
+        if (bad.length) process.exitCode = 1;
+      });
       console.log("plan WP3 (matrix only — nothing executed)");
       const pl = await runWp3Planner((s) => console.log(s), runId, c.totalTestsPrimary);
       if (pl.issues.length > 0 || !pl.worksheetValid) {
         console.error("\nattest: WP3 PLAN FAILED validation.");
         process.exitCode = 1;
       }
+      // Drafts are regenerated from the plan every run, and the merge never
+      // touches a sentence the author has written (D3.24).
+      console.log("draft AUTHOR INTENT sentences (drafts only — the author adopts them)");
+      const { plan: freshPlan, schemaVersion } = await buildPlanInProcess();
+      const ip = await buildIntentPackage(freshPlan, runId, schemaVersion, (m) => console.log(m));
+      if (ip.qualityIssues.length > 0 || !ip.worksheetValid) {
+        console.error("\nattest: the AUTHOR INTENT draft package did not validate.");
+        process.exitCode = 1;
+      }
+      console.log(
+        `\n  WP3 is planned and implemented but NOT executed.\n` +
+          `  ${ip.aiDraft} of ${ip.required} intent sentences still await the author.\n` +
+          `  Next: review evidence/runs/${runId}/author-intent-worksheet.md, adopt each sentence in\n` +
+          `  rubric/author-intents.json, then: npm run attest preflight-wp3 -- --for-execution`,
+      );
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         execute-wp3 [--confirm]|run]`);
       process.exitCode = 2;
   }
 }

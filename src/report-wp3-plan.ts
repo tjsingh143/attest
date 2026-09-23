@@ -223,8 +223,49 @@ export function renderWp3PlanMarkdown(
   }
   p();
 
+  // --- seed extensions -----------------------------------------------------
+  p(`## 5. Seed extensions — state that must exist before any of this runs`);
+  p();
+  p(`The standing seed (\`seed/seed.sql\`) does not create everything the matrix needs. This is`);
+  p(`the reconciled set of what else must exist, derived from the plan rather than declared`);
+  p(`beside it: every state a planned row names as its fixture, plus every declared fixture`);
+  p(`reference a row uses in its operation without naming it as a fixture — which is the half`);
+  p(`that used to go unstated. \`attest preflight-wp3\` fails if any key here has no`);
+  p(`implementation, so a fixture cannot be silently assumed into existence.`);
+  p();
+  const se = plan.seedExtensions;
+  const byKind = se.reduce<Record<string, number>>((a, e) => ({ ...a, [e.kind]: (a[e.kind] ?? 0) + 1 }), {});
+  p(
+    `**${se.length} requirements** — ` +
+      Object.entries(byKind).map(([k, n]) => `${n} ${k}`).join(", ") +
+      `. They cover **${new Set(se.flatMap((e) => e.provides)).size}** declared fixture references and are required by ` +
+      `**${new Set(se.flatMap((e) => e.requiredBy)).size}** of the ${plan.tests.length} planned tests.`,
+  );
+  p();
+  p(`| Key | Kind | Provides | Built on | Required by | Families | State that must hold | Setup |`);
+  p(`|---|---|---|---|---:|---|---|---|`);
+  for (const e of se) {
+    const req = e.requiredBy.length === 0
+      ? "**0 — declared, unreferenced**"
+      : `${e.requiredBy.length}`;
+    p(
+      `| \`${cell(e.key)}\` | ${e.kind} | ${e.provides.map((x) => `\`${x}\``).join(", ") || "—"} | ` +
+        `${e.dependsOn.map((x) => `\`${x}\``).join(", ") || "—"} | ${req} | ` +
+        `${e.families.map((f) => f.split(" ")[0]).join(", ") || "—"} | ${cell(e.state)} | ${cell(e.setup)} |`,
+    );
+  }
+  p();
+  p(`<details><summary>Test IDs per requirement</summary>`);
+  p();
+  for (const e of se) {
+    p(`- \`${e.key}\` — ${e.requiredBy.length ? e.requiredBy.map((t) => `\`${t}\``).join(", ") : "*no planned test references this*"}`);
+  }
+  p();
+  p(`</details>`);
+  p();
+
   // --- the matrix ----------------------------------------------------------
-  p(`## 5. The matrix`);
+  p(`## 6. The matrix`);
   p();
   p(`Grouped by family. \`Plumbing\`: **reuse WP1** means the same mechanism WP1 already drives;`);
   p(`**extend WP1** means the mechanism exists but needs a new case or seeded row; **new** means it`);
