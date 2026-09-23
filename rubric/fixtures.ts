@@ -41,6 +41,13 @@ export const FIXTURES = {
   friendshipAliceBob: F("fixtures.friendshipAliceBob.id", "aa000000-0000-4000-8000-000000000001", "standing", "the seeded alice-bob friendship"),
 
   // --- seed extensions the corrected fixtures require ---------------------
+  // A fifth synthetic account whose profile privacy is 'private'. The
+  // leaderboard probes (F5.leaderboard_*) assert that no private-privacy
+  // account's identity appears; with no private account holding leaderboard
+  // data that claim was true of an empty set (D3.38). Erin is also the
+  // counterparty for alice's own friend request and, probe-scoped, her friend,
+  // so that a row naming alice's relationships need not name bob or carol.
+  erin: F("fixtures.erin.id", "00000000-0000-4000-8000-00000000000e", "extension", "a fifth synthetic account, privacy 'private', holding leaderboard data; alice's friend-request counterparty"),
   roomBobHosts: F("fixtures.roomBobHosts.id", "11110000-0000-4000-8000-000000000001", "extension", "a private room hosted by BOB, with bob and carol joined and alice not a member"),
   roomAliceBob: F("fixtures.roomAliceBob.id", "11110000-0000-4000-8000-000000000002", "extension", "a private room hosted by alice, with alice and bob joined and carol NOT a member"),
   tournamentAliceBob: F("fixtures.tournamentAliceBob.id", "22220000-0000-4000-8000-000000000001", "extension", "a tournament with alice and bob entered and carol not"),

@@ -174,6 +174,766 @@
       "to": "anon",
       "reason": "C1. The approved operation names anon as the caller (\"as anon, call leaderboard_weekly_xp(10, 0)\") and the approved expectation (\"error 42501 — EXECUTE is granted to authenticated and must n…\") is stated for that caller. The planner had defaulted every F5_SPECS identity to authenticated:alice; the identity is now read from the same spec record as the operation (callerNamedBy). Operation, expected and covers are unchanged.",
       "decision": "D3.33"
+    },
+    {
+      "testId": "F10.private_game_commands.012",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "two accepted private.game_commands rows at session fixtures.session.id, one by alice and one by bob, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. For the immutability probes, the one row an UPDATE or DELETE names now exists.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.private_game_commands.013",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "two accepted private.game_commands rows at session fixtures.session.id, one by alice and one by bob, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. For the immutability probes, the one row an UPDATE or DELETE names now exists.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.private_game_commands.014",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "two accepted private.game_commands rows at session fixtures.session.id, one by alice and one by bob, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. For the immutability probes, the one row an UPDATE or DELETE names now exists.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_blocks.023",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "a block authored by bob (bob->dave) alongside the seeded alice->dave block, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F2.public_blocks.025",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "a block authored by bob (bob->dave) alongside the seeded alice->dave block, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_career_attempts.031",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.career_attempts row owned by alice and one owned by bob, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_career_attempts.032",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.career_attempts row owned by alice and one owned by bob, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F6.public_daily_challenges.045",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "today's daily challenge present, open (opens_at <= now < closes_at) and unrevealed, inserted server-side with a seed commitment computed from its secret",
+      "reason": "The approved fixture restated the operation ('state for <fn>: <attempt>') rather than naming a state; the concrete state is now stated. For F6.045 the standing seed creates no daily challenge, so the positive's 'rows returned' was unreachable (R2). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_daily_entries.050",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "today's daily challenge, with one completed public.daily_entries row each for alice, bob and erin (a private-privacy account), inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the daily leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_daily_entries.051",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "today's daily challenge, with one completed public.daily_entries row each for alice, bob and erin (a private-privacy account), inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the daily leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_friend_requests.053",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "exactly one friend request sent by alice: a pending alice->erin public.friend_requests row, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The one alice-sent request is to erin, not to bob or carol, so rows listing alice's relationships need not name them.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F2.public_friend_requests.055",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "exactly one friend request sent by alice: a pending alice->erin public.friend_requests row, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The one alice-sent request is to erin, not to bob or carol, so rows listing alice's relationships need not name them.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F2.public_friend_requests.056",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.friend_requests row linking bob and carol, with alice named in neither sender_id nor receiver_id",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The bob->carol row already existed as a requirement of F1.054; this row now states it.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F3.public_friend_requests.058",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with the pending bob->carol friend request removed, so a new bob->carol request would violate no unique key if the policy admitted it",
+      "reason": "A WITH CHECK negative must insert a row that WOULD be accepted if the policy admitted it; with the baseline's pending bob->carol request present a failed WITH CHECK would surface as a unique violation. That request is removed for this probe only. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F3.public_friend_requests.059",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "exactly one friend request sent by alice: a pending alice->erin public.friend_requests row, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The one alice-sent request is to erin, not to bob or carol, so rows listing alice's relationships need not name them.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F6.public_friend_requests.061",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline plus one pending friend request from carol to alice, the only request alice has received",
+      "reason": "R2 (D3.36): the operation updates a friend request alice RECEIVED, and the standing seed has none. The request (from carol) is probe-scoped because a baseline one would appear in rows listing alice's own requests. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F2.public_friendships.068",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.friendships row linking bob and carol, with alice named in neither user_id_a nor user_id_b",
+      "reason": "The approved operation (a carol call against a room she is not in) is refused at the membership check only if carol is bob's friend — invite_friend_to_room checks friendship first — so the bob<->carol friendship, already a requirement of F1.066, is what lets this probe reach the property it names. For F2.068 it is the bob-authored row the negative must fail to delete. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.public_game_events.079",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The rows already existed as a requirement of the F1 game_events probes; this row now states it.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.public_game_events.080",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The rows already existed as a requirement of the F1 game_events probes; this row now states it.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.public_game_events.081",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The rows already existed as a requirement of the F1 game_events probes; this row now states it.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_hand_players.099",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one settled hand at session fixtures.session.id: a public.hand_records row, a public.hand_players row for alice and one for bob, and one graded public.player_actions row each, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_hand_players.100",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one settled hand at session fixtures.session.id: a public.hand_records row, a public.hand_players row for alice and one for bob, and one graded public.player_actions row each, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_hand_records.102",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one settled hand at session fixtures.session.id: a public.hand_records row, a public.hand_players row for alice and one for bob, and one graded public.player_actions row each, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_hand_records.103",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one settled hand at session fixtures.session.id: a public.hand_records row, a public.hand_players row for alice and one for bob, and one graded public.player_actions row each, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F3.public_loadouts.114",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with alice's loadout row removed, so a new loadout attributed to alice violates no unique key",
+      "reason": "R3 (D3.36): alice already holds the one loadout loadouts_user_id_key allows, so the positive INSERT hit a unique key and could never reach WITH CHECK. Her loadout is removed for this probe only. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F3.public_loadouts.115",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with bob's loadout row removed, so a loadout attributed to bob would violate no unique key if the policy admitted it",
+      "reason": "A WITH CHECK negative must insert a row that WOULD be accepted if the policy admitted it; with bob's existing loadout present a failed WITH CHECK would surface as a unique violation instead of an inserted row. Bob's loadout is removed for this probe only. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_matchmaking_queue.119",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "alice, bob and carol each holding a waiting casual public.matchmaking_queue entry, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_matchmaking_queue.120",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "alice, bob and carol each holding a waiting casual public.matchmaking_queue entry, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_actions.130",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one settled hand at session fixtures.session.id: a public.hand_records row, a public.hand_players row for alice and one for bob, and one graded public.player_actions row each, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_actions.131",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one settled hand at session fixtures.session.id: a public.hand_records row, a public.hand_players row for alice and one for bob, and one graded public.player_actions row each, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_daily_xp.133",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_daily_xp row this UTC week each for alice, bob and erin (a private-privacy account), inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the weekly-XP leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_daily_xp.134",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_daily_xp row this UTC week each for alice, bob and erin (a private-privacy account), inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the weekly-XP leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_decision_periods.136",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_decision_periods row for the current UTC week each for alice, bob and erin (a private-privacy account), each at or above the strategy-accuracy minimum, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the strategy-accuracy leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_decision_periods.137",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_decision_periods row for the current UTC week each for alice, bob and erin (a private-privacy account), each at or above the strategy-accuracy minimum, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the strategy-accuracy leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_mode_stats.139",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_mode_stats row owned by alice and one owned by bob, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_player_mode_stats.140",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_mode_stats row owned by alice and one owned by bob, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.public_rate_limit_events.171",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "public.rate_limit_events rows for bob and for carol on 'player_search', one inside the rate-limit window and one older than it, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. For the immutability probes, the one row an UPDATE or DELETE names now exists.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.public_rate_limit_events.172",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "public.rate_limit_events rows for bob and for carol on 'player_search', one inside the rate-limit window and one older than it, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. For the immutability probes, the one row an UPDATE or DELETE names now exists.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F10.public_rate_limit_events.173",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "public.rate_limit_events rows for bob and for carol on 'player_search', one inside the rate-limit window and one older than it, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. For the immutability probes, the one row an UPDATE or DELETE names now exists.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_user_cosmetics.222",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "alice owning one default cosmetic and bob owning a different one, equipped in his loadout, with default cosmetics alice does not own remaining, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F1.public_user_cosmetics.223",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "alice owning one default cosmetic and bob owning a different one, equipped in his loadout, with default cosmetics alice does not own remaining, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.invite_friend_to_room.248",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.friendships row linking bob and carol, with alice named in neither user_id_a nor user_id_b",
+      "reason": "The approved operation (a carol call against a room she is not in) is refused at the membership check only if carol is bob's friend — invite_friend_to_room checks friendship first — so the bob<->carol friendship, already a requirement of F1.066, is what lets this probe reach the property it names. For F2.068 it is the bob-authored row the negative must fail to delete. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.decline_friend_request.258",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with the alice<->bob friendship replaced by a pending friend request alice sent to bob",
+      "reason": "R5 (D3.36): the approved operation's own premise — \"a request alice sent to bob\", which exists nowhere, and which the application only allows while they are not yet friends — contradicts the canonical baseline, which other rows need. It is established by a probe-scoped setup applied to a verified baseline before this probe only, and the disposable database is rebuilt afterwards (R7). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.remove_friend.262",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with the bob<->carol friendship and friend request removed, so carol shares no friendship or request with bob while the alice<->bob friendship remains",
+      "reason": "R5 (D3.36): the approved operation's own premise — that carol shares no friendship or request with bob (\"when the friendship is alice↔bob\"), while F1.054/.066 need the bob↔carol rows — contradicts the canonical baseline, which other rows need. It is established by a probe-scoped setup applied to a verified baseline before this probe only, and the disposable database is rebuilt afterwards (R7). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.player_public_profile.264",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with the alice<->bob friendship removed, so bob is a non-friend of alice whose privacy is 'public'",
+      "reason": "R5 (D3.36): the approved operation's own premise — that bob is \"a non-friend\" of alice, while the standing seed makes them friends — contradicts the canonical baseline, which other rows need. It is established by a probe-scoped setup applied to a verified baseline before this probe only, and the disposable database is rebuilt afterwards (R7). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.viewer_is_friend_of.265",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with the bob<->carol friendship removed, so carol and bob are not friends while the alice<->bob friendship remains",
+      "reason": "R5 (D3.36): the approved operation's own premise — that carol and bob are not friends (\"when the friendship is alice↔bob\"), while F1.066 needs the bob↔carol friendship — contradicts the canonical baseline, which other rows need. It is established by a probe-scoped setup applied to a verified baseline before this probe only, and the disposable database is rebuilt afterwards (R7). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.join_private_room.270",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "a private lobby room hosted by bob whose expires_at has passed (an ineligible room for a code-based join), inserted server-side",
+      "reason": "The approved expectation is a refusal 'that does not distinguish a non-existent room from an ineligible one'. That claim compares two responses, so the ineligible room it is compared with — an expired private lobby, one of the ineligible cases the function's own comment lists — is now a stated fixture (D3.40). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.leaderboard_weekly_xp.271",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_daily_xp row this UTC week each for alice, bob and erin (a private-privacy account), inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the weekly-XP leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.leaderboard_daily_challenge.273",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "today's daily challenge, with one completed public.daily_entries row each for alice, bob and erin (a private-privacy account), inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the daily leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.leaderboard_strategy_accuracy.274",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.player_decision_periods row for the current UTC week each for alice, bob and erin (a private-privacy account), each at or above the strategy-accuracy minimum, inserted server-side",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. On the strategy-accuracy leaderboard row the same rows populate the board, including a private-privacy account.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.leaderboard_tournament_wins.275",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "two completed tournaments: one won by erin (a private-privacy account) with bob second, one won by bob with alice second, inserted server-side",
+      "reason": "R2 (D3.36): the leaderboard this probe reads was empty, so 'no private-privacy identity' and 'public-safe projection' held of zero rows. The fixture now states a populated board that includes a private-privacy account (erin). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.ensure_todays_daily_challenge.277",
+      "field": "fixture",
+      "from": "state for ensure_todays_daily_challenge(): as alice, call ensure_todays_daily_challenge() while today's challenge is open, and inspect every returned column; then read daily_challenges.revealed_seed and seed_revealed_at for today's row",
+      "to": "today's daily challenge present, open (opens_at <= now < closes_at) and unrevealed, inserted server-side with a seed commitment computed from its secret",
+      "reason": "The approved fixture restated the operation ('state for <fn>: <attempt>') rather than naming a state; the concrete state is now stated. For F6.045 the standing seed creates no daily challenge, so the positive's 'rows returned' was unreachable (R2). Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.latest_verifiable_daily_challenge.278",
+      "field": "fixture",
+      "from": "state for latest_verifiable_daily_challenge(): as anon, call latest_verifiable_daily_challenge() while one revealed and one unrevealed challenge both exist",
+      "to": "yesterday's daily challenge closed and revealed, and today's later challenge still unrevealed, inserted server-side",
+      "reason": "The approved fixture restated the operation ('state for <fn>: <attempt>') rather than naming a state; the concrete state is now stated. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.join_matchmaking.279",
+      "field": "fixture",
+      "from": "state for join_matchmaking(p_tier table_tier): as alice, call join_matchmaking('casual') while bob holds a fresh (non-stale) queue entry",
+      "to": "the canonical baseline with alice's seat marked 'left' and alice holding no queue entry, while bob and carol hold fresh waiting casual entries",
+      "reason": "The approved fixture restated the operation rather than naming a state. join_matchmaking refuses a caller holding a live seat (PT409) before anything else — a business prerequisite, not the property this row asks about — and alice is seated in the standing seed; so the state is probe-scoped: alice's seat 'left', no queue entry of her own, bob and carol fresh. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.poll_matchmaking.280",
+      "field": "fixture",
+      "from": "state for poll_matchmaking(): as alice, call poll_matchmaking() while bob and carol also hold queue entries",
+      "to": "the canonical baseline with alice, bob and carol each holding a fresh waiting casual queue entry",
+      "reason": "The approved fixture restated the operation rather than naming a state. poll_matchmaking reports the caller's live entry, which the standing seed never created, so the call returned nothing and 'no bob or carol identity appears' held of zero rows (R2); the entries are re-stamped fresh before the probe. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.create_private_room.281",
+      "field": "fixture",
+      "from": "state for create_private_room(p_max_seats integer): as alice, call create_private_room(9) — outside the permitted 2..5 range",
+      "to": "the canonical baseline; the out-of-range seat count needs no row, only create_private_room(integer) present as a SECURITY DEFINER function",
+      "reason": "The approved fixture restated the operation ('state for <fn>: <attempt>') rather than naming a state; the concrete state is now stated. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.claim_recovery_grant.282",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with alice's balance brought below 2,000 chips through apply_wallet_delta (a correction the ledger records), and no recovery grant in the last 12 hours",
+      "reason": "claim_recovery_grant() refuses a balance at or above 2,000 chips (P0001) before its definer path is reached, and alice holds 25,000 in the standing seed; that business refusal says nothing about caller scoping. Her balance is brought below 2,000 through apply_wallet_delta, so ledger and balance still reconcile. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.delete_own_account.283",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with alice's seat at session fixtures.session.id marked 'left' (she has stood up), so she holds no active seat at an active session",
+      "reason": "delete_own_account() refuses a caller holding an active seat at an active session (P0001), before the SECURITY DEFINER behaviour this row examines is reached — and alice is seated in the standing seed. A refusal for that business rule says nothing about caller scoping (D3.41). Alice's seat is 'left', the state the function's own comment names as owing and holding nothing; Arc21's active-seat rule is untouched. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.grant_earned_cosmetics.284",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.leave_matchmaking.285",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.list_blocked.286",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.list_friend_requests.287",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.list_friends.288",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline with alice's only friendship being alice<->erin (the alice<->bob friendship removed) while the bob<->carol friendship remains",
+      "reason": "list_friends() returns the caller's friends' profiles, and in the standing seed alice's friend is bob, so the approved 'no bob or carol row appears in the result' would be false of a function working correctly. Alice's friend becomes erin while the bob<->carol friendship stays present, so a leak past alice's own rows would show. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_active_session.289",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_career_progress.290",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_competition_record.291",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_daily_entry.292",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_inventory.293",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_level_progress.294",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_loadout.295",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_sprint_entry.296",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_strategy_accuracy_progress.297",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.touch_last_seen.298",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.unread_notification_count.299",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.enforce_rate_limit.300",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_leaderboard_position.301",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "F5.my_notifications.302",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+      "reason": "The approved operation calls the function 'while bob's and carol's rows are present in every table it reads'; several of those tables held no bob or carol row in the standing seed, so 'no bob or carol row appears' held of nothing there (R2). The fixture now states that population, and preflight verifies it live. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.private_game_commands.323",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_blocks.325",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_friend_requests.326",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public.friend_requests row linking bob and carol, with alice named in neither sender_id nor receiver_id",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The bob->carol row already existed as a requirement of F1.054; this row now states it.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_friend_requests.327",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_friendships.329",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_game_events.330",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The rows already existed as a requirement of the F1 game_events probes; this row now states it.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_game_events.331",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_game_session_seats.332",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_game_sessions.333",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_profiles.335",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_rate_limit_events.336",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_room_members.337",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_rooms.338",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_tournament_entries.339",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "one tournament with alice and bob holding tournament_entries rows, and carol holding none",
+      "reason": "R2 (D3.36): the standing seed creates none of the rows this probe's own operation acts on, so a positive could not succeed and a refusal would have been true of an empty set. The fixture now states those rows as a baseline requirement applied after every rebuild. Operation, expected and covers are unchanged. The tournament's entries already existed as a requirement of F1.204/.205; this row now states it.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_tournament_entries.340",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_wallet_ledger.342",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.public_wallets.344",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "reason": "R5 (D3.36): the deleted-user boundary ran with dave's account live. The fixture now states a genuine deletion through Arc21's own delete_own_account(), with dave's token signed before it. (Contradiction C5 records why, even so, the approved operation cannot measure its claim.) Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
+    },
+    {
+      "testId": "B.suite.expired-session",
+      "field": "fixture",
+      "from": "the standing seed: alice, bob, carol and dave, with alice and bob seated at session fixtures.session.id, carol not seated, alice↔bob friends, and alice blocking dave",
+      "to": "a token for alice signed with the local stack's JWT secret whose exp is in the past (fixtures.expiredJwt), and the local PostgREST endpoint reachable",
+      "reason": "The expired-session probe needs a correctly signed but expired token; the approved fixture named only the standing seed. The credential is now a stated requirement. Operation, expected and covers are unchanged.",
+      "decision": "D3.38"
     }
   ],
   "rows": [
@@ -283,7 +1043,7 @@
       "tier": "High",
       "identity": "server-side (admin) — no client role holds USAGE on the private schema",
       "frozenSha256": "b6d7ce728521fb628976b074cf981d2718e44522da0114763a85db9a14ee42e4",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "8fbb39e9ee194da0015528cedabf00adb2ef59e890bbccfcae647fe706f4bef8"
     },
     {
       "testId": "F10.private_game_commands.013",
@@ -292,7 +1052,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "7b4f7a60093b7bd434046867b6c2d611d5ab24e6157d798466c69f48d16bf3b7",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "8fbb39e9ee194da0015528cedabf00adb2ef59e890bbccfcae647fe706f4bef8"
     },
     {
       "testId": "F10.private_game_commands.014",
@@ -301,7 +1061,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "bc11b73afb35eb5c2e5fb15758f1c8482b6188da7897f8baef9c17e5b1bbfcc3",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "8fbb39e9ee194da0015528cedabf00adb2ef59e890bbccfcae647fe706f4bef8"
     },
     {
       "testId": "F10.private_game_commands.015",
@@ -382,7 +1142,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "eb8e64dc0eaab08a35e444185801b127d330bf7b5dfea37dc10c4fa0395f4b2b",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "6fb6a36af4b51ea038a5f6c6c08e0732215107e141c16edd6d47ab70e60b82e9"
     },
     {
       "testId": "F2.public_blocks.024",
@@ -400,7 +1160,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "b6a3cff89952aaa8b196945ae5015d02ee49f6eb265d47cdfd88890ec28714af",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "6fb6a36af4b51ea038a5f6c6c08e0732215107e141c16edd6d47ab70e60b82e9"
     },
     {
       "testId": "F3.public_blocks.026",
@@ -454,7 +1214,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "8711ab4dc7760c5656c1fdb1997e407a1a2698ebef96daa1a9a185d6b8e98c15",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "ed5cbd4d35bddfbcb249749d0c9d6486f5c7d025eec61fe9c540aeb14e35d522"
     },
     {
       "testId": "F1.public_career_attempts.032",
@@ -463,7 +1223,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "a541bdd4754d235f7add0afde29d7946ef6c525fda5b9f688ba53dde66735451",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "ed5cbd4d35bddfbcb249749d0c9d6486f5c7d025eec61fe9c540aeb14e35d522"
     },
     {
       "testId": "F4.public_career_attempts.033",
@@ -580,7 +1340,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "99d5d73d2b981aee98a25fb227d3ca618c687f52777823db7f2abe00cf861898",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "fe3856ea173eddc61b335fd20eff2eb3ee1ff633331d15b27550cca2b0197491"
     },
     {
       "testId": "F6.public_daily_challenges.046",
@@ -625,7 +1385,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "e8503c2f31d31715eb2318f6828142a2db8f59333d88e45ee1fbdddc3ec955a5",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "5c11e16f497d2d625a1c245802922d8e7c2b4ef912e9b88c2dd66e90dc517cc9"
     },
     {
       "testId": "F1.public_daily_entries.051",
@@ -634,7 +1394,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "1bfc07ff1c3e763987c37219f45e76bb0fd9338843954b6ca05b16f623ad4e77",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "5c11e16f497d2d625a1c245802922d8e7c2b4ef912e9b88c2dd66e90dc517cc9"
     },
     {
       "testId": "F4.public_daily_entries.052",
@@ -652,7 +1412,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "5dbdf76de9df1c604ea58fff2c75b8be89d3484d80ba7577f09423a8c9c15c13",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "67e51c89758d35f2064e0964f8034f68e92cc459ccc228e6fa9dbe036adc722b"
     },
     {
       "testId": "F1.public_friend_requests.054",
@@ -670,7 +1430,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "076791afcacfcf6c92d99688c1b7c341ed434f526b9a50d57729beac5b26d923",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "67e51c89758d35f2064e0964f8034f68e92cc459ccc228e6fa9dbe036adc722b"
     },
     {
       "testId": "F2.public_friend_requests.056",
@@ -679,7 +1439,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "acc1a5dfb1e31447ad22633cbedb79e0fb5f4a3391714597c80bd8a9b41876f1",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "7f7c5431dac9589722cd9aac352ca28d82a95cb82482f5073311d754df3580fe"
     },
     {
       "testId": "F3.public_friend_requests.057",
@@ -697,7 +1457,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "e8230308e2a7f8f28f468ee9c526972be72d81456b1d9366ceb2f1b325a4591e",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "e849c6ed0709b95140af75e67eeecd7e67c54a7380cd32c70a0bf0b77a46a40e"
     },
     {
       "testId": "F3.public_friend_requests.059",
@@ -706,7 +1466,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "4e3a201bed979c58ffead533decc16e5ad96aeef40372df949b64277c472a6c3",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "67e51c89758d35f2064e0964f8034f68e92cc459ccc228e6fa9dbe036adc722b"
     },
     {
       "testId": "F4.public_friend_requests.060",
@@ -724,7 +1484,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "ecbc1c624644ee8a4a814202833ed0bbe762f9ce07e9041adcd7604021791e4b",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "d61b1924ffcb2c9a01ec3ae0ee739b8c73c6831c61f1088371790236522483e6"
     },
     {
       "testId": "F6.public_friend_requests.062",
@@ -787,7 +1547,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "5a3d56a539aae6cfdf3bb8c2bde9a24c005e0cb3c19ddd49875c23505d6a6f84",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "7562911622020170cb1974532abd2aa741aa2f81e2a28ebf6dbf6938365f1bef"
     },
     {
       "testId": "F4.public_friendships.069",
@@ -886,7 +1646,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "0191721840f1116ef621386d89dc14ac5040cdf991939e23ae6a04bd56a9d1d4",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b8cbeccb019a7a08e4dd1c01a5299f1cc01547af528e72744aeed9e3ff5a4199"
     },
     {
       "testId": "F10.public_game_events.080",
@@ -895,7 +1655,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "593184f4a030f8d9975715475464489870795b3730b775a9040ec35dfcd693ed",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b8cbeccb019a7a08e4dd1c01a5299f1cc01547af528e72744aeed9e3ff5a4199"
     },
     {
       "testId": "F10.public_game_events.081",
@@ -904,7 +1664,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "60a6a7b89232a1e1ee33429e1f47c1ae85d70db23461f418b2d13f3edbc9f3c2",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b8cbeccb019a7a08e4dd1c01a5299f1cc01547af528e72744aeed9e3ff5a4199"
     },
     {
       "testId": "F10.public_game_events.082",
@@ -1066,7 +1826,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "135ac02504eafcd971bbce15ac7b12b3dafea2d13acff65205bdcf45d281ea46",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "9aa03ccac03ebef36e6b371edc44d58dc59ce345d259b1ba19b2c68e72b3a80c"
     },
     {
       "testId": "F1.public_hand_players.100",
@@ -1075,7 +1835,7 @@
       "tier": "Medium",
       "identity": "authenticated:carol",
       "frozenSha256": "b12518291459b9b6692c8215e1f9d3dd6ca1cddd4670ccff5e9a1a985188c681",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "9aa03ccac03ebef36e6b371edc44d58dc59ce345d259b1ba19b2c68e72b3a80c"
     },
     {
       "testId": "F4.public_hand_players.101",
@@ -1093,7 +1853,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "40344848d8a382e81dc1275da705df6a3e3468536ee3b146ebc957d64f6cbf4f",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "9aa03ccac03ebef36e6b371edc44d58dc59ce345d259b1ba19b2c68e72b3a80c"
     },
     {
       "testId": "F1.public_hand_records.103",
@@ -1102,7 +1862,7 @@
       "tier": "High",
       "identity": "authenticated:carol",
       "frozenSha256": "8d347163ff16986050047c33156298f17483bd0ba314c2658a41bbd5048ad767",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "9aa03ccac03ebef36e6b371edc44d58dc59ce345d259b1ba19b2c68e72b3a80c"
     },
     {
       "testId": "F2.public_hand_records.104",
@@ -1201,7 +1961,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "62167c346d9dd45fed10bbe5519c04978e3807674f2bb9c6d986c1b4f01accb7",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b27f4fbbdb6a89c844f7a9d2b824b3c6b852370785b47b4501e026c4646bb5c8"
     },
     {
       "testId": "F3.public_loadouts.115",
@@ -1210,7 +1970,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "5634e8cadb89e332063d9edabcec241b8749c2f14811240b89937b2882c0bdb5",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b95c6025f42e042e001bc5710510c0a02281885bd91fd15e2d6394b6bee09dc7"
     },
     {
       "testId": "F4.public_loadouts.116",
@@ -1246,7 +2006,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "bc414b177cfb6637b0a55889966e0ad803bd7a2013912541cd17848fe8feacb4",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "5435f7c1ab3e32f64a31f975fdc445a1fe12baf8102f9e47f096a7b4a1a7db89"
     },
     {
       "testId": "F1.public_matchmaking_queue.120",
@@ -1255,7 +2015,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "ee10a2509ca1b4c2319005d9ee068e9bcc510ae156db5034889fe781a81990ca",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "5435f7c1ab3e32f64a31f975fdc445a1fe12baf8102f9e47f096a7b4a1a7db89"
     },
     {
       "testId": "F4.public_matchmaking_queue.121",
@@ -1345,7 +2105,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "d372d61c56644022519c64a5ff5f7cbadde22a04b6409ee7f25bc07cd0c41a7b",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "9aa03ccac03ebef36e6b371edc44d58dc59ce345d259b1ba19b2c68e72b3a80c"
     },
     {
       "testId": "F1.public_player_actions.131",
@@ -1354,7 +2114,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "bbc9ea8cbf4087ddc223dbeb147b3ce75c282d6b4db66c48ba677f4e427b29a6",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "9aa03ccac03ebef36e6b371edc44d58dc59ce345d259b1ba19b2c68e72b3a80c"
     },
     {
       "testId": "F4.public_player_actions.132",
@@ -1372,7 +2132,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "9197535c7f3baa2ca6d6aebfd1ff8b102b0f331567307d5a6e6afb0afe45d575",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "787abf335aa22e19c249bfee3a62f512e46870596db77f56a949996eb3778552"
     },
     {
       "testId": "F1.public_player_daily_xp.134",
@@ -1381,7 +2141,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "00af6505945a93322e92bf0859a5871f93b1bdb206e6cb18e99a37faf1e5b9db",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "787abf335aa22e19c249bfee3a62f512e46870596db77f56a949996eb3778552"
     },
     {
       "testId": "F4.public_player_daily_xp.135",
@@ -1399,7 +2159,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "6379ffffe5a776dc367f727e7895cc86fe03d6ad3d8358f2b9049023a476909b",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b853298375ad654928051c74b043e19ed495605a2f04d05f922d139412754e3c"
     },
     {
       "testId": "F1.public_player_decision_periods.137",
@@ -1408,7 +2168,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "01585109567f66bf24ad0a5a945be61d857fe46b12c090cef28f6ef73f280a44",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b853298375ad654928051c74b043e19ed495605a2f04d05f922d139412754e3c"
     },
     {
       "testId": "F4.public_player_decision_periods.138",
@@ -1426,7 +2186,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "3ac64b912badec8b004cd4f96e0d1cf14a9729e68a88228ebd0f514da2378a23",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "86093c4aa9cf2e84c5f872a875669765d57252584983ec5fc141751020331e13"
     },
     {
       "testId": "F1.public_player_mode_stats.140",
@@ -1435,7 +2195,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "ee3ae91b2311b0040e5c874b20d689d5f258f9e32c027d6fe410fa28b3b510eb",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "86093c4aa9cf2e84c5f872a875669765d57252584983ec5fc141751020331e13"
     },
     {
       "testId": "F4.public_player_mode_stats.141",
@@ -1714,7 +2474,7 @@
       "tier": "High",
       "identity": "server-side (admin) — RLS is enabled with no policy and no client grant exists",
       "frozenSha256": "14027770b8566037f2a9a890042b05d1ed00b253609e09c329fc964fb27b6b9d",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "4ccbd267cc5f62075a97e234b4b754df4cf24aaac6b5c1edf539717f14d21cbe"
     },
     {
       "testId": "F10.public_rate_limit_events.172",
@@ -1723,7 +2483,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "ab20668a4dbaf23042421d225bbe7d2a6e4f85c84bb4306147365ca6653c05f9",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "4ccbd267cc5f62075a97e234b4b754df4cf24aaac6b5c1edf539717f14d21cbe"
     },
     {
       "testId": "F10.public_rate_limit_events.173",
@@ -1732,7 +2492,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "5141f7d7e7b6a5424acc15b96557461e128729d982bad8817a1b504761621739",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "4ccbd267cc5f62075a97e234b4b754df4cf24aaac6b5c1edf539717f14d21cbe"
     },
     {
       "testId": "F10.public_rate_limit_events.174",
@@ -2173,7 +2933,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "c7b232369ec53cdc7fffcf849f101f624b1633a4eebfba2e5a432e70ddcff91d",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "7a18541998362796ce2d597fc2e36fbe9de4220ff68ced24e1c20707640a47e1"
     },
     {
       "testId": "F1.public_user_cosmetics.223",
@@ -2182,7 +2942,7 @@
       "tier": "Medium",
       "identity": "authenticated:alice",
       "frozenSha256": "c1637a7ab5a67ccdb35ac9bbd281173a8c86086453176a87bade2b40881517dc",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "7a18541998362796ce2d597fc2e36fbe9de4220ff68ced24e1c20707640a47e1"
     },
     {
       "testId": "F4.public_user_cosmetics.224",
@@ -2407,7 +3167,7 @@
       "tier": "High",
       "identity": "authenticated:carol",
       "frozenSha256": "f4a99023adfb46f383447b7dcb6199abe91b1866ffeade3d9cef25cf79154706",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "7562911622020170cb1974532abd2aa741aa2f81e2a28ebf6dbf6938365f1bef"
     },
     {
       "testId": "F5.leave_room.249",
@@ -2497,7 +3257,7 @@
       "tier": "High",
       "identity": "authenticated:carol",
       "frozenSha256": "c272aeeecc2bac51640489cb43c742878e8e9abf8b1dfad9b674e63a124ea4fc",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "45b40c138c15c2bafc1318ddf7f5774be699aebc2da535aa95a272869c0e3e15"
     },
     {
       "testId": "F5.send_friend_request.259",
@@ -2533,7 +3293,7 @@
       "tier": "High",
       "identity": "authenticated:carol",
       "frozenSha256": "9c90de6718ac264c1614ba96713def1539c391c41103b318973f9565148c246c",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "760923755fab146317ae22504527ca778a27a17e0834e5837e0cefb586c77d0d"
     },
     {
       "testId": "F5.player_public_profile.263",
@@ -2551,7 +3311,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "64fb5881d618393951881340c12b491627aac552dcb1feca1b9971f49f78e38b",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "ded19ebad85d0260855f5329803e96f71ca617fc53efc517391ba73814ccc28b"
     },
     {
       "testId": "F5.viewer_is_friend_of.265",
@@ -2560,7 +3320,7 @@
       "tier": "High",
       "identity": "authenticated:carol",
       "frozenSha256": "d05adfa42d01c2d47e2651880a79e0c14c2b0b0bf6715a9b2e3b16a30022b9b0",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "3295a7ea473734e481b5ee7bc3e1a36f16c8360d5f7c44c825dbb4dff6281548"
     },
     {
       "testId": "F5.viewer_has_blocked.266",
@@ -2605,7 +3365,7 @@
       "tier": "High",
       "identity": "authenticated:carol",
       "frozenSha256": "001c803dab631d5457ff591173af857b55a0e43b9f4d587fed91964ee3368e4d",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "dfca2b3d890565ad90cd2271502b652228708288d075e8a8d2fdc03ecc8132a6"
     },
     {
       "testId": "F5.leaderboard_weekly_xp.271",
@@ -2614,7 +3374,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "6096dffc4f3dcae3c1b90c9602fc944549fe30bf22e88542488708349937d09b",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "787abf335aa22e19c249bfee3a62f512e46870596db77f56a949996eb3778552"
     },
     {
       "testId": "F5.leaderboard_weekly_xp.272",
@@ -2632,7 +3392,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "eebfb8a135764489289c3bddd8488e8027fed4a31edd40a04ffdc4a5ea08fbdd",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "5c11e16f497d2d625a1c245802922d8e7c2b4ef912e9b88c2dd66e90dc517cc9"
     },
     {
       "testId": "F5.leaderboard_strategy_accuracy.274",
@@ -2641,7 +3401,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "1ce51348e7551a96ff0bb7fa37636d858fa91e4b8fe517ef92ac55399d3aded3",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b853298375ad654928051c74b043e19ed495605a2f04d05f922d139412754e3c"
     },
     {
       "testId": "F5.leaderboard_tournament_wins.275",
@@ -2650,7 +3410,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "d867bfb7219ba7131f0c333626d231e77dd7e626ae22ef3d1bbc94cb86164cc2",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "be1e0cfd60af9098c81fee81f467224bb7b2ed18a8887e7d2963369897863d44"
     },
     {
       "testId": "F5.search_players.276",
@@ -2668,7 +3428,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "9e0030bd14fd08cc54d9f92e44850f921d4e43e7ec097932473dd12320ca0761",
-      "fixtureSha256": "cb8d1010206c626ba4f6c76129b057146635d2d411f8b50193449f5f96bed133"
+      "fixtureSha256": "fe3856ea173eddc61b335fd20eff2eb3ee1ff633331d15b27550cca2b0197491"
     },
     {
       "testId": "F5.latest_verifiable_daily_challenge.278",
@@ -2677,7 +3437,7 @@
       "tier": "High",
       "identity": "anon",
       "frozenSha256": "37a98522d2ee8d9e54197f8a9b2d6893175d7d91b256538b0a6fbba9569beb23",
-      "fixtureSha256": "499b6fad875d3c0be2552876d6aed6f52a5a825227b44c75b3442de76a13e42f"
+      "fixtureSha256": "fe842d901daf64f33f981d8fe1f005885788f2b5ab39069bf0fa27644dda677c"
     },
     {
       "testId": "F5.join_matchmaking.279",
@@ -2686,7 +3446,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "a98a8c21f258fe985b7c435bd49caf2b21c3b216680ad4163c0acc97d172557c",
-      "fixtureSha256": "be10e27c4f6f57773954a282516ae226c4f6459315751b8508c44007cdecb35b"
+      "fixtureSha256": "f5e15d1b24136f8dcb5922232df0c245f348bdcffdfc8129dcfbef259044712e"
     },
     {
       "testId": "F5.poll_matchmaking.280",
@@ -2695,7 +3455,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "53ce93267754e7c30e0e3abba582a152c92725f47074de579bdfc8efb4322b81",
-      "fixtureSha256": "a0d790ddd5a321609fd914c0083263f1801ad438fa1b3d9a6d6e2fdc4cb545ce"
+      "fixtureSha256": "49dd00f9ed4ed329f33e3e923c2a6b8a1e2800458c9ea306b9395b219ff1d105"
     },
     {
       "testId": "F5.create_private_room.281",
@@ -2704,7 +3464,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "c4f6c20708b5185a483087bc8ea0c04f768059d8b0b577e3576b5cc630989166",
-      "fixtureSha256": "94d170fb14c4ec51101d71b566ef641d0aaaa30fcf168340dd22808d2b79e8da"
+      "fixtureSha256": "235e2a29d24efa79716cec783b05e879cf84cec41d7630c00a21b95550a4f484"
     },
     {
       "testId": "F5.claim_recovery_grant.282",
@@ -2713,7 +3473,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "f39b13288598739a7c25fe24dff1692e3f44d978b2efa3759fe30990fee95a4d",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "bf00dbe0180ccbd4f423abe23bb667e8a17a23b71776d3c62ebe7309b6b442a9"
     },
     {
       "testId": "F5.delete_own_account.283",
@@ -2722,7 +3482,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "daeebaf0fa14b27a7c95f5523ce517c1467b2f5424ff965c9794f5938303e419",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "8dd3fae2d0e6dfb45f9c96c8e6b2b384ade2d77890cf48a99fd630d673d411f5"
     },
     {
       "testId": "F5.grant_earned_cosmetics.284",
@@ -2731,7 +3491,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "88e737cd0820931de182d7e76adb5e30b0ff47df672af02c2374713005048e4a",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.leave_matchmaking.285",
@@ -2740,7 +3500,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "b67d0bf6b10a1d9aa2f32039a556824ca0ed2d633d043c336a45dcea936c5428",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.list_blocked.286",
@@ -2749,7 +3509,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "07e7c2dcc09e18ceb3ccce1c6da7d4d82a3b6bc2924963be8632dc86cbcc7095",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.list_friend_requests.287",
@@ -2758,7 +3518,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "75e6ab0322df270adc6ed6d3badaa9f640cb6eab77bd20e9f813561a4958c3fa",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.list_friends.288",
@@ -2767,7 +3527,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "2e8662715a4e0f45dda3a2770fa2d5a8e0429f1d87bd19cd02596b8363b0aeb3",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "57ddbf566e10b8b09db26a29126ac34c5788499a385fd804c044dd09d39704bc"
     },
     {
       "testId": "F5.my_active_session.289",
@@ -2776,7 +3536,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "1788216b8cd1c1e45ec7cb79f982003a15d6c4ac5fc48f62589a14b9b094c67e",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_career_progress.290",
@@ -2785,7 +3545,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "6146a0d5dd7ed5a4a471be9b24c063c1323497ac8f637fe44e45e0de8d3b3538",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_competition_record.291",
@@ -2794,7 +3554,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "c202cd1f5b207d52d44479f4b9f143fc1f57c68f110b36a64dff73bc0b161ab9",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_daily_entry.292",
@@ -2803,7 +3563,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "e62c72070fd457f55043b8f2744afd6a8cf74bbd23883b2510632b9baf3a2dc7",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_inventory.293",
@@ -2812,7 +3572,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "99fc685ac260d603314cc2cdc165bba8884908af17733232a2988fd4172e1e32",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_level_progress.294",
@@ -2821,7 +3581,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "b4bd513847283d620ea0bf31925795aec06b46aa3f0e9902376918254ec0161f",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_loadout.295",
@@ -2830,7 +3590,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "c3552c7a701db809bace5c3b00726ea03f563a00572107d06c5315e29b00bc46",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_sprint_entry.296",
@@ -2839,7 +3599,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "56f479d76fda8665564b48a6abb3d0f123f7dbc41a3acdd4a58980b129d96656",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_strategy_accuracy_progress.297",
@@ -2848,7 +3608,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "905af9bb89902ea8801fb3bd8b2f35ad2027f15a2fb8438c5789dc32ad02c523",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.touch_last_seen.298",
@@ -2857,7 +3617,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "fee42961c18fc0a5bd767e877372cbb7507d4d1a86a6c7a1589d3f3236a7b8ba",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.unread_notification_count.299",
@@ -2866,7 +3626,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "0f1c0895a6ba2306e539afa907f48cd7fc7a0982b94db9c8179c48c92118d7d3",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.enforce_rate_limit.300",
@@ -2875,7 +3635,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "a565bd8b7cb0e3060307edb248ecca273599a33edbc7f8f4d31021dd32c8d759",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_leaderboard_position.301",
@@ -2884,7 +3644,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "1e3442d2f11c1d501a0d97ae30158fed1f2eab0de8b7fcde4938926c9229b73e",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F5.my_notifications.302",
@@ -2893,7 +3653,7 @@
       "tier": "High",
       "identity": "authenticated:alice",
       "frozenSha256": "4db1f0dc59ef209f88893caca3221433a975ecaf93519639ac64a53d3199d723",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "2fa9d9cbeb221152d77b2c197ece4e8f2adcf3d6b8b7a41a9b38bddf057cad93"
     },
     {
       "testId": "F7m.mechanism.303",
@@ -3082,7 +3842,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "b722d40886dd50db926d54c68f7bea3745ca188914a2964661d4af09f61871dd",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_blocks.324",
@@ -3100,7 +3860,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "9a9f327e3cce70a13335b9cd17d274993922a34f52e86a28138d610e3991e24e",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_friend_requests.326",
@@ -3109,7 +3869,7 @@
       "tier": "High",
       "identity": "authenticated with NO claims set (auth.uid() is null)",
       "frozenSha256": "a70f766f45bdee12e3950449537d728343b11899c59f9e3c64ce2889a0d8b4ff",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "7f7c5431dac9589722cd9aac352ca28d82a95cb82482f5073311d754df3580fe"
     },
     {
       "testId": "B.public_friend_requests.327",
@@ -3118,7 +3878,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "fa11eb9197a482eb3225d893da32a4a46947e48914424e10df696b463083709a",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_friendships.328",
@@ -3136,7 +3896,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "9887448f080b71cb76b9ae5e44f02802ed5d708706c18d2d4ecb116245d31cf5",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_game_events.330",
@@ -3145,7 +3905,7 @@
       "tier": "High",
       "identity": "authenticated with NO claims set (auth.uid() is null)",
       "frozenSha256": "3450acc8c84aae1cfa60e8640ffc2ace93db8b0b6c2e0b5675dbc5356bcc7f16",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b8cbeccb019a7a08e4dd1c01a5299f1cc01547af528e72744aeed9e3ff5a4199"
     },
     {
       "testId": "B.public_game_events.331",
@@ -3154,7 +3914,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "614b99fd7a0ac819d3e342826f376714b6eda915305b75a58b5c8e4542b6e4e0",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_game_session_seats.332",
@@ -3163,7 +3923,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "56189ab46a939278450bbf3b616f7bd6616f3a1f54e5f596470990e045cabfb5",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_game_sessions.333",
@@ -3172,7 +3932,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "a1fc4031485c302d3de972731b7739c13ec1c06f589d78422cc61e05b9c15ed8",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_profiles.334",
@@ -3190,7 +3950,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "8644c75059b3276bad8f7e4b49a1c67b4d73cb3e7f66539418ca3e44968285fd",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_rate_limit_events.336",
@@ -3199,7 +3959,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "837b503e89161eb97369f0440a791cb4f0fcfd964a819547702701f5c2dd90f7",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_room_members.337",
@@ -3208,7 +3968,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "8f042f77778a7a0f3b45e9099b7897557b59d9f9949314bd7ce019971fd2fe07",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_rooms.338",
@@ -3217,7 +3977,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "cef9e97b3c2c2bc411f0d811689dfc852506bfae48ff7999efd5002e3235d383",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_tournament_entries.339",
@@ -3226,7 +3986,7 @@
       "tier": "High",
       "identity": "authenticated with NO claims set (auth.uid() is null)",
       "frozenSha256": "d5ba40998b4e1efd856ba7e0387fce2da93db32bfa394808f36fab86cb0f4cd8",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "dd7e0535b73745834ecd3ab01eb671569e9b08da7f781e692afdc02217cf3af4"
     },
     {
       "testId": "B.public_tournament_entries.340",
@@ -3235,7 +3995,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "eb5735a89fb96827cfae2ac433e712b81a3e57550528b15b8a469d81475f23b5",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_wallet_ledger.341",
@@ -3253,7 +4013,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "74b43857e09c46a44e467a8d945aef0613df187a28f6a4684df0e45dcc440bb9",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.public_wallets.343",
@@ -3271,7 +4031,7 @@
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
       "frozenSha256": "32f7461f17cf03c1582f521c3f9e3cc032029ea63b3f0b377bcf7327fc869dcc",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
     },
     {
       "testId": "B.suite.expired-session",
@@ -3280,7 +4040,7 @@
       "tier": "suite",
       "identity": "an expired JWT presented over HTTP",
       "frozenSha256": "d11a7300c47081e9d765d8c7921e5b946c10fa3108e46c8315a3bf9c6bb70bc0",
-      "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
+      "fixtureSha256": "572c2eda3318146a380cc0b545f02c5669e6893537e0cc516f769a850e179dde"
     }
   ]
 }

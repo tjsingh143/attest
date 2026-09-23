@@ -16,6 +16,7 @@
  * suggest an answer.
  */
 import { mkdir, writeFile } from "node:fs/promises";
+import { registeredContradictionsFor } from "./wp3-contradictions.ts";
 import { join } from "node:path";
 import type { PlannedTest, Wp3Plan, Family } from "./wp3-plan.ts";
 import type { AuthorIntent, IntentStore } from "./author-intents.ts";
@@ -207,6 +208,21 @@ export function buildWorksheet(plan: Wp3Plan, store?: IntentStore | null): Works
 
 const cell = (v: unknown) => String(v ?? "").replaceAll("|", "\\|").replaceAll("\n", " ");
 
+/** The label every harness-written proposal carries, wherever it is rendered (§22). */
+export const AI_DRAFT_LABEL = "AI DRAFT — NOT YET ADOPTED BY AUTHOR";
+
+function banner(rows: readonly WorksheetRow[]): string[] {
+  const drafts = rows.filter((r) => r.proposal?.provenance === "ai_draft").length;
+  const adopted = rows.filter((r) => r.proposal && isAdopted(r.proposal)).length;
+  return [
+    `> **${AI_DRAFT_LABEL}.** ${drafts} of the ${rows.length} proposed sentences in this file were written by the`,
+    `> harness, not by the author, and ${adopted} ${adopted === 1 ? "has" : "have"} been adopted. A proposal is a starting point to`,
+    `> accept, correct or replace — never a sentence the author wrote. \`execute-wp3\` refuses to run while any`,
+    `> required sentence is still an AI draft.`,
+    ``,
+  ];
+}
+
 function renderRow(r: WorksheetRow, n: number): string[] {
   return [
     `#### ${n}. \`${r.testId}\``,
@@ -218,6 +234,8 @@ function renderRow(r: WorksheetRow, n: number): string[] {
     `| Operation | ${cell(r.operation)} |`,
     `| Expected safe result | ${cell(r.expected)} |`,
     `| Covers | ${cell(r.covers)} |`,
+    ...registeredContradictionsFor(r.testId).map((c) =>
+      `| Pending author decision | registered contradiction \`${c.id}\`: ${cell(c.summary)} — until decided, this probe runs as approved and records \`not_measured\` |`),
     ``,
     `> ${cell(r.question)}`,
     ``,
@@ -240,6 +258,7 @@ export function renderWorksheetMarkdown(w: Worksheet, meta: { runId: string; sch
 
   p(`# AUTHOR INTENT worksheet — WP3 negative tests`);
   p();
+  for (const line of banner(w.rows)) p(line);
   p(`Generated from the approved WP3 matrix. **${w.rows.length} negative tests**, each needing one`);
   p(`sentence in the author's own words naming the attack or misuse it simulates.`);
   p();
@@ -312,6 +331,7 @@ export function renderBatchMarkdown(
   p();
   p(`**${b.label}** · ${b.rows.length} rows · run \`${meta.runId}\``);
   p();
+  for (const line of banner(b.rows)) p(line);
   p(`One sentence each, in your own words, naming the attack or misuse the probe simulates.`);
   p(`Test IDs are verbatim from the matrix — do not renumber them.`);
   p();
@@ -328,7 +348,11 @@ export async function writeWorksheet(
   await writeFile(join(runDir, "author-intent-worksheet.md"), renderWorksheetMarkdown(w, meta));
   await writeFile(
     join(runDir, "author-intent-worksheet.json"),
-    JSON.stringify({ rows: w.rows, batches: w.batches, validation: w.validation }, null, 2) + "\n",
+    JSON.stringify({
+      WARNING: `${AI_DRAFT_LABEL}: every proposal whose provenance is ai_draft was written by the harness, not the author. None is adopted until the author edits rubric/author-intents.json.`,
+      rows: w.rows.map((r) => ({ ...r, label: r.proposal?.provenance === "ai_draft" ? AI_DRAFT_LABEL : r.proposal && isAdopted(r.proposal) ? "ADOPTED BY AUTHOR" : "NOT ADOPTED" })),
+      batches: w.batches, validation: w.validation,
+    }, null, 2) + "\n",
   );
   const batchDir = join(runDir, "batches");
   await mkdir(batchDir, { recursive: true });
@@ -342,10 +366,11 @@ export async function writeWorksheet(
   // the surrounding detail. Tab-separated so it opens in a spreadsheet and the
   // sentences can be edited in a column.
   const tsv = [
-    "test_id\tprovenance\treview_status\tproposed_intent",
+    "test_id\tlabel\tprovenance\treview_status\tproposed_intent",
     ...w.rows.map((r) =>
       [
         r.testId,
+        r.proposal?.provenance === "ai_draft" ? AI_DRAFT_LABEL : r.proposal && isAdopted(r.proposal) ? "ADOPTED BY AUTHOR" : "NOT ADOPTED",
         r.proposal?.provenance ?? "none",
         r.proposal?.reviewStatus ?? "none",
         (r.proposal?.intent ?? "").replaceAll("\t", " ").replaceAll("\n", " "),

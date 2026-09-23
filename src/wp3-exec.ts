@@ -10,43 +10,50 @@
  * templates the planner emitted, and every derived spec is then cross-checked
  * against the catalog: the resource must exist, the column must exist, the
  * function must exist with that identity argument list, the fixture reference
- * must resolve.
+ * must resolve. Preflight compiles every derived statement with PREPARE.
  *
- * A row that does not parse, or whose derived spec does not validate, is a hard
- * failure naming the Test ID. It is never guessed at. `attest preflight-wp3`
- * surfaces it before anything runs.
+ * A row that does not parse is a hard failure naming the Test ID. It is never
+ * guessed at.
  *
  * ## What the executor may not do
  *
- * It may not make a security judgment. The expectation comes from the plan's
- * `expected` text and the verdict from the plan's `verdictWhenPredicted`; the
- * executor's whole job is to issue the statement and record what came back. If
- * a row cannot be executed as approved — because its own fields contradict each
- * other — that is surfaced as a contradiction and the row is blocked, not
- * quietly reinterpreted. See `src/plan-contradictions.ts`.
+ * It may not make a security judgment and it may not change what a row asks.
+ * The claims come from the approved `expected` text (wp3-claims.ts); the
+ * verdict from the plan's `verdictWhenPredicted` and the evaluator. Where an
+ * approved operation leaves something unstated that a statement needs — the
+ * receiver of a friend request whose row is "with sender_id = alice", the value
+ * a function's signature names but the operation does not give — the executor
+ * binds a deterministic value, says so in `bindingNotes`, and the evidence
+ * record carries the note. It never substitutes a value the approved text DOES
+ * give (D3.39).
  *
- * One Test ID produces exactly one probe and exactly one evidence record.
+ * One Test ID produces exactly one probe statement. Setup, premises, guards
+ * and reference observations are separate, labelled parts of the evidence
+ * (wp3-bindings.ts), never folded into the probe.
  */
-import type { Session } from "./db.ts";
-import { adminSession, roleSession, quoteIdent } from "./db.ts";
-import type { Expectation, Outcome } from "./evidence.ts";
-import { execute, summarize } from "./evidence.ts";
+import { quoteIdent } from "./db.ts";
 import type { PlannedTest, Wp3Plan } from "./wp3-plan.ts";
 import { FIXTURES } from "../rubric/fixtures.ts";
-import { assertCustom } from "./wp3-assertions.ts";
+import { AUX } from "./seed-extensions.ts";
+import { MALFORMED_SQLSTATES } from "./wp3-outcome.ts";
 
 // ---------------------------------------------------------------------------
 // identities
 // ---------------------------------------------------------------------------
 
-export type SubjectName = "alice" | "bob" | "carol" | "dave";
+export type SubjectName = "alice" | "bob" | "carol" | "dave" | "erin";
 
 const UID: Record<SubjectName, string> = {
   alice: FIXTURES.alice.value,
   bob: FIXTURES.bob.value,
   carol: FIXTURES.carol.value,
   dave: FIXTURES.dave.value,
+  erin: FIXTURES.erin.value,
 };
+
+export function uidOf(sub: SubjectName): string {
+  return UID[sub];
+}
 
 export function claimsFor(sub: SubjectName): Record<string, unknown> {
   return { sub: UID[sub], role: "authenticated", aud: "authenticated" };
@@ -65,18 +72,9 @@ export type Caller =
   | { readonly kind: "external"; readonly label: string };
 
 /**
- * The caller a row runs as: its structured `identity`, and nothing else.
- *
- * This used to read `effectiveActor(t)`, which substitutes the caller an
- * operation names when it disagrees with the identity column. While C1 was open
- * that substitution was never reachable in a real run (preflight blocked every
- * contradicted row), but it meant the executor COULD run a row as someone its
- * structured identity did not say — and the evidence record's identity field
- * would then have disagreed with the plan's. C1 is resolved in the plan
- * (D3.33), so there is nothing to substitute, and the executor now has no path
- * that re-decides who a probe runs as. A disagreement between identity and
- * operation is a plan contradiction for preflight to refuse, not something the
- * executor settles.
+ * The caller a row runs as: its structured `identity`, and nothing else
+ * (D3.33). A disagreement between identity and operation is a plan
+ * contradiction for preflight to refuse, not something the executor settles.
  */
 export function callerFor(t: PlannedTest): Caller {
   const id = t.identity;
@@ -134,44 +132,39 @@ export interface ExecSpec {
   readonly testId: string;
   readonly kind: ExecKind;
   readonly caller: Caller;
-  /** The statement or call to issue. Empty for kinds that build their own. */
+  /** The statement or call to issue. For the composite kinds, a description; the runner records the real one. */
   readonly statement: string;
   readonly params: readonly unknown[];
-  readonly expect: Expectation | { readonly kind: "custom"; readonly describe: string };
   /** For rpc: the identity-qualified function. */
   readonly functionCall?: string;
+  /** For rpc: the bare function name, which a function-body refusal must be raised inside. */
+  readonly calledFunction?: string;
   /** Sub-probe selector for the composite kinds. */
   readonly variant?: string;
-  /** Catalog assertions return one row of `ok boolean, detail text`. */
+  /** Catalog assertions return one row of named booleans plus `detail`. */
   readonly assertSql?: string;
   /**
-   * Statements to issue on the same session BEFORE the probe.
-   *
-   * `realtime.messages` policies read `realtime.topic()`, which is a GUC, so
-   * the topic has to be set first. Packing both into one statement string sent
-   * them as a multi-statement query with a bind parameter, which PostgreSQL
-   * rejects with 42601 — and 42601 satisfied the row's "no data" expectation,
-   * so a malformed probe read as a working control. See MALFORMED_PROBE.
+   * Statements to issue on the same session BEFORE the probe. `realtime.messages`
+   * policies read `realtime.topic()`, a GUC, so the topic is set first — as its
+   * own statement, because a multi-statement query carrying a bind parameter is
+   * rejected with 42601 (D3.30).
    */
   readonly preStatements?: readonly { sql: string; params: readonly unknown[] }[];
+  /** The relation a SQL probe acts on. */
+  readonly relation?: string;
+  /** What the executor had to bind that the approved operation leaves unstated (D3.39). */
+  readonly bindingNotes?: readonly string[];
   /**
-   * A post-probe check on state the probe must NOT have changed, run as admin.
-   * Returns one row of `ok boolean, detail text`, and is ANDed with the
-   * probe's own assertion.
+   * Static classification for isolation (R7): this probe commits a change when
+   * its control HOLDS — a positive write, a VOLATILE function the approved row
+   * expects to run, a composite runner that writes. A probe that is refused
+   * when the control holds is not classified here; if it changes state anyway
+   * the post-probe digest says so and the executor rebuilds.
    */
-  readonly stateGuard?: { readonly sql: string; readonly params: readonly unknown[]; readonly describe: string };
+  readonly writesWhenControlHolds: boolean;
 }
 
-/**
- * SQLSTATEs that mean the PROBE is malformed, not that the database refused.
- *
- * 42601 syntax_error and friends are defects in the harness's own SQL. Treating
- * them as refusals is how a broken probe passes: `no_data` accepts any raise,
- * so a syntax error scored as a control holding. 42501 is deliberately absent —
- * insufficient_privilege is a real refusal and is the expected outcome of most
- * of this suite.
- */
-export const MALFORMED_PROBE = new Set(["42601", "42703", "42P01", "42883", "42P02", "42P18", "42804"]);
+export const MALFORMED_PROBE = MALFORMED_SQLSTATES;
 
 /** The membership column a participation policy keys on, per resource. */
 const MEMBERSHIP_FK: Readonly<Record<string, string>> = {
@@ -186,9 +179,13 @@ const MEMBERSHIP_FK: Readonly<Record<string, string>> = {
   "public.tournament_matches": "tournament_id",
 };
 
-/** The owner column each resource links identity through, for the boundary rows. */
+/**
+ * The owner column each resource links identity through, for the deleted-user
+ * boundary rows. `private.game_commands` names its caller `user_id`; the
+ * previous map said `actor_user_id`, a column that does not exist (D3.36).
+ */
 const OWNER_COL: Readonly<Record<string, string>> = {
-  "private.game_commands": "actor_user_id",
+  "private.game_commands": "user_id",
   "public.blocks": "blocker_id",
   "public.friend_requests": "sender_id",
   "public.friendships": "user_id_a",
@@ -204,55 +201,75 @@ const OWNER_COL: Readonly<Record<string, string>> = {
   "public.wallets": "user_id",
 };
 
-const NO_DATA: Expectation = { kind: "no_data" };
-const ROWS = (n: number): Expectation => ({ kind: "rows", count: n });
-const ERR = (sqlstate?: string): Expectation => ({ kind: "error", sqlstate });
+/**
+ * The one row an F10 immutability UPDATE or DELETE names ("UPDATE one row of
+ * X"): a fixture row the probe can point at by a deterministic key, so the
+ * statement is about one row, as approved, rather than `where true`.
+ */
+const TRAIL_ROW: Readonly<Record<string, { col: string; where: string; params: readonly unknown[]; touch: string }>> = {
+  "private.game_commands": { col: "id", where: `"id" = $1`, params: [AUX.commandAlice], touch: "command_type" },
+  "public.game_events": { col: "id", where: `"id" = $1`, params: [FIXTURES.publicGameEvent.value], touch: "type" },
+  "public.rate_limit_events": { col: "id", where: `"id" = $1`, params: [AUX.rateBobFresh], touch: "action" },
+  "public.wallet_ledger": { col: "idempotency_key", where: `"idempotency_key" = $1`, params: [`initial_grant:${FIXTURES.alice.value}`], touch: "reason" },
+};
 
-/** Derive the expectation from the plan's own `expected` text. */
-export function expectationFor(t: PlannedTest): Expectation | { kind: "custom"; describe: string } {
-  const e = t.expected;
-  if (/^no data/i.test(e)) return NO_DATA;
-  if (/^at least 1 row/i.test(e)) return { kind: "custom", describe: "at least 1 row" };
-  const m = /^error (\d{5})/i.exec(e);
-  if (m) return ERR(m[1]);
-  if (/^error/i.test(e)) return ERR();
-  if (/^(\d+) rows? affected/i.test(e)) {
-    const n = Number(/^(\d+)/.exec(e)![1]);
-    return ROWS(n);
-  }
-  return { kind: "custom", describe: e };
-}
+/** The actor/action/time columns an audit-existence probe reads (D3.6 #5, #6). */
+const AUDIT_COLUMNS: Readonly<Record<string, readonly string[]>> = {
+  "private.game_commands": ["user_id", "command_type", "created_at"],
+  "public.game_events": ["type", "created_at"],
+  "public.rate_limit_events": ["user_id", "action", "occurred_at"],
+  "public.wallet_ledger": ["user_id", "reason", "created_at"],
+};
 
 /**
- * Did the outcome match?
- *
- * A `custom` expectation is delegated to `assertCustom`, which keys on the
- * plan's own `expected` text. That is why this takes the planned row: the
- * assertion for "only alice's own rows are returned" is not derivable from a
- * row count.
+ * The rest of a WITH CHECK row. The approved F3 operation names only the
+ * column the policy compares ("INSERT into public.blocks with blocker_id = …");
+ * a statement also needs every NOT NULL column without a default, and a value
+ * that collides with no unique key, or the positive never reaches WITH CHECK
+ * (R3). The negative inserts the SAME row with only the compared column
+ * changed, so the one variable between the pair is the one the policy reads.
  */
-export function matches(
-  expect: Expectation | { kind: "custom"; describe: string },
-  o: Outcome,
-  t?: PlannedTest,
-): boolean {
-  if (o.harnessError) return false; // never evidence that a control worked
-  // A malformed probe is a harness defect wearing a SQLSTATE. It must not be
-  // able to satisfy an expected refusal.
-  if (o.raised && o.sqlstate && MALFORMED_PROBE.has(o.sqlstate)) return false;
-  if (expect.kind === "custom") {
-    if (!t) return expect.describe === "at least 1 row" && !o.raised && (o.rowCount ?? 0) >= 1;
-    return assertCustom(t, o).satisfied;
-  }
-  if (expect.kind === "rows") return !o.raised && o.rowCount === expect.count;
-  if (expect.kind === "no_data") return o.raised || o.rowCount === 0;
-  if (!o.raised) return false;
-  return expect.sqlstate === undefined || o.sqlstate === expect.sqlstate;
-}
+const INSERT_COMPLETION: Readonly<Record<string, { cols: readonly string[]; values: readonly unknown[]; note: string }>> = {
+  "public.blocks": {
+    cols: ["blocked_id"], values: [FIXTURES.carol.value],
+    note: "blocked_id bound to carol: an account the row's blocker has not blocked, so no unique key or self-block CHECK intervenes",
+  },
+  "public.friend_requests": {
+    cols: ["receiver_id"], values: [FIXTURES.carol.value],
+    note: "receiver_id bound to carol: not the sender, not blocked either way, not already a friend, and (after the probe-scoped setup where needed) no pending request on the pair; status takes its default 'pending'",
+  },
+  "public.loadouts": {
+    cols: [], values: [],
+    note: "no further column is required; the unique key on user_id is cleared by the probe-scoped setup",
+  },
+  "public.push_tokens": {
+    cols: ["token", "platform"], values: ["ExponentPushToken[attest-probe-f3]", "ios"],
+    note: "token bound to a fresh string no row carries (push_tokens_token_key), platform to 'ios'",
+  },
+};
 
-// ---------------------------------------------------------------------------
-// derivation
-// ---------------------------------------------------------------------------
+/**
+ * The value each caller-scoped function's signature names but the approved
+ * operation does not give ("call enforce_rate_limit(p_action text) as alice
+ * …"). The previous derivation bound the SIGNATURE TEXT itself — the string
+ * "p_limit integer" as an integer (22P02), "p_action text" as an action
+ * (22023 'no rate limit policy is configured'), so each would have raised for
+ * the harness's reason and been recorded against Arc21 (D3.39).
+ */
+const SIGNATURE_BINDINGS: Readonly<Record<string, { args: readonly unknown[]; sql: string; note: string }>> = {
+  enforce_rate_limit: {
+    args: ["player_search"], sql: "$1",
+    note: "p_action bound to 'player_search': a configured action, and the one bob's and carol's rate-limit history is seeded under",
+  },
+  my_leaderboard_position: {
+    args: ["weekly_xp"], sql: "$1",
+    note: "p_category bound to 'weekly_xp': a category the body recognises, over a board bob, carol's peers and alice all appear on",
+  },
+  my_notifications: {
+    args: [50], sql: "$1",
+    note: "p_limit bound to 50, the function's own default",
+  },
+};
 
 const ctrlSuffix = (t: PlannedTest) => (t.control.includes("#") ? t.control.replace(/^[^#]*#/, "") : t.control);
 
@@ -260,10 +277,6 @@ const ctrlSuffix = (t: PlannedTest) => (t.control.includes("#") ? t.control.repl
 export function functionIdentity(resource: string): { schema: string; name: string; args: string } {
   const m = /^([a-z_]+)\.([a-z_0-9]+)\(([\s\S]*)\)$/.exec(resource.trim());
   if (!m) throw new Error(`cannot parse a function identity from "${resource}"`);
-  // Strip a disambiguating tag — " [non-friend projection]", " (profiles join)" —
-  // without touching an array type. The whitespace before "[" is what tells the
-  // two apart: `p_ids uuid[]` has none, so it survives. Without that the
-  // argument list became `p_ids uuid` and preflight could not find the function.
   const args = m[3]!.replace(/\s+\[[^\]]+\]\s*$/, "").replace(/\s+\([^()]*\)\s*$/, "").trim();
   return { schema: m[1]!, name: m[2]!, args };
 }
@@ -277,97 +290,114 @@ export function specFor(t: PlannedTest): ExecSpec {
   const caller = callerFor(t);
   const suffix = ctrlSuffix(t);
   const res = t.resource;
-  const expect = expectationFor(t);
-  const base = { testId: t.testId, caller, params: [] as unknown[], expect };
+  const base = { testId: t.testId, caller, params: [] as unknown[] };
+  const pos = t.polarity === "positive";
 
-  // --- F2 grant surface: the control is the ABSENCE of the privilege --------
+  // --- F2 grant surface: the approved statement, verbatim ------------------
+  // The control is the ABSENCE of the privilege. The previous derivation
+  // issued `set c = c where false` instead of the approved statement; with a
+  // rebuild after any probe that changes state (R7) there is no reason to
+  // deviate, and the evidence now records the statement that was approved.
   let m = /^grant:authenticated:(INSERT|UPDATE|DELETE)$/.exec(suffix);
   if (m) {
     const cmd = m[1]!;
-    if (cmd === "INSERT") return { ...base, kind: "sql", statement: `insert into ${res} default values` };
-    if (cmd === "DELETE") return { ...base, kind: "sql", statement: `delete from ${res}` };
-    const col = /set\s+([a-z_]+)\s*=/.exec(t.operation)?.[1];
-    if (!col) throw new Error(`${t.testId}: no SET column in "${t.operation}"`);
-    // `where false` so that, if the privilege check ever stopped firing, this
-    // still could not modify a row. The probe is about the privilege.
-    return { ...base, kind: "sql", statement: `update ${res} set ${quoteIdent(col)} = ${quoteIdent(col)} where false` };
+    if (cmd === "INSERT") {
+      return {
+        ...base, kind: "sql", relation: res, statement: `insert into ${res} default values`, writesWhenControlHolds: false,
+        bindingNotes: ["the approved operation offers 'default values, or the minimum NOT NULL set'; DEFAULT VALUES is issued, because the privilege check precedes any column"],
+      };
+    }
+    if (cmd === "DELETE") {
+      if (!/^delete from \S+$/.test(t.operation)) throw new Error(`${t.testId}: unexpected DELETE form "${t.operation}"`);
+      return { ...base, kind: "sql", relation: res, statement: t.operation, writesWhenControlHolds: false };
+    }
+    const um = /^update (\S+) set ([a-z_]+) = (.+)$/.exec(t.operation);
+    if (!um || um[1] !== res) throw new Error(`${t.testId}: unexpected UPDATE form "${t.operation}"`);
+    return { ...base, kind: "sql", relation: res, statement: `update ${res} set ${quoteIdent(um[2]!)} = ${um[3]!}`, writesWhenControlHolds: false };
   }
 
   // --- F6 column grants ----------------------------------------------------
   if (suffix === "colgrant:SELECT") {
     const cols = /^SELECT\s+([a-z_, ]+?)\s+from\s/i.exec(t.operation)?.[1];
     if (!cols) throw new Error(`${t.testId}: no column list in "${t.operation}"`);
-    return { ...base, kind: "sql", statement: `select ${cols} from ${res}` };
+    return { ...base, kind: "sql", relation: res, statement: `select ${cols} from ${res}`, writesWhenControlHolds: false };
   }
   if (suffix === "colgrant:UPDATE") {
     const mm = /^UPDATE\s+\S+\s+set\s+([a-z_]+)\s*=\s*(.+?)(?:\s+where\s+([a-z_]+)\s*=\s*(\S+))?$/i.exec(t.operation);
     if (!mm) throw new Error(`${t.testId}: cannot parse "${t.operation}"`);
     const [, col, rawVal, whereCol, whereRef] = mm;
     const value = resolveRefs(rawVal!.trim()).value;
-    if (whereCol && whereRef) {
-      return {
-        ...base, kind: "sql",
-        statement: `update ${res} set ${quoteIdent(col!)} = ${value} where ${quoteIdent(whereCol)} = $1`,
-        params: [resolveRefs(whereRef).value],
-      };
-    }
-    return { ...base, kind: "sql", statement: `update ${res} set ${quoteIdent(col!)} = ${value}` };
+    if (!whereCol || !whereRef) throw new Error(`${t.testId}: an F6 UPDATE without a WHERE`);
+    return {
+      ...base, kind: "sql", relation: res, writesWhenControlHolds: pos,
+      statement: `update ${res} set ${quoteIdent(col!)} = ${value} where ${quoteIdent(whereCol)} = $1`,
+      params: [resolveRefs(whereRef).value],
+    };
   }
 
   // --- F4 anon reach: no policy admits the caller --------------------------
   if (suffix === "anon-reach") {
-    return { ...base, kind: "sql", statement: `select * from ${res}`, expect: NO_DATA };
+    return { ...base, kind: "sql", relation: res, statement: `select * from ${res}`, writesWhenControlHolds: false };
   }
 
   // --- F7 per-resource characterization ------------------------------------
   if (suffix === "rls_forced") {
     return {
-      ...base, kind: "catalog", statement: `pg_class read for ${res}`,
+      ...base, kind: "catalog", statement: `pg_class read for ${res}`, relation: res, writesWhenControlHolds: false,
       assertSql:
-        `select (c.relrowsecurity and not c.relforcerowsecurity) as ok,
-                'rls_enabled = ' || c.relrowsecurity::text ||
-                ', rls_forced = ' || c.relforcerowsecurity::text ||
-                ', owner = ' || pg_get_userbyid(c.relowner)  as detail
-         from pg_class c where c.oid = '${res}'::regclass`,
+        `select c.relrowsecurity as rls_enabled, not c.relforcerowsecurity as rls_not_forced,
+                pg_get_userbyid(c.relowner) as owner,
+                'rls_enabled = ' || c.relrowsecurity::text || ', rls_forced = ' || c.relforcerowsecurity::text ||
+                ', owner = ' || pg_get_userbyid(c.relowner) as detail
+           from pg_class c where c.oid = '${res}'::regclass`,
     };
   }
-  if (suffix === "pg_roles: rolsuper / rolbypassrls / relowner") return { ...base, kind: "f7_roles", statement: "pg_roles / pg_class read" };
+  if (suffix === "pg_roles: rolsuper / rolbypassrls / relowner") {
+    return { ...base, kind: "f7_roles", statement: "pg_roles / pg_class read", writesWhenControlHolds: false };
+  }
   if (suffix === "FORCE ROW LEVEL SECURITY vs BYPASSRLS") {
     const step = /NOT forced/i.test(t.operation) ? "unforced_owner" : /enable FORCE/i.test(t.operation) ? "forced_owner" : "forced_bypass";
-    return { ...base, kind: "f7_mechanism", statement: `scratch-table demonstration: ${step}`, variant: step };
+    return { ...base, kind: "f7_mechanism", statement: `scratch-table demonstration: ${step}`, variant: step, writesWhenControlHolds: false };
   }
 
   // --- F10 audit trail ------------------------------------------------------
   if (suffix === "audit:absent") {
     return {
-      ...base, kind: "audit_absence", statement: `catalog search for a history/versioning/audit relation covering ${res}`,
+      ...base, kind: "audit_absence", relation: res, writesWhenControlHolds: false,
+      statement: `catalog search for a history/versioning/audit relation covering ${res}`,
       assertSql: auditAbsenceSql(res),
     };
   }
   m = /^audit:immutable:(UPDATE|DELETE|TRUNCATE)$/.exec(suffix);
   if (m) {
     const cmd = m[1]!;
-    if (cmd === "TRUNCATE") return { ...base, kind: "sql", statement: `truncate ${res}` };
-    if (cmd === "DELETE") return { ...base, kind: "sql", statement: `delete from ${res} where true` };
-    const col = auditTouchColumn(res);
-    return { ...base, kind: "sql", statement: `update ${res} set ${quoteIdent(col)} = ${quoteIdent(col)} where true` };
+    if (cmd === "TRUNCATE") return { ...base, kind: "sql", relation: res, statement: `truncate ${res}`, writesWhenControlHolds: false };
+    const row = TRAIL_ROW[res];
+    if (!row) throw new Error(`${t.testId}: no trail row known for ${res}`);
+    const note = `"one row of ${res}" bound to the fixture row ${row.col} = ${String(row.params[0])}`;
+    if (cmd === "DELETE") {
+      return { ...base, kind: "sql", relation: res, statement: `delete from ${res} where ${row.where}`, params: [...row.params], writesWhenControlHolds: false, bindingNotes: [note] };
+    }
+    return {
+      ...base, kind: "sql", relation: res, writesWhenControlHolds: false, params: [...row.params],
+      statement: `update ${res} set ${quoteIdent(row.touch)} = ${quoteIdent(row.touch)} where ${row.where}`,
+      bindingNotes: [note, `the approved operation names no column; ${row.touch} is set to itself, so the statement changes nothing but still requires UPDATE`],
+    };
   }
-  if (/^audit:/.test(suffix)) {
-    // The existence check: does a who/what/when record exist at all.
-    const cols = auditColumns(res);
-    return { ...base, kind: "sql", statement: `select ${cols.join(", ")} from ${res} limit 5`, expect: { kind: "custom", describe: "at least 1 row" } };
+  if (/^audit:exists$/.test(suffix)) {
+    const cols = AUDIT_COLUMNS[res];
+    if (!cols) throw new Error(`${t.testId}: no audit columns known for ${res}`);
+    return { ...base, kind: "sql", relation: res, statement: `select ${cols.join(", ")} from ${res} limit 5`, writesWhenControlHolds: false };
   }
 
   // --- F5 SECURITY DEFINER --------------------------------------------------
   if (suffix === "security_definer") {
     const { schema, name, args } = functionIdentity(res);
-    const call = parseCall(t);
+    const call = parseCall(t, name);
     return {
-      ...base, kind: "rpc",
-      statement: call.sql, params: call.params,
-      functionCall: `${schema}.${name}(${args})`,
-      expect: expectationFor(t),
-      stateGuard: STATE_GUARDS[t.testId],
+      ...base, kind: "rpc", statement: call.sql, params: call.params,
+      functionCall: `${schema}.${name}(${args})`, calledFunction: name,
+      bindingNotes: call.notes, writesWhenControlHolds: F5_WRITES_WHEN_HOLDING.has(t.testId.replace(/\.\d+$/, "")) || F5_WRITES_BY_TEST.has(t.testId),
     };
   }
 
@@ -380,22 +410,31 @@ export function specFor(t: PlannedTest): ExecSpec {
       : /debit larger than the balance/i.test(op) ? "overdebit"
       : /truncate/i.test(op) ? "ledger_truncate"
       : "ledger_update";
-    return { ...base, kind: "f9", statement: op, variant };
+    return { ...base, kind: "f9", statement: op, variant, writesWhenControlHolds: variant === "concurrent" || variant === "idempotent" };
   }
 
   // --- F8 realtime ----------------------------------------------------------
   if (suffix === "realtime-socket") {
-    const variant = /publish/i.test(t.operation) ? "publish_denied" : t.polarity === "positive" ? "subscribe_ok" : "subscribe_denied";
-    return { ...base, kind: "socket", statement: t.operation, variant };
+    const variant = /publish/i.test(t.operation) ? "publish_denied" : pos ? "subscribe_ok" : "subscribe_denied";
+    // Every socket runner has the server broadcast onto the topic, which
+    // writes a realtime.messages row.
+    return { ...base, kind: "socket", statement: t.operation, variant, writesWhenControlHolds: true };
   }
 
   // --- boundary -------------------------------------------------------------
-  if (suffix === "PostgREST / GoTrue JWT verification") return { ...base, kind: "http", statement: "GET /rest/v1/profiles with an expired bearer token", variant: "expired_jwt" };
-  if (/^boundary:null-identity$/.test(suffix)) return { ...base, kind: "sql", statement: `select * from ${res}`, expect: NO_DATA };
+  if (suffix === "PostgREST / GoTrue JWT verification") {
+    return { ...base, kind: "http", statement: "GET /rest/v1/profiles with an expired bearer token", variant: "expired_jwt", writesWhenControlHolds: false };
+  }
+  if (/^boundary:null-identity$/.test(suffix)) {
+    return { ...base, kind: "sql", relation: res, statement: `select * from ${res}`, writesWhenControlHolds: false };
+  }
   if (/^boundary:deleted-user$/.test(suffix)) {
     const col = OWNER_COL[res];
     if (!col) throw new Error(`${t.testId}: no owner column known for ${res}`);
-    return { ...base, kind: "sql", statement: `select * from ${res} where ${quoteIdent(col)} = $1`, params: [refValue("fixtures.dave.id")], expect: NO_DATA };
+    return {
+      ...base, kind: "sql", relation: res, statement: `select * from ${res} where ${quoteIdent(col)} = $1`,
+      params: [refValue("fixtures.dave.id")], writesWhenControlHolds: false,
+    };
   }
 
   // --- policy probes (F1, F2 policy, F3, F4 predicate, F8 SQL) --------------
@@ -404,23 +443,42 @@ export function specFor(t: PlannedTest): ExecSpec {
   throw new Error(`${t.testId}: no executor derivation for control "${t.control}"`);
 }
 
+/**
+ * F5 functions whose approved row expects the call to RUN and write when the
+ * control holds — keyed on the function, not a Test ID number. A refusal row
+ * (get_room_state, sprint_standings, …) is absent: when its control holds it
+ * writes nothing, and if it writes anyway the digest catches it.
+ */
+const F5_WRITES_WHEN_HOLDING: ReadonlySet<string> = new Set([
+  "F5.block_player", "F5.register_push_token", "F5.join_private_room", "F5.search_players",
+  "F5.ensure_todays_daily_challenge", "F5.join_matchmaking", "F5.poll_matchmaking",
+  "F5.claim_recovery_grant", "F5.delete_own_account", "F5.grant_earned_cosmetics", "F5.leave_matchmaking",
+  "F5.touch_last_seen", "F5.enforce_rate_limit",
+]);
+const F5_WRITES_BY_TEST: ReadonlySet<string> = new Set();
+
 /** F1/F2/F3/F4/F8 rows, all of which name a policy. */
 function policySpec(
   t: PlannedTest,
-  base: { testId: string; caller: Caller; params: unknown[]; expect: Expectation | { kind: "custom"; describe: string } },
+  base: { testId: string; caller: Caller; params: unknown[] },
 ): ExecSpec {
   const res = t.resource;
   const op = t.operation;
+  const pos = t.polarity === "positive";
 
   // realtime.messages: the topic GUC is what the policies read.
   if (res === "realtime.messages") {
-    const topicRef = /set realtime\.topic to (\S+)/.exec(op)?.[1];
-    const topic = topicRef === "the" ? refValue("fixtures.session.topic") : topicRef ? resolveRefs(topicRef).value : refValue("fixtures.session.topic");
+    // "set realtime.topic to fixtures.session.topic, then …": the reference
+    // ends at the first character a fixture reference cannot contain. The
+    // previous parser took every non-space character and kept the comma, so
+    // four probes read the topic "game:…001," which exists nowhere (R2).
+    const topicRef = /set realtime\.topic to (fixtures\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)?|the game topic)/.exec(op)?.[1];
+    if (!topicRef) throw new Error(`${t.testId}: no topic in "${op}"`);
+    const topic = topicRef === "the game topic" ? refValue("fixtures.session.topic") : resolveRefs(topicRef).value;
     const setTopic = [{ sql: `select set_config('realtime.topic', $1, false)`, params: [topic] }];
     if (/insert into/i.test(op)) {
       return {
-        ...base, kind: "sql",
-        preStatements: setTopic,
+        ...base, kind: "sql", relation: res, preStatements: setTopic, writesWhenControlHolds: pos,
         statement:
           `insert into realtime.messages (topic, extension, payload, event, private) ` +
           `values ($1, 'broadcast', '{"attest":true}'::jsonb, 'state', true)`,
@@ -428,18 +486,26 @@ function policySpec(
       };
     }
     return {
-      ...base, kind: "sql",
-      preStatements: setTopic,
+      ...base, kind: "sql", relation: res, preStatements: setTopic, writesWhenControlHolds: false,
       statement: `select * from realtime.messages where topic = $1`,
       params: [topic],
     };
   }
 
-  // INSERT probes (F3, and the F2 insert policies).
+  // INSERT probes (F3): the compared column from the approved row, the rest
+  // completed so the row reaches WITH CHECK (R3).
   let m = /^INSERT into \S+ with ([a-z_]+) = (fixtures\.\w+\.\w+)/i.exec(op);
   if (m) {
     const col = m[1]!, value = resolveRefs(m[2]!).value;
-    return { ...base, kind: "sql", statement: `insert into ${res} (${quoteIdent(col)}) values ($1)`, params: [value] };
+    const done = INSERT_COMPLETION[res];
+    if (!done) throw new Error(`${t.testId}: no row completion known for ${res}`);
+    const cols = [col, ...done.cols];
+    const params = [value, ...done.values];
+    return {
+      ...base, kind: "sql", relation: res, writesWhenControlHolds: pos,
+      statement: `insert into ${res} (${cols.map(quoteIdent).join(", ")}) values (${params.map((_, i) => `$${i + 1}`).join(", ")})`,
+      params, bindingNotes: [done.note],
+    };
   }
 
   // UPDATE / DELETE probes keyed on a predicate column.
@@ -448,20 +514,35 @@ function policySpec(
     const [, verb, setCol, setVal, whereCol, whereRef] = m;
     const value = resolveRefs(whereRef!).value;
     if (verb!.toLowerCase() === "delete") {
-      return { ...base, kind: "sql", statement: `delete from ${res} where ${quoteIdent(whereCol!)} = $1`, params: [value] };
+      return { ...base, kind: "sql", relation: res, statement: `delete from ${res} where ${quoteIdent(whereCol!)} = $1`, params: [value], writesWhenControlHolds: pos };
     }
-    // The plan's UPDATE template sometimes omits SET; use a granted column that
-    // does not move the predicate, so the probe tests the policy and not a
-    // column grant.
-    const col = setCol ?? updateTouchColumn(res);
-    const rhs = setVal ? resolveRefs(setVal).value : quoteIdent(col);
-    return { ...base, kind: "sql", statement: `update ${res} set ${quoteIdent(col)} = ${rhs} where ${quoteIdent(whereCol!)} = $1`, params: [value] };
+    if (setCol) {
+      return {
+        ...base, kind: "sql", relation: res, writesWhenControlHolds: pos,
+        statement: `update ${res} set ${quoteIdent(setCol)} = ${resolveRefs(setVal!).value} where ${quoteIdent(whereCol!)} = $1`,
+        params: [value],
+      };
+    }
+    // The approved F2 UPDATE names no SET. The executor picks a granted
+    // column whose new value is one the application permits the caller to
+    // write, so the probe tests the policy and not a column grant or a write
+    // guard.
+    const touch = UPDATE_TOUCH[res];
+    if (!touch) throw new Error(`${t.testId}: no update binding known for ${res}`);
+    return {
+      ...base, kind: "sql", relation: res, writesWhenControlHolds: pos,
+      statement: `update ${res} set ${quoteIdent(touch.col)} = ${touch.value} where ${quoteIdent(whereCol!)} = $1`,
+      params: [value], bindingNotes: [touch.note],
+    };
   }
 
   // SELECT keyed on an ownership column.
   m = /^select from \S+ where ([a-z_]+) = (fixtures\.\w+\.\w+)/i.exec(op);
   if (m) {
-    return { ...base, kind: "sql", statement: `select * from ${res} where ${quoteIdent(m[1]!)} = $1`, params: [resolveRefs(m[2]!).value] };
+    return {
+      ...base, kind: "sql", relation: res, writesWhenControlHolds: false,
+      statement: `select * from ${res} where ${quoteIdent(m[1]!)} = $1`, params: [resolveRefs(m[2]!).value],
+    };
   }
 
   // SELECT over a multi-clause OR predicate: the fixture row names neither party.
@@ -469,7 +550,7 @@ function policySpec(
   if (m) {
     const cols = m[1]!.split(",").map((c) => c.trim()).filter(Boolean);
     const conj = cols.map((c) => `${quoteIdent(c)} <> $1`).join(" and ");
-    return { ...base, kind: "sql", statement: `select * from ${res} where ${conj}`, params: [refValue("fixtures.alice.id")] };
+    return { ...base, kind: "sql", relation: res, writesWhenControlHolds: false, statement: `select * from ${res} where ${conj}`, params: [refValue("fixtures.alice.id")] };
   }
 
   // SELECT gated by membership rather than ownership.
@@ -478,37 +559,76 @@ function policySpec(
     const fk = MEMBERSHIP_FK[res];
     if (!fk) throw new Error(`${t.testId}: no membership column known for ${res}`);
     const extra = /visibility = 'public'/.test(op) ? ` and visibility = 'public'` : "";
-    return { ...base, kind: "sql", statement: `select * from ${res} where ${quoteIdent(fk)} = $1${extra}`, params: [resolveRefs(m[1]!).value] };
+    return {
+      ...base, kind: "sql", relation: res, writesWhenControlHolds: false,
+      statement: `select * from ${res} where ${quoteIdent(fk)} = $1${extra}`, params: [resolveRefs(m[1]!).value],
+    };
   }
 
-  // F4's falsifying-predicate rows.
+  // F4's predicate rows.
   m = /^select from \S+ for (?:the seeded row where|a row satisfying) (.+)$/i.exec(op);
   if (m) {
-    return { ...base, kind: "sql", statement: `select * from ${res} where ${m[1]!.trim()}` };
+    return { ...base, kind: "sql", relation: res, writesWhenControlHolds: false, statement: `select * from ${res} where ${m[1]!.trim()}` };
   }
 
   throw new Error(`${t.testId}: cannot derive a policy probe from "${op}"`);
 }
 
-/** Parse `as <who>, call f(args…)` into a callable statement. */
-function parseCall(t: PlannedTest): { sql: string; params: unknown[] } {
+/** A column (and value) an approved F2 UPDATE that names no SET is issued with. */
+const UPDATE_TOUCH: Readonly<Record<string, { col: string; value: string; note: string }>> = {
+  "public.friend_requests": {
+    col: "status", value: `'cancelled'`,
+    note: "the approved UPDATE names no column. status is the only client-granted column, and guard_friend_request_transition lets a SENDER make exactly one change — to 'cancelled' — so that is the value; any other would be refused by the trigger before the policy's USING could be observed",
+  },
+  "public.loadouts": {
+    col: "avatar_cosmetic_id", value: `"avatar_cosmetic_id"`,
+    note: "the approved UPDATE names no column; a granted slot is set to itself, which guard_loadout_slots accepts",
+  },
+  "public.profiles": {
+    col: "bio", value: `"bio"`,
+    note: "the approved UPDATE names no column; bio (granted, and read by no trigger) is set to itself",
+  },
+};
+
+/**
+ * Parse `as <who>, call f(args…)` into a callable statement.
+ *
+ * Three shapes are bound rather than copied, each recorded in `notes`:
+ * a signature placeholder (`p_action text`) the approved row never filled; an
+ * elision (`...`) meaning "the remaining arguments", which take the function's
+ * own defaults; and "call it for the seeded challenge date", which names the
+ * date of the seeded challenge rather than giving it.
+ */
+function parseCall(t: PlannedTest, fn: string): { sql: string; params: unknown[]; notes: string[] } {
   const { schema, name } = functionIdentity(t.resource);
   const op = t.operation;
-  // `call it …` refers back to the row's own function.
-  const argText = /\bcall\s+(?:it|[a-z_0-9]+)\s*\(([\s\S]*?)\)(?:\s|$|,|—|—)/.exec(op)?.[1];
-  if (argText === undefined) {
-    // No parenthesised argument list: a zero-argument call.
-    return { sql: `select * from ${schema}.${name}()`, params: [] };
+  const notes: string[] = [];
+
+  const sig = SIGNATURE_BINDINGS[fn];
+  if (sig && /^call [a-z_]+\([a-z_]+ [a-z ]+\) as /.test(op)) {
+    notes.push(sig.note);
+    return { sql: `select * from ${schema}.${name}(${sig.sql})`, params: [...sig.args], notes };
   }
-  const raw = argText.trim();
-  if (raw === "") return { sql: `select * from ${schema}.${name}()`, params: [] };
-  const parts = splitArgs(raw);
+  if (/call it for the seeded challenge date/.test(op)) {
+    notes.push("\"the seeded challenge date\" bound to today's UTC date, the date of the daily challenge the fixture seeds; p_limit and p_offset take the function's defaults");
+    return { sql: `select * from ${schema}.${name}((now() at time zone 'utc')::date)`, params: [], notes };
+  }
+
+  const argText = /\bcall\s+(?:it|[a-z_0-9]+)\s*\(([\s\S]*?)\)(?:\s|$|,|—)/.exec(op)?.[1];
+  if (argText === undefined || argText.trim() === "") {
+    if (/call it and inspect/.test(op) && argText === undefined) {
+      notes.push("the approved operation calls the function with no arguments; every parameter takes the function's own default");
+    }
+    return { sql: `select * from ${schema}.${name}()`, params: [], notes };
+  }
+  let parts = splitArgs(argText.trim());
+  if (parts[parts.length - 1] === "...") {
+    parts = parts.slice(0, -1);
+    notes.push("the approved operation elides the remaining arguments ('...'); they take the function's own defaults rather than values the harness would invent");
+  }
   const params: unknown[] = [];
-  const placeholders = parts.map((p) => {
-    const lit = literalArg(p, params);
-    return lit;
-  });
-  return { sql: `select * from ${schema}.${name}(${placeholders.join(", ")})`, params };
+  const placeholders = parts.map((p) => literalArg(p, params));
+  return { sql: `select * from ${schema}.${name}(${placeholders.join(", ")})`, params, notes };
 }
 
 /** Split an argument list on commas that are not inside brackets or quotes. */
@@ -516,7 +636,7 @@ function splitArgs(s: string): string[] {
   const out: string[] = [];
   let depth = 0, quoted = false, cur = "";
   for (const ch of s) {
-    if (ch === "'" ) quoted = !quoted;
+    if (ch === "'") quoted = !quoted;
     if (!quoted && (ch === "(" || ch === "[")) depth++;
     if (!quoted && (ch === ")" || ch === "]")) depth--;
     if (ch === "," && depth === 0 && !quoted) { out.push(cur); cur = ""; continue; }
@@ -529,6 +649,9 @@ function splitArgs(s: string): string[] {
 /** Turn one planned argument into a placeholder plus its bound value. */
 function literalArg(arg: string, params: unknown[]): string {
   const a = arg.trim();
+  if (/^[a-z_]+ [a-z_ ]+$/.test(a) && !/^'/.test(a)) {
+    throw new Error(`the argument "${a}" is a signature placeholder, not a value; bind it in SIGNATURE_BINDINGS`);
+  }
   const arrayMatch = /^ARRAY\[(.+)\]$/i.exec(a);
   if (arrayMatch) {
     const inner = splitArgs(arrayMatch[1]!).map((x) => resolveRefs(x.replace(/^'|'$/g, "")).value);
@@ -539,138 +662,13 @@ function literalArg(arg: string, params: unknown[]): string {
   if (/^'.*'$/.test(a)) { params.push(resolveRefs(a.slice(1, -1)).value); return `$${params.length}`; }
   if (/^-?\d+$/.test(a)) { params.push(Number(a)); return `$${params.length}`; }
   if (/^(true|false)$/i.test(a)) { params.push(a.toLowerCase() === "true"); return `$${params.length}`; }
-  params.push(resolveRefs(a).value);
-  return `$${params.length}`;
-}
-
-/**
- * Post-probe state checks, for the twelve rows whose expectation is not only
- * about the return value.
- *
- * "returns 0 AND bob's notification read_at stays null" is two claims. Checking
- * only the first would let a probe pass while the definer privilege had in fact
- * reached another account's row — which is the exact escalation F5 exists to
- * detect. Each guard is written from the row's own `expected` text.
- */
-const F = FIXTURES;
-const STATE_GUARDS: Readonly<Record<string, { sql: string; params: readonly unknown[]; describe: string }>> = {
-  "F5.remove_room_member.245": {
-    describe: "bob's membership of the bob-hosted room is unchanged",
-    sql: `select count(*) = 1 as ok, 'bob joined-membership rows: ' || count(*)::text as detail
-          from public.room_members where room_id = $1 and user_id = $2 and status = 'joined'`,
-    params: [F.roomBobHosts.value, F.bob.value],
-  },
-  "F5.set_room_ready.247": {
-    describe: "carol is still not a member of the alice/bob room",
-    sql: `select count(*) = 0 as ok, 'carol membership rows: ' || count(*)::text as detail
-          from public.room_members where room_id = $1 and user_id = $2`,
-    params: [F.roomAliceBob.value, F.carol.value],
-  },
-  "F5.invite_friend_to_room.248": {
-    describe: "no room_members row was created for bob in the alice/bob room by this call",
-    sql: `select count(*) = 1 as ok, 'bob membership rows: ' || count(*)::text || ' (the seeded one only)' as detail
-          from public.room_members where room_id = $1 and user_id = $2`,
-    params: [F.roomAliceBob.value, F.bob.value],
-  },
-  "F5.leave_room.249": {
-    describe: "no other member's row was altered",
-    sql: `select count(*) = 2 as ok, 'joined members still in the room: ' || count(*)::text || ' of 2' as detail
-          from public.room_members where room_id = $1 and status = 'joined'`,
-    params: [F.roomAliceBob.value],
-  },
-  "F5.mark_notifications_read.251": {
-    describe: "bob's notification read_at is still null",
-    sql: `select (read_at is null) as ok, 'bob notification read_at = ' || coalesce(read_at::text, 'null') as detail
-          from public.notifications where id = $1`,
-    params: [F.bobNotification.value],
-  },
-  "F5.decline_friend_request.258": {
-    describe: "the bob->carol request is untouched",
-    sql: `select (status = 'pending') as ok, 'request status = ' || status::text as detail
-          from public.friend_requests where id = $1`,
-    params: [F.bobNotSentRequest.value],
-  },
-  "F5.block_player.260": {
-    describe: "the new block is attributed to alice, and no row appears with blocker_id = bob",
-    sql: `select (mine >= 1 and theirs = 0) as ok,
-                 'blocks by alice on bob: ' || mine::text || ', blocks by bob on bob: ' || theirs::text as detail
-          from (select
-                  (select count(*) from public.blocks where blocker_id = $1 and blocked_id = $2) mine,
-                  (select count(*) from public.blocks where blocker_id = $2 and blocked_id = $2) theirs) x`,
-    params: [F.alice.value, F.bob.value],
-  },
-  "F5.unblock_player.261": {
-    describe: "the seeded alice->dave block survives",
-    sql: `select count(*) = 1 as ok, 'alice->dave block rows: ' || count(*)::text as detail
-          from public.blocks where blocker_id = $1 and blocked_id = $2`,
-    params: [F.alice.value, F.dave.value],
-  },
-  "F5.remove_friend.262": {
-    describe: "the seeded alice<->bob friendship survives",
-    sql: `select count(*) = 1 as ok, 'alice<->bob friendship rows: ' || count(*)::text as detail
-          from public.friendships where (user_id_a, user_id_b) in (($1,$2),($2,$1))`,
-    params: [F.alice.value, F.bob.value],
-  },
-  "F5.retire_push_token.268": {
-    describe: "bob's push token row is still active",
-    sql: `select (is_active) as ok, 'bob token is_active = ' || is_active::text as detail
-          from public.push_tokens where token = $1`,
-    params: [F.bobPushToken.value],
-  },
-  "F5.register_push_token.269": {
-    describe: "bob's token row still exists and is still attributed to bob",
-    sql: `select count(*) = 1 as ok, 'rows for that token still owned by bob: ' || count(*)::text as detail
-          from public.push_tokens where token = $1 and user_id = $2`,
-    params: [F.bobPushToken.value, F.bob.value],
-  },
-  "F5.create_private_room.281": {
-    describe: "no rooms row was created by the out-of-range call",
-    sql: `select count(*) = 0 as ok, 'rooms with max_seats outside 2..5: ' || count(*)::text as detail
-          from public.rooms where max_seats < 2 or max_seats > 5`,
-    params: [],
-  },
-};
-
-/** A column safe to no-op update when testing an immutability trigger. */
-function auditTouchColumn(res: string): string {
-  const byRes: Record<string, string> = {
-    "private.game_commands": "command_id",
-    "public.game_events": "type",
-    "public.rate_limit_events": "action",
-    "public.wallet_ledger": "reason",
-  };
-  return byRes[res] ?? "id";
-}
-
-/** A granted, non-predicate column to move in an UPDATE policy probe. */
-function updateTouchColumn(res: string): string {
-  const byRes: Record<string, string> = {
-    "public.friend_requests": "status",
-    "public.loadouts": "avatar_cosmetic_id",
-    "public.notifications": "read_at",
-    "public.profiles": "bio",
-    "public.push_tokens": "is_active",
-  };
-  return byRes[res] ?? "id";
-}
-
-/** The actor/action/time columns an audit-existence probe reads. */
-function auditColumns(res: string): string[] {
-  const byRes: Record<string, string[]> = {
-    "private.game_commands": ["actor_user_id", "command_type", "created_at"],
-    "public.game_events": ["type", "created_at"],
-    "public.rate_limit_events": ["user_id", "action", "occurred_at"],
-    "public.wallet_ledger": ["user_id", "reason", "created_at"],
-  };
-  const cols = byRes[res];
-  if (!cols) throw new Error(`no audit columns known for ${res}`);
-  return cols;
+  throw new Error(`cannot bind the argument "${a}"`);
 }
 
 /** Search the catalogs for any trail covering a resource. */
 function auditAbsenceSql(res: string): string {
   const [, name] = res.split(".");
-  return `select (hist = 0 and softdel = 0 and deltrig = 0) as ok,
+  return `select (hist = 0 and softdel = 0 and deltrig = 0) as no_trail,
                  'history/versioning/audit relations naming ' || '${name}' || ': ' || hist::text ||
                  ', soft-delete columns: ' || softdel::text ||
                  ', delete triggers retaining a record: ' || deltrig::text as detail
@@ -713,58 +711,3 @@ export function deriveAll(plan: Wp3Plan): DerivationResult {
   }
   return { specs, failures };
 }
-
-// ---------------------------------------------------------------------------
-// session pooling
-// ---------------------------------------------------------------------------
-
-/** Opens each distinct caller once and reuses it. */
-export class CallerPool {
-  private readonly sessions = new Map<string, Session>();
-  private admin: Session | null = null;
-
-  async get(c: Caller): Promise<Session> {
-    if (c.kind === "external") {
-      throw new Error(`caller "${c.label}" manages its own connection; the pool must not be asked for it`);
-    }
-    if (c.kind === "admin") {
-      this.admin ??= await adminSession(c.label);
-      return this.admin;
-    }
-    const key = c.label;
-    const existing = this.sessions.get(key);
-    if (existing) return existing;
-    const s = await roleSession({
-      role: c.role,
-      claims: c.subject ? claimsFor(c.subject) : null,
-      label: c.label,
-    });
-    this.sessions.set(key, s);
-    return s;
-  }
-
-  async closeAll(): Promise<void> {
-    for (const s of this.sessions.values()) await s.close().catch(() => {});
-    if (this.admin) await this.admin.close().catch(() => {});
-    this.sessions.clear();
-    this.admin = null;
-  }
-}
-
-/** Run one plain SQL or RPC spec and capture the outcome. */
-export async function runSqlSpec(session: Session, spec: ExecSpec): Promise<Outcome> {
-  return execute(session, spec.statement, spec.params);
-}
-
-/** Run a catalog assertion, turning `ok/detail` into an outcome. */
-export async function runCatalogSpec(admin: Session, spec: ExecSpec): Promise<{ outcome: Outcome; detail: string }> {
-  const o = await execute(admin, spec.assertSql ?? "select true as ok, '' as detail");
-  if (o.harnessError || o.raised) return { outcome: o, detail: o.message ?? "catalog read failed" };
-  const row = (o.sample[0] ?? {}) as { ok?: boolean; detail?: string };
-  return {
-    outcome: { ...o, rowCount: row.ok === true ? 1 : 0 },
-    detail: row.detail ?? "",
-  };
-}
-
-export { summarize };

@@ -1,37 +1,39 @@
 /**
- * Attest — WP3 execution readiness.
+ * Attest — WP3 execution readiness: would each verdict mean what it says?
  *
- * Preflight already asks whether the plan is intact, whether its fixtures
- * exist, and whether the author has spoken. This module asks the question
- * those leave open: if the 345 probes ran right now, would each verdict mean
- * what it says?
+ * Preflight asks whether the plan is intact, its fixtures exist and the author
+ * has spoken. This module asks the question those leave open. D3.36 found that
+ * a full run would have recorded dozens of verdicts that meant nothing — empty
+ * subject sets, positives that could not reach their control, "no effect"
+ * judged by a return value, premises the fixture contradicted, state claims
+ * nobody checked, probes contaminating each other. Each class is now a check,
+ * and each check is either STATIC (over the plan, the derived probes, the claim
+ * spans and the bindings) or LIVE (admin reads on a verified baseline, with a
+ * probe-scoped setup applied only inside a transaction that is rolled back).
  *
- * It was written because the answer turned out to be no, for reasons none of
- * the existing gates could see (D3.36). A probe can derive, name real objects,
- * find its fixture present, and still be unable to produce a meaningful
- * verdict: its subject set is empty, so a refusal proves nothing; its INSERT
- * omits a NOT NULL column, so a working control records `deficient`; its
- * assertion cannot tell a no-op from an effect; its premise is contradicted by
- * another row's fixture; or an earlier probe's committed side effect has
- * already changed the state it depends on.
+ *   R1  every claim span of every approved expectation has an implemented evaluator
+ *   R2  no vacuous target: every probe whose verdict depends on rows states a subject
+ *       or relationship premise, and every premise holds live
+ *   R3  every positive reaches its control: INSERT positives supply every required
+ *       column and collide with no unique key, on the probe's own setup
+ *   R4  every "no effect" claim is judged from a state guard, never a return value
+ *   R5  every stated premise — fixture, relationship, identity — holds live
+ *   R6  every state claim has a guard, and every evaluator's inputs are bound
+ *   R7  isolation: every probe runs on a rebuilt, verified baseline after any state
+ *       change; the strategy is available and its classification is complete
  *
- * Each check here is computed — from the plan, the derived probes, the
- * catalog, or an admin-side count of the fixture state — never listed by hand,
- * except the premises, which are written from each row's own approved text the
- * way the state guards are. None of it executes a probe or exercises a control:
- * the live reads are admin-side counts of seeded state and catalog lookups, the
- * same kind of read the fixture verification already makes.
- *
- * A failing check here blocks execution exactly as a plan contradiction does.
- * Resolving one is either Attest-side work (a fixture, an assertion, an
- * isolation mechanism) or, where it would change an approved row, the author's
- * decision.
+ * None of it executes a probe. The live checks are the same admin reads the
+ * executor makes before a probe, run in advance.
  */
 import type { Session } from "./db.ts";
-import type { PlannedTest, Wp3Plan } from "./wp3-plan.ts";
-import type { ExecSpec } from "./wp3-exec.ts";
-import { assertionImplementedFor } from "./wp3-assertions.ts";
-import { FIXTURES } from "../rubric/fixtures.ts";
+import type { Wp3Plan } from "./wp3-plan.ts";
+import type { PreparedProbe } from "./wp3-execute.ts";
+import { validateClaimCoverage } from "./wp3-claims.ts";
+import { evaluatorExists } from "./wp3-evaluate.ts";
+import { implFor } from "./seed-extensions.ts";
+import { REGISTERED_CONTRADICTIONS, checkRegisteredContradictions } from "./wp3-contradictions.ts";
+import { claimsFor } from "./wp3-exec.ts";
+import { subjectExemption } from "./wp3-bindings.ts";
 
 export interface ReadinessCheck {
   readonly id: string;
@@ -39,508 +41,266 @@ export interface ReadinessCheck {
   readonly passed: boolean;
   readonly testIds: readonly string[];
   readonly detail: string;
-  /** Per-row explanations, for the report and the author. */
   readonly rows: readonly { readonly testId: string; readonly why: string }[];
 }
 
-const F = FIXTURES;
-const uid = (x: { value: string }) => x.value;
+const make = (id: string, name: string, rows: { testId: string; why: string }[], okDetail: string): ReadinessCheck => ({
+  id, name, passed: rows.length === 0, testIds: [...new Set(rows.map((r) => r.testId))], rows,
+  detail: rows.length ? `${rows.length} problem(s): ${[...new Set(rows.map((r) => r.testId))].slice(0, 6).join(", ")}${rows.length > 6 ? ", …" : ""}` : okDetail,
+});
 
 // ---------------------------------------------------------------------------
-// R1 — custom expectations nobody implemented
+// static
 // ---------------------------------------------------------------------------
 
-/** Static: every custom expectation on a SQL or RPC probe has an assertion. */
-export function checkAssertionCoverage(plan: Wp3Plan, specs: ReadonlyMap<string, ExecSpec>): ReadinessCheck {
+/** R1 / §17: every approved expectation fully covered, every claim evaluable. */
+export function checkClaimCoverage(plan: Wp3Plan): ReadinessCheck {
+  const rows = validateClaimCoverage(plan.tests, evaluatorExists).map((i) => ({ testId: i.testId, why: i.problem }));
+  return make("R1", "every claim of every approved expectation has an implemented evaluator", rows,
+    `all ${plan.tests.length} expectations are covered span by span, and every span's evaluator is implemented`);
+}
+
+/** R6 + §8: every evaluator a span names has the per-row input it needs. */
+export function checkBindingsComplete(prepared: ReadonlyMap<string, PreparedProbe>): ReadinessCheck {
   const rows: { testId: string; why: string }[] = [];
-  for (const t of plan.tests) {
-    const s = specs.get(t.testId);
-    if (!s || s.expect.kind !== "custom" || (s.kind !== "sql" && s.kind !== "rpc")) continue;
-    if (!assertionImplementedFor(t)) {
-      rows.push({ testId: t.testId, why: `no assertion recognises "${t.expected.slice(0, 90)}…" — it would be recorded deficient whatever the control did` });
+  const RUNNER_KINDS = new Set(["f7_mechanism", "f7_roles", "f9", "socket", "http"]);
+  for (const p of prepared.values()) {
+    const { t, spec, binding: b } = p;
+    for (const s of p.spans) {
+      const e = s.eval;
+      if (!e) continue;
+      const need = (ok: boolean, why: string) => { if (!ok) rows.push({ testId: t.testId, why: `"${s.text}" (${e}): ${why}` }); };
+      if (e.startsWith("state:")) {
+        const key = e.slice(6);
+        if (key === "stale_expiry_permitted") need(b.guards.guard2?.permitsStaleExpiry === true, "no guard declares the stale-expiry permission");
+        else need(!!b.guards[key], `no state guard '${key}' is bound — the state claim would go unchecked`);
+      } else if (e.startsWith("catalog:")) need(!!b.catalog[e.slice(8)], `no catalog fact '${e.slice(8)}' is bound`);
+      else if (e.startsWith("premise:")) need(b.premises.some((x) => x.id === e.slice(8)), `no premise '${e.slice(8)}' is bound`);
+      else if (e === "reference:identical") need(!!b.reference, "no reference observation is bound");
+      else if (e.startsWith("mech:trigger:")) need(!!b.namedTrigger, "the named trigger is not resolved to its function");
+      else if (e.startsWith("runner:")) need(RUNNER_KINDS.has(spec.kind), `a runner claim on a ${spec.kind} probe`);
+      else if (e === "result:only_own" || e === "result:own_queue_entry" || e === "result:non_friend_projection") need(!!b.results[e.slice(7)], `no result check '${e.slice(7)}' is bound`);
+      else if (e === "result:trail_columns_present") need((b.trailColumns ?? []).length > 0, "no trail columns are bound");
+      else if (e === "refusal") {
+        // Refusal is the ONLY way to meet this claim, so a site must say which raise is it.
+        need(!!b.refusalByReturn || (b.refusalSites ?? []).length > 0, "no refusal site is declared, so no raise could count as THE refusal this row examines");
+      } else if (e === "refusal_or_no_effect") {
+        // With no declared site every raise is judged not-reached; the claim is met only from state.
+        need(!!b.guards.no_effect, "no 'no effect' guard: a no-op would be judged by its return value (R4)");
+      } else if (e === "refusal_or_non_displacing") {
+        need(!!b.guards.guard && !!b.guards.caller_row, "the displacement guards are not bound");
+      }
     }
   }
-  return {
-    id: "R1", name: "every custom expectation has an implemented assertion",
-    passed: rows.length === 0, testIds: rows.map((r) => r.testId), rows,
-    detail: rows.length ? `${rows.length} row(s) with no assertion: ${rows.map((r) => r.testId).join(", ")}` : "every custom expectation is recognised",
-  };
+  return make("R6", "every state claim has a guard, and every evaluator's inputs are bound", rows,
+    `every span of ${prepared.size} probes has the guard, premise, catalog fact, reference or result check it names`);
+}
+
+/** R4: "no effect" is judged from state. */
+export function checkNoEffectFromState(prepared: ReadonlyMap<string, PreparedProbe>): ReadinessCheck {
+  const rows: { testId: string; why: string }[] = [];
+  for (const p of prepared.values()) {
+    const e = p.t.expected;
+    if (!/\bno effect\b|refusal or no effect/i.test(e)) continue;
+    const g = p.binding.guards.no_effect ?? p.binding.guards.guard;
+    if (!g || (!g.snap && !g.after)) rows.push({ testId: p.t.testId, why: "a 'no effect' claim with no state guard to judge it by" });
+    if (p.spans.some((s) => s.kind === "outcome" && /^returns/.test(s.eval ?? ""))) {
+      rows.push({ testId: p.t.testId, why: "a 'no effect' claim judged by a returned value" });
+    }
+  }
+  return make("R4", "every no-effect claim is judged from a state guard, never a returned value", rows,
+    "every 'no effect' claim is judged by a before/after state guard");
+}
+
+/** R2 (static): a probe whose verdict depends on rows states the premise that makes them non-empty. */
+export function checkVacuityPremises(prepared: ReadonlyMap<string, PreparedProbe>): ReadinessCheck {
+  const rows: { testId: string; why: string }[] = [];
+  for (const p of prepared.values()) {
+    const { t, spec, binding: b } = p;
+    if (spec.kind === "sql") {
+      // Every SQL probe that acts on rows needs its subject shown non-empty,
+      // unless it is exempt for a stated reason (the same rule the binding uses).
+      if (!subjectExemption(t, spec) && !b.premises.some((x) => x.id === "subject")) {
+        rows.push({ testId: t.testId, why: "the probe acts on rows, and no premise makes its subject non-empty" });
+      }
+    }
+    if (spec.kind === "rpc") {
+      const hasPremise = b.premises.some((x) => x.id === "relationship" || x.id.startsWith("setup:"));
+      const selfContained = p.spans.some((s) => s.eval === "message") || t.identity === "anon" && /42501/.test(t.expected);
+      if (!hasPremise && !selfContained) rows.push({ testId: t.testId, why: "an F5 probe with no premise that its target exists in the relationship the row describes" });
+    }
+  }
+  return make("R2", "no probe can pass on an absent target: every row-dependent verdict states a non-empty subject", rows,
+    "every row-dependent verdict carries a subject or relationship premise");
+}
+
+/** R7 (static): isolation is complete and every contradiction registration is wired. */
+export function checkIsolationDesign(prepared: ReadonlyMap<string, PreparedProbe>): ReadinessCheck {
+  const rows: { testId: string; why: string }[] = [];
+  for (const p of prepared.values()) {
+    const { t, spec, binding: b } = p;
+    if (typeof spec.writesWhenControlHolds !== "boolean") rows.push({ testId: t.testId, why: "not classified for isolation" });
+    if (b.setupKey && implFor(b.setupKey)?.scope !== "probe") rows.push({ testId: t.testId, why: `setup ${b.setupKey} is not a probe-scoped implementation` });
+    // A positive that writes when its control holds must be classified so,
+    // or its committed row would meet the next probe.
+    const writesOnSuccess = t.polarity === "positive" && /^\s*(insert|update|delete)\b/i.test(spec.statement);
+    if (writesOnSuccess && !spec.writesWhenControlHolds) rows.push({ testId: t.testId, why: "a positive write not classified as writing when its control holds" });
+  }
+  const known = new Set(prepared.keys());
+  for (const c of REGISTERED_CONTRADICTIONS) for (const id of c.testIds) {
+    if (!known.has(id)) rows.push({ testId: id, why: `registered contradiction ${c.id} names a Test ID the plan does not have` });
+  }
+  return make("R7", "isolation: rebuild after any state change, every probe classified, every setup probe-scoped", rows,
+    `isolation by rebuild; ${[...prepared.values()].filter((p) => p.spec.writesWhenControlHolds).length} probes statically classified as writing, ` +
+    `${[...prepared.values()].filter((p) => p.binding.setupKey).length} with a probe-scoped setup; any other state change is caught by the post-probe digest`);
 }
 
 // ---------------------------------------------------------------------------
-// R2 — empty subjects
+// live, on a verified baseline
 // ---------------------------------------------------------------------------
 
-interface Subject {
-  readonly relation: string;
-  readonly where: string | null;
-  readonly privilege: "SELECT" | "UPDATE" | "DELETE";
-}
-
-/** The set of rows a probe acts on, read back out of its derived statement. */
-function subjectOf(s: ExecSpec): Subject | null {
-  const st = s.statement.trim().replace(/\s+limit\s+\d+\s*$/i, "");
-  let m = /^select\s+[\s\S]+?\s+from\s+((?:public|private|realtime)\.[a-z_0-9]+)(?:\s+where\s+([\s\S]+))?$/i.exec(st);
-  if (m) return { relation: m[1]!, where: m[2] ?? null, privilege: "SELECT" };
-  m = /^update\s+((?:public|private|realtime)\.[a-z_0-9]+)\s+set\s+[\s\S]+?\s+where\s+([\s\S]+)$/i.exec(st);
-  if (m) return { relation: m[1]!, where: m[2]!, privilege: "UPDATE" };
-  m = /^delete\s+from\s+((?:public|private|realtime)\.[a-z_0-9]+)(?:\s+where\s+([\s\S]+))?$/i.exec(st);
-  if (m) return { relation: m[1]!, where: m[2] ?? null, privilege: "DELETE" };
-  return null;
+/** Apply a probe's setup inside the current transaction on `admin` (never committed). */
+async function applySetupInTxn(admin: Session, key: string): Promise<void> {
+  const impl = implFor(key);
+  if (!impl) throw new Error(`no implementation for ${key}`);
+  if (impl.asClient) {
+    // As the function would run for that caller: its claims set locally, the
+    // SECURITY DEFINER body reading auth.uid() from them.
+    await admin.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claimsFor(impl.asClient.subject))]);
+    await admin.query(impl.asClient.statement);
+    await admin.query(`select set_config('request.jwt.claims', '', true)`);
+  } else {
+    for (const sql of impl.statements) await admin.query(sql);
+  }
 }
 
 /**
- * Which rows' verdicts depend on their subject set being non-empty.
- *
- * Excluded, because a privilege refusal does not need a row to refuse: the F2
- * grant-surface probes (`where false`, or no WHERE at all), the F6 negatives
- * (column privilege), the F10 immutability probes (no client write grant), and
- * INSERT and TRUNCATE, which have no subject set.
+ * Staged state for prove-gates: applied inside each probe's own rolled-back
+ * transaction, after its setup, so an injected defect is seen by exactly the
+ * reads a real preflight makes and is never committed.
  */
-function subjectMatters(t: PlannedTest, s: ExecSpec, sub: Subject): boolean {
-  if (s.kind !== "sql") return false;
-  if (/#grant:|#audit:immutable:/.test(t.control)) return false;
-  if (/#colgrant:/.test(t.control) && t.polarity !== "positive") return false;
-  if (sub.where && /^(false|true)$/i.test(sub.where.trim())) return false;
-  if (sub.privilege !== "SELECT" && !sub.where) return false;
-  return true;
-}
+export type Stage = (admin: Session) => Promise<void>;
 
-/**
- * Live: every probe whose verdict depends on its subject rows has some.
- *
- * Counted as admin with the probe's own WHERE clause and parameters. A positive
- * with an empty subject cannot succeed; a refusal against an empty subject
- * proves nothing — unless the caller's role lacks the privilege outright, in
- * which case the grant is the control and the rows do not matter.
- */
-export async function checkSubjects(
+/** R5 (+ R2 live): every premise of every probe holds, each with its own setup, rolled back. */
+export async function checkPremisesLive(
   admin: Session,
-  plan: Wp3Plan,
-  specs: ReadonlyMap<string, ExecSpec>,
-): Promise<ReadinessCheck> {
+  prepared: ReadonlyMap<string, PreparedProbe>,
+  opts: { stage?: Stage } = {},
+): Promise<ReadinessCheck & { readonly held: number }> {
   const rows: { testId: string; why: string }[] = [];
-  for (const t of plan.tests) {
-    const s = specs.get(t.testId);
-    if (!s) continue;
-    const sub = subjectOf(s);
-    if (!sub || !subjectMatters(t, s, sub)) continue;
-    let n: number;
+  let held = 0;
+  for (const p of prepared.values()) {
+    const b = p.binding;
+    if (!b.premises.length) continue;
+    // A registered contradiction excuses only the premises it makes false by
+    // construction (C5: the empty subject). Every other premise must hold.
+    const exempt = new Set(REGISTERED_CONTRADICTIONS.filter((c) => c.testIds.includes(p.t.testId)).flatMap((c) => c.exemptPremises));
+    await admin.query("begin");
     try {
-      const { rows: r } = await admin.query(
-        `select count(*)::int as n from ${sub.relation}${sub.where ? ` where ${sub.where}` : ""}`,
-        s.params as unknown[],
-      );
-      n = (r[0] as { n: number }).n;
+      if (b.setupKey) await applySetupInTxn(admin, b.setupKey);
+      if (opts.stage) await opts.stage(admin);
+      for (const c of b.premises) {
+        let ok = false, detail = "";
+        try {
+          const r = (await admin.query(c.sql, c.params as unknown[])).rows[0] as { ok?: boolean; detail?: string } | undefined;
+          ok = r?.ok === true; detail = String(r?.detail ?? "no row");
+        } catch (err) {
+          detail = `raised: ${(err as Error).message}`;
+        }
+        if (ok) held++;
+        else if (!exempt.has(c.id)) rows.push({ testId: p.t.testId, why: `${c.describe}: ${detail}` });
+      }
     } catch (err) {
-      // A subject that cannot even be counted is a malformed derivation; the
-      // catalog check names it too. Recorded here so the row is not silently
-      // skipped.
-      rows.push({ testId: t.testId, why: `the subject cannot be counted — the derived statement is malformed: ${(err as Error).message}` });
-      continue;
+      rows.push({ testId: p.t.testId, why: `the probe-scoped setup ${b.setupKey} could not be applied: ${(err as Error).message}` });
+    } finally {
+      await admin.query("rollback");
     }
-    if (n > 0) continue;
-    let rolePrivileged = true;
-    if (t.polarity !== "positive" && s.caller.kind === "role") {
-      // DELETE exists only at table level; SELECT and UPDATE may be granted
-      // per column, so "any column" is the right question for those.
-      const { rows: p } = await admin.query(
-        sub.privilege === "DELETE"
-          ? `select has_table_privilege($1, $2::regclass, $3) as ok`
-          : `select has_any_column_privilege($1, $2::regclass, $3) as ok`,
-        [s.caller.role, sub.relation, sub.privilege],
-      );
-      rolePrivileged = (p[0] as { ok: boolean }).ok;
-    }
-    if (!rolePrivileged) continue;
-    // The bound values are part of the evidence: a subject can be empty
-    // because the fixture is missing, or because the derivation bound the
-    // wrong value — the F8 topic parser, for one, keeps a trailing comma.
-    const bound = s.params.length ? ` [bound: ${s.params.map((v) => JSON.stringify(v)).join(", ")}]` : "";
-    rows.push({
-      testId: t.testId,
-      why:
-        t.polarity === "positive"
-          ? `positive expecting "${t.expected.slice(0, 40)}…" but ${sub.relation}${sub.where ? ` where ${sub.where}` : ""}${bound} holds 0 rows — it cannot succeed, and would record deficient`
-          : `${t.polarity} expecting a refusal, but ${sub.relation}${sub.where ? ` where ${sub.where}` : ""}${bound} holds 0 rows and the caller holds ${sub.privilege} — "no data" would be true because there was nothing to return`,
-    });
   }
-  return {
-    id: "R2", name: "every probe's subject rows exist, so no verdict is vacuous",
-    passed: rows.length === 0, testIds: rows.map((r) => r.testId), rows,
-    detail: rows.length
-      ? `${rows.length} row(s) act on an empty set: ${rows.map((r) => r.testId).join(", ")}`
-      : "every positive has something to find, and every refusal has something to refuse",
-  };
+  return { ...make("R5", "every premise — fixture, relationship, subject — holds live, on the probe's own setup", rows, `all ${held} premises hold`), held };
 }
 
-// ---------------------------------------------------------------------------
-// R3 — INSERT positives that cannot succeed
-// ---------------------------------------------------------------------------
-
-/** Live: an INSERT positive supplies every NOT NULL column and violates no unique key. */
+/** R3: INSERT positives supply every required column and collide with no unique key. */
 export async function checkInsertPositives(
   admin: Session,
-  plan: Wp3Plan,
-  specs: ReadonlyMap<string, ExecSpec>,
+  prepared: ReadonlyMap<string, PreparedProbe>,
+  opts: { stage?: Stage } = {},
 ): Promise<ReadinessCheck> {
   const rows: { testId: string; why: string }[] = [];
-  for (const t of plan.tests) {
-    const s = specs.get(t.testId);
-    if (!s || s.kind !== "sql" || t.polarity !== "positive") continue;
-    const m = /^insert into\s+((?:public|private|realtime)\.[a-z_0-9]+)\s*\(([^)]*)\)\s*values\s*\(([\s\S]*)\)\s*$/i.exec(s.statement.trim());
+  for (const p of prepared.values()) {
+    const { t, spec, binding: b } = p;
+    if (spec.kind !== "sql" || t.polarity !== "positive") continue;
+    const m = /^insert into\s+((?:public|private|realtime)\.[a-z_0-9]+)\s*\(([^)]*)\)\s*values\s*\(([\s\S]*)\)\s*$/i.exec(spec.statement.trim());
     if (!m) continue;
     const rel = m[1]!;
     const cols = m[2]!.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-    const vals = m[3]!.split(/,(?![^(]*\))/).map((v) => v.trim());
-    const { rows: req } = await admin.query(
-      `select a.attname::text as col from pg_attribute a
-        where a.attrelid = $1::regclass and a.attnum > 0 and not a.attisdropped
-          and a.attnotnull and not a.atthasdef and a.attidentity = '' and a.attgenerated = ''`,
-      [rel],
-    );
-    const missing = req.map((r) => (r as { col: string }).col).filter((c) => !cols.includes(c));
-    const problems: string[] = [];
-    if (missing.length) problems.push(`omits NOT NULL column(s) with no default: ${missing.join(", ")} (23502)`);
-    // Single-column unique keys whose value the probe binds.
-    const { rows: uniq } = await admin.query(
-      `select a.attname::text as col from pg_index i
-         join pg_attribute a on a.attrelid = i.indrelid and a.attnum = i.indkey[0]
-        where i.indrelid = $1::regclass and i.indisunique and i.indnkeyatts = 1 and i.indpred is null`,
-      [rel],
-    );
-    for (const u of uniq.map((r) => (r as { col: string }).col)) {
-      const at = cols.indexOf(u);
-      const pm = at >= 0 ? /^\$(\d+)$/.exec(vals[at] ?? "") : null;
-      if (!pm) continue;
-      const value = s.params[Number(pm[1]) - 1];
-      const { rows: hit } = await admin.query(`select count(*)::int as n from ${rel} where "${u}" = $1`, [value]);
-      if ((hit[0] as { n: number }).n > 0) problems.push(`a row with ${u} = ${String(value)} already exists, so the unique key on ${u} refuses it (23505)`);
-    }
-    if (problems.length) rows.push({ testId: t.testId, why: `\`${s.statement}\` ${problems.join("; ")} — the positive would record deficient against a working control` });
-  }
-  return {
-    id: "R3", name: "every INSERT positive can succeed against the fixture",
-    passed: rows.length === 0, testIds: rows.map((r) => r.testId), rows,
-    detail: rows.length ? `${rows.length} INSERT positive(s) cannot succeed as derived: ${rows.map((r) => r.testId).join(", ")}` : "every INSERT positive supplies its required columns",
-  };
-}
-
-// ---------------------------------------------------------------------------
-// R4 — refusal / no-effect assertions that cannot judge a non-raising call
-// ---------------------------------------------------------------------------
-
-/**
- * Catalog: `select * from f()` returns exactly one row whenever a
- * non-set-returning function does not raise — a boolean, a text `'none'`, a
- * void, or a NULL composite. The assertion for "refusal" / "no effect" reads
- * that row as an effect. So a function that signals refusal by returning
- * (join_private_room returns NULL by design) or that no-ops and returns
- * (decline_friend_request returns 'none') would be recorded deficient while
- * the control held.
- */
-export function checkNoEffectAssertions(
-  plan: Wp3Plan,
-  specs: ReadonlyMap<string, ExecSpec>,
-  procs: ProcIndex,
-): ReadinessCheck {
-  const rows: { testId: string; why: string }[] = [];
-  for (const t of plan.tests) {
-    const s = specs.get(t.testId);
-    if (!s || s.kind !== "rpc" || !s.functionCall) continue;
-    const e = t.expected.trim();
-    if (!/^(refusal|refused|no effect)\b/i.test(e) || /^refusal,\s+or\b/i.test(e)) continue;
-    const p = procs.get(s.functionCall);
-    if (!p || p.setof) continue;
-    // Two ways the row-count judgement goes wrong. The expectation itself may
-    // permit a no-op ("no effect", "refusal or no effect"), which a
-    // single-row function reports as one returned row. Or the function may
-    // refuse by RETURNING — join_private_room returns NULL "rather than raising"
-    // by design. The second is read from the body, so it is a heuristic in the
-    // same sense as D0.14's can_refuse flag, and is labelled as one.
-    const permitsNoOp = /\bno effect\b/i.test(e);
-    const refusesByReturn = /\breturn\s+null\b/i.test(p.body);
-    if (!permitsNoOp && !refusesByReturn) continue;
-    rows.push({
-      testId: t.testId,
-      why:
-        `${s.functionCall} returns ${p.result}, so a call that does not raise returns exactly one row, and "${e.slice(0, 50)}…" ` +
-        `is judged as "raised or 0 rows". ` +
-        (permitsNoOp
-          ? "The expectation permits a no-op, which would therefore be recorded as an effect"
-          : "The body refuses by returning NULL (heuristic: a `return null` in the body), which would be recorded as an effect") +
-        (s.stateGuard ? "; the state guard cannot rescue it, because the row-count half still fails" : "; and no state guard exists to judge the effect by"),
-    });
-  }
-  return {
-    id: "R4", name: "every refusal / no-effect assertion can judge a call that returns",
-    passed: rows.length === 0, testIds: rows.map((r) => r.testId), rows,
-    detail: rows.length
-      ? `${rows.length} row(s) whose assertion treats any returned row as an effect: ${rows.map((r) => r.testId).join(", ")}`
-      : "no refusal or no-effect assertion depends on a zero row count from a single-row function",
-  };
-}
-
-// ---------------------------------------------------------------------------
-// R5 — premises the fixture does not satisfy
-// ---------------------------------------------------------------------------
-
-interface Premise {
-  readonly premise: string;
-  readonly sql: string;
-  readonly params: readonly unknown[];
-}
-
-const notRoomMember: Premise = {
-  premise: "carol is not a member of fixtures.roomAliceBob",
-  sql: `select count(*) = 0 as ok, 'carol rows in room_members for roomAliceBob: ' || count(*) || ' (need 0)' as detail
-          from public.room_members where room_id = $1::uuid and user_id = $2::uuid`,
-  params: [uid(F.roomAliceBob), uid(F.carol)],
-};
-const notEntrant: Premise = {
-  premise: "carol holds no entry in fixtures.tournamentAliceBob",
-  sql: `select count(*) = 0 as ok, 'carol entries in tournamentAliceBob: ' || count(*) || ' (need 0)' as detail
-          from public.tournament_entries where tournament_id = $1::uuid and user_id = $2::uuid`,
-  params: [uid(F.tournamentAliceBob), uid(F.carol)],
-};
-const pairCount = (table: "friendships" | "friend_requests") =>
-  table === "friendships"
-    ? `(select count(*) from public.friendships where (user_id_a, user_id_b) in ((PX, PY), (PY, PX)))`
-    : `(select count(*) from public.friend_requests where (sender_id, receiver_id) in ((PX, PY), (PY, PX)))`;
-const pair = (table: "friendships" | "friend_requests", x: string, y: string) =>
-  pairCount(table).replaceAll("PX", x).replaceAll("PY", y);
-
-/**
- * Each row's own approved text, turned into a check on the fixture state.
- *
- * For the seventeen rows C1 corrected, the premise is the relationship that
- * makes the corrected caller the refused one — it is the live half of "the
- * expected result is defined for that caller". The others are premises an
- * approved operation states ("when the friendship is alice↔bob", "for a
- * request alice sent to bob", "a non-friend", "a deleted account") that the
- * shared fixture does not, or cannot, satisfy.
- */
-export function probePremises(plan: Wp3Plan): ReadonlyMap<string, Premise> {
-  const m = new Map<string, Premise>();
-  const byFn = (fn: string) => plan.tests.filter((t) => t.family.startsWith("F5") && t.resource.startsWith(`public.${fn}(`));
-  const set = (fn: string, p: Premise, filter: (t: PlannedTest) => boolean = () => true) => {
-    for (const t of byFn(fn).filter(filter)) m.set(t.testId, p);
-  };
-  for (const fn of ["get_room_state", "set_room_ready", "invite_friend_to_room", "leave_room", "caller_is_room_member"]) set(fn, notRoomMember);
-  set("is_session_participant", {
-    premise: "carol holds no seat at fixtures.session",
-    sql: `select count(*) = 0 as ok, 'carol seats at the session: ' || count(*) || ' (need 0)' as detail
-            from public.game_session_seats where game_session_id = $1::uuid and user_id = $2::uuid`,
-    params: [uid(F.session), uid(F.carol)],
-  });
-  set("sprint_standings", notEntrant, (t) => t.polarity === "negative");
-  set("viewer_is_in_tournament", notEntrant);
-  set("accept_friend_request", {
-    premise: "no request from alice to carol exists, and alice and carol are not friends",
-    sql: `select (${pair("friend_requests", "$1::uuid", "$2::uuid")} = 0 and ${pair("friendships", "$1::uuid", "$2::uuid")} = 0) as ok,
-                 'alice<->carol friend_requests: ' || ${pair("friend_requests", "$1::uuid", "$2::uuid")} ||
-                 ', friendships: ' || ${pair("friendships", "$1::uuid", "$2::uuid")} || ' (need 0 and 0)' as detail`,
-    params: [uid(F.alice), uid(F.carol)],
-  });
-  set("decline_friend_request", {
-    premise: "a pending request alice sent to bob exists — the operation's \"for a request alice sent to bob\" — and carol is not its receiver",
-    sql: `select count(*) = 1 as ok, 'pending alice->bob friend_requests: ' || count(*) || ' (need 1)' as detail
-            from public.friend_requests where sender_id = $1::uuid and receiver_id = $2::uuid and status = 'pending'`,
-    params: [uid(F.alice), uid(F.bob)],
-  });
-  set("unblock_player", {
-    premise: "the alice→dave block exists and carol has no block on dave — \"when the alice→dave block is the one that exists\"",
-    sql: `select (ad = 1 and cd = 0) as ok, 'alice->dave blocks: ' || ad || ' (need 1), carol->dave blocks: ' || cd || ' (need 0)' as detail
-            from (select (select count(*) from public.blocks where blocker_id = $1::uuid and blocked_id = $3::uuid) ad,
-                         (select count(*) from public.blocks where blocker_id = $2::uuid and blocked_id = $3::uuid) cd) x`,
-    params: [uid(F.alice), uid(F.carol), uid(F.dave)],
-  });
-  set("remove_friend", {
-    premise: "the alice↔bob friendship exists and carol shares neither a friendship nor a friend request with bob — \"when the friendship is alice↔bob\"",
-    sql: `select (ab = 1 and cbf = 0 and cbr = 0) as ok,
-                 'alice<->bob friendships: ' || ab || ' (need 1), carol<->bob friendships: ' || cbf ||
-                 ' (need 0), carol<->bob friend_requests: ' || cbr || ' (need 0)' as detail
-            from (select ${pair("friendships", "$1::uuid", "$2::uuid")} ab,
-                         ${pair("friendships", "$3::uuid", "$2::uuid")} cbf,
-                         ${pair("friend_requests", "$3::uuid", "$2::uuid")} cbr) x`,
-    params: [uid(F.alice), uid(F.bob), uid(F.carol)],
-  });
-  set("viewer_is_friend_of", {
-    premise: "carol and bob are not friends — \"when the friendship is alice↔bob\"",
-    sql: `select cbf = 0 as ok, 'carol<->bob friendships: ' || cbf || ' (need 0)' as detail
-            from (select ${pair("friendships", "$1::uuid", "$2::uuid")} cbf) x`,
-    params: [uid(F.carol), uid(F.bob)],
-  });
-  set("viewer_has_blocked", {
-    premise: "carol has blocked nobody",
-    sql: `select count(*) = 0 as ok, 'blocks by carol: ' || count(*) || ' (need 0)' as detail from public.blocks where blocker_id = $1::uuid`,
-    params: [uid(F.carol)],
-  });
-  set("viewer_is_blocked_by", {
-    premise: "alice has not blocked carol — \"when the block is alice→dave\"",
-    sql: `select count(*) = 0 as ok, 'alice->carol blocks: ' || count(*) || ' (need 0)' as detail
-            from public.blocks where blocker_id = $1::uuid and blocked_id = $2::uuid`,
-    params: [uid(F.alice), uid(F.carol)],
-  });
-  set("join_private_room", {
-    premise: `no room carries the code ${F.nonexistentRoomCode.value}`,
-    sql: `select count(*) = 0 as ok, 'rooms with that code: ' || count(*) || ' (need 0)' as detail from public.rooms where code = $1`,
-    params: [F.nonexistentRoomCode.value],
-  });
-  set("player_public_profile", {
-    premise: "bob is not alice's friend and bob's privacy is 'public' — the operation's \"a non-friend whose privacy is 'public'\"",
-    sql: `select (ab = 0 and pub) as ok, 'alice<->bob friendships: ' || ab || ' (need 0), bob privacy public: ' || pub as detail
-            from (select ${pair("friendships", "$1::uuid", "$2::uuid")} ab,
-                         coalesce((select privacy::text = 'public' from public.profiles where id = $2::uuid), false) pub) x`,
-    params: [uid(F.alice), uid(F.bob)],
-  }, (t) => /non-friend projection/.test(t.resource));
-  // The deleted-user boundary: the identity is "claims for a deleted account".
-  for (const t of plan.tests.filter((x) => x.control.endsWith("#boundary:deleted-user"))) {
-    m.set(t.testId, {
-      premise: "fixtures.dave.id has no auth.users row when the probe runs — the identity is \"claims for a deleted account\"",
-      sql: `select count(*) = 0 as ok, 'auth.users rows for dave: ' || count(*) || ' (need 0 — the executor has no step that deletes him)' as detail
-              from auth.users where id = $1::uuid`,
-      params: [uid(F.dave)],
-    });
-  }
-  return m;
-}
-
-/** Live: every registered premise holds in the fixture state. */
-export async function checkPremises(admin: Session, plan: Wp3Plan): Promise<ReadinessCheck & { readonly held: readonly { testId: string; premise: string; detail: string }[] }> {
-  const rows: { testId: string; why: string }[] = [];
-  const held: { testId: string; premise: string; detail: string }[] = [];
-  for (const [testId, p] of probePremises(plan)) {
-    let ok = false;
-    let detail = "";
+    await admin.query("begin");
     try {
-      const { rows: r } = await admin.query(p.sql, p.params as unknown[]);
-      const row = r[0] as { ok?: boolean; detail?: string } | undefined;
-      ok = row?.ok === true;
-      detail = row?.detail ?? "premise check returned no row";
+      if (b.setupKey) await applySetupInTxn(admin, b.setupKey);
+      if (opts.stage) await opts.stage(admin);
+      const { rows: req } = await admin.query(
+        `select a.attname::text as col from pg_attribute a
+          where a.attrelid = $1::regclass and a.attnum > 0 and not a.attisdropped
+            and a.attnotnull and not a.atthasdef and a.attidentity = '' and a.attgenerated = ''`, [rel]);
+      const missing = req.map((r) => (r as { col: string }).col).filter((c) => !cols.includes(c));
+      if (missing.length) rows.push({ testId: t.testId, why: `omits NOT NULL column(s) with no default: ${missing.join(", ")}` });
+      // Every unique index whose columns the probe binds, checked against the row it would insert.
+      const { rows: uniq } = await admin.query(
+        `select array_agg(a.attname::text order by k.ord) as cols, pg_get_expr(i.indpred, i.indrelid) as pred
+           from pg_index i cross join lateral unnest(i.indkey) with ordinality k(attnum, ord)
+           join pg_attribute a on a.attrelid = i.indrelid and a.attnum = k.attnum
+          where i.indrelid = $1::regclass and i.indisunique group by i.indexrelid, i.indpred, i.indrelid`, [rel]);
+      for (const u of uniq as { cols: string[]; pred: string | null }[]) {
+        if (!u.cols.every((c) => cols.includes(c))) continue;
+        const where = u.cols.map((c, k) => `"${c}" = $${k + 1}`).join(" and ") + (u.pred ? ` and (${u.pred})` : "");
+        const vals = u.cols.map((c) => spec.params[cols.indexOf(c)]);
+        const hit = Number((await admin.query(`select count(*)::int n from ${rel} where ${where}`, vals)).rows[0]!.n);
+        if (hit > 0) rows.push({ testId: t.testId, why: `a row with (${u.cols.join(", ")}) = (${vals.join(", ")}) already exists; the positive would hit a unique key, not WITH CHECK` });
+      }
+    } finally {
+      await admin.query("rollback");
+    }
+  }
+  return make("R3", "every positive reaches its control: required columns supplied, no unique collision, on its own setup", rows,
+    "every INSERT positive supplies its required columns and collides with no unique key");
+}
+
+/** Every registered approved-row contradiction still holds; a stale one fails. */
+export async function checkContradictionsLive(admin: Session): Promise<ReadinessCheck & { readonly checks: Awaited<ReturnType<typeof checkRegisteredContradictions>> }> {
+  const checks = await checkRegisteredContradictions(admin);
+  const rows = checks.filter((c) => !c.holds).map((c) => ({ testId: c.testIds[0]!, why: `${c.id} no longer holds (stale registration): ${c.detail}` }));
+  return {
+    ...make("C", "every registered approved-row contradiction still holds (a stale one fails)", rows,
+      `${checks.length} registered, all holding live; ${new Set(checks.flatMap((c) => c.testIds)).size} distinct Test IDs will record not_measured until the author decides`),
+    checks,
+  };
+}
+
+/** Every admin read a binding will make compiles and runs, on the verified baseline. */
+export async function checkBindingSql(admin: Session, prepared: ReadonlyMap<string, PreparedProbe>): Promise<ReadinessCheck> {
+  const rows: { testId: string; why: string }[] = [];
+  const tryPrepare = async (testId: string, what: string, sql: string) => {
+    try {
+      await admin.query(`prepare attest_binding_probe as ${sql}`);
     } catch (err) {
-      detail = `premise check raised: ${(err as Error).message}`;
+      rows.push({ testId, why: `${what} does not compile: ${(err as Error).message}` });
+    } finally {
+      await admin.query("deallocate all").catch(() => {});
     }
-    if (ok) held.push({ testId, premise: p.premise, detail });
-    else rows.push({ testId, why: `premise not satisfied: ${p.premise} (${detail})` });
-  }
-  return {
-    id: "R5", name: "every row's stated premise holds in the fixture",
-    passed: rows.length === 0, testIds: rows.map((r) => r.testId), rows, held,
-    detail: rows.length
-      ? `${rows.length} of ${rows.length + held.length} premise(s) not satisfied: ${rows.map((r) => r.testId).join(", ")}`
-      : `all ${held.length} premises hold`,
   };
-}
-
-// ---------------------------------------------------------------------------
-// R6 — two-claim expectations whose state half nobody checks
-// ---------------------------------------------------------------------------
-
-/**
- * Static: an expectation that asserts something about STATE — "stays",
- * "survives", "is still attributed", "no row … changes" — needs a post-probe
- * state guard, or only its return-value half is checked (D3.30 #2's class).
- */
-export function checkStateClaims(plan: Wp3Plan, specs: ReadonlyMap<string, ExecSpec>, procs: ProcIndex): ReadinessCheck {
-  const STATE = /\b(stays|unchanged|survives|untouched|still exists?|still attributed|afterwards|is created|appears (?:with|between)|or changes|is altered|displace)\b/i;
-  const rows: { testId: string; why: string }[] = [];
-  for (const t of plan.tests) {
-    const s = specs.get(t.testId);
-    if (!s || (s.kind !== "sql" && s.kind !== "rpc")) continue;
-    const hit = STATE.exec(t.expected);
-    if (!hit || s.stateGuard) continue;
-    // A STABLE or IMMUTABLE function cannot write — PL/pgSQL refuses a data
-    // change inside a non-volatile function — so its "nothing changes" half
-    // is guaranteed by the database rather than left unchecked.
-    if (s.kind === "rpc" && s.functionCall && procs.get(s.functionCall)?.volatility !== "v") continue;
-    rows.push({ testId: t.testId, why: `the expectation makes a state claim ("…${hit[0]}…") that no state guard checks; only the returned value is asserted` });
-  }
-  return {
-    id: "R6", name: "every state claim in an expectation has a state guard",
-    passed: rows.length === 0, testIds: rows.map((r) => r.testId), rows,
-    detail: rows.length ? `${rows.length} row(s) assert state that nothing checks: ${rows.map((r) => r.testId).join(", ")}` : "every state claim is guarded",
-  };
-}
-
-// ---------------------------------------------------------------------------
-// R7 — probes are not isolated from one another
-// ---------------------------------------------------------------------------
-
-/**
- * How the executor keeps one probe's committed effects away from the next.
- *
- * `none` is the truth today: every probe runs in autocommit on one shared
- * instance, in plan order, and nothing restores state between them. The check
- * below fails while that is so and there is any probe that commits a change
- * when its control HOLDS — because then a later probe can meet state its own
- * premise does not describe, and record a verdict about a situation the plan
- * never set up. Changing this constant without building the mechanism would be
- * the gate lying; `prove-gates` does not treat it as configuration.
- */
-export const PROBE_ISOLATION: "none" | "per-probe" = "none";
-
-export function checkIsolation(
-  plan: Wp3Plan,
-  specs: ReadonlyMap<string, ExecSpec>,
-  procs: ProcIndex,
-): ReadinessCheck {
-  const volatile = new Set([...procs].filter(([, p]) => p.volatility === "v").map(([sig]) => sig));
-  const rows: { testId: string; why: string }[] = [];
-  for (const t of plan.tests) {
-    const s = specs.get(t.testId);
-    if (!s) continue;
-    const n = /^(\d+) rows? affected/i.exec(t.expected);
-    if (s.kind === "sql" && n && Number(n[1]) > 0) {
-      rows.push({ testId: t.testId, why: `commits "${t.expected.slice(0, 40)}…" when the control holds: \`${s.statement.slice(0, 90)}\`` });
-    } else if (s.kind === "rpc" && s.functionCall && volatile.has(s.functionCall)) {
-      rows.push({ testId: t.testId, why: `calls ${s.functionCall}, a VOLATILE function, and commits whatever it writes` });
-    } else if (s.kind === "f9" && (s.variant === "concurrent" || s.variant === "idempotent")) {
-      rows.push({ testId: t.testId, why: "commits wallet and ledger rows by design (the concurrency and retry probes)" });
+  for (const p of prepared.values()) {
+    const b = p.binding;
+    for (const c of Object.values(b.catalog)) await tryPrepare(p.t.testId, `catalog fact ${c.id}`, c.sql);
+    for (const [n, g] of Object.entries(b.guards)) {
+      if (g.snap?.kind === "sql") await tryPrepare(p.t.testId, `guard ${n} snapshot`, g.snap.sql);
+      if (g.after) await tryPrepare(p.t.testId, `guard ${n} check`, g.after.sql);
     }
+    for (const [n, r] of Object.entries(b.results)) {
+      if (r.admin) await tryPrepare(p.t.testId, `result ${n}`, r.admin.sql);
+      if (r.adminBefore) await tryPrepare(p.t.testId, `result ${n} (before)`, r.adminBefore.sql);
+    }
+    if (b.reachability) await tryPrepare(p.t.testId, "reachability", b.reachability.sql);
+    if (b.reference) await tryPrepare(p.t.testId, "reference statement", b.reference.statement);
   }
-  const passed = PROBE_ISOLATION === "per-probe" || rows.length === 0;
-  return {
-    id: "R7", name: "no probe's committed side effect can reach a later probe",
-    passed, testIds: passed ? [] : rows.map((r) => r.testId), rows: passed ? [] : rows,
-    detail: passed
-      ? "probes are isolated"
-      : `the executor runs every probe in autocommit on one shared instance with no restore between them, and ${rows.length} probe(s) ` +
-        `commit changes when their control holds (for example F2.public_blocks.024 deletes the seeded alice→dave block that ` +
-        `F1.public_profiles.146/.148, F5.send_friend_request.259, F5.unblock_player.261, F5.player_public_profile.263 and ` +
-        `F5.search_players.276 all rely on, and runs before them)`,
-  };
-}
-
-/** Everything above, in order. */
-export async function auditReadiness(
-  admin: Session,
-  plan: Wp3Plan,
-  specs: ReadonlyMap<string, ExecSpec>,
-): Promise<ReadinessCheck[]> {
-  const procs = await readProcIndex(admin);
-  return [
-    checkAssertionCoverage(plan, specs),
-    await checkSubjects(admin, plan, specs),
-    await checkInsertPositives(admin, plan, specs),
-    checkNoEffectAssertions(plan, specs, procs),
-    await checkPremises(admin, plan),
-    checkStateClaims(plan, specs, procs),
-    checkIsolation(plan, specs, procs),
-  ];
-}
-
-/** The functions the F5 probes call: return shape, volatility and body, keyed by identity signature. */
-export type ProcIndex = ReadonlyMap<string, { readonly setof: boolean; readonly result: string; readonly volatility: string; readonly body: string }>;
-
-export async function readProcIndex(admin: Session): Promise<ProcIndex> {
-  const { rows } = await admin.query(
-    `select n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' as sig,
-            p.proretset as setof, pg_get_function_result(p.oid) as result, p.provolatile::text as volatility,
-            coalesce(p.prosrc, '') as body
-       from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public', 'private')`,
-  );
-  return new Map(rows.map((r) => [r.sig as string, {
-    setof: r.setof as boolean, result: r.result as string, volatility: r.volatility as string, body: r.body as string,
-  }]));
+  return make("B", "every guard, catalog fact, result check and reference a probe will make compiles", rows,
+    "every binding statement compiles against the rebuilt schema");
 }

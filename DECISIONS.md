@@ -1923,3 +1923,236 @@ a substituted and an edited approved row, R1, R2 and R5 shown to fail and then c
 defect is removed in a rolled-back transaction, the harness-exception case extended to the
 structured assertion path and to a malformed probe's 42601, and six Arc21 source-state changes
 made in a throwaway git repository.
+
+## WP3 — executor hardening (this pass)
+
+Everything below was decided while turning D3.36's list into a harness whose every verdict means
+what it says. None of it changes an approved row's frozen field; none of it touches Arc21.
+
+### D3.38 — Fixtures have a scope, and every one is a stated requirement
+
+A fixture is one of three things, and the plan says which (`SeedExtension.scope`):
+
+| Scope | Applied | Examples |
+|---|---|---|
+| `baseline` (33) | at every rebuild, verified before any probe | the tournament match, erin, the owned-row pairs, the realtime rows, the stale queue population |
+| `probe` (14) | as admin after the verified baseline, before exactly one probe, which is then followed by a rebuild | `probe:alice_seat_left` (.283), `probe:carol_no_tie_to_bob` (.262), `probe:dave_deleted` (the deleted-user boundary) |
+| `runtime` (4) | in memory, never in the database | the F7 scratch roles, signed JWTs, the expired JWT, a room code that does not exist |
+
+A premise that conflicts with the shared baseline — `.262` needs carol to have no tie to bob while
+F1's negatives need the bob↔carol rows — is a probe-scoped setup, never a baseline edit that would
+break another row. Every setup is a plan-stated requirement (`needSeed`), so a row whose approved
+fixture text was "the standing seed" but whose probe needs more carries a **listed fixture
+correction** in `rubric/wp3-approved-matrix.json`: 97 fixture corrections (and the 17 identity
+corrections of D3.33), each with its reason, produced by `freeze-fixture-corrections`, which
+refuses any frozen-field or unattributable change. Structural fixtures are matched on family,
+resource, control, polarity and function — never on Test ID numbers. A fifth synthetic account,
+**erin** (privacy `private`, display name "Erin"), exists so that the leaderboards' "no
+private-privacy identity" claim has a subject that could leak.
+
+### D3.39 — The executed statement is the approved one, bound to real values
+
+Found by reconstructing, fixed in `wp3-exec.ts`: `enforce_rate_limit` bound its signature text
+(`'p_action text'`) as the argument; `register_push_token.269` bound the approved text's elision
+(`"..."`) as `p_device_id`; "the seeded challenge date" was dropped; the F8 topic parser kept the
+trailing comma. Now the elision means "the function's own defaults apply", the date binds to
+today's UTC date, the topic parser takes exactly the fixture reference, and preflight fails if any
+executed statement or parameter still carries a fixture reference, an elision or signature text.
+The F2 grant-surface statements are the approved text verbatim; F3 INSERT positives are completed
+with the NOT NULL columns their table requires (so they reach WITH CHECK, R3); F10 trail UPDATE and
+DELETE name exactly one seeded row.
+
+### D3.40 — Every approved expectation is partitioned into claims, and every claim is judged
+
+`wp3-claims.ts` splits each approved `expected` text, character for character, into spans with 72
+templates. Each span is an outcome, mechanism, state, premise, catalog, reference or runner claim
+naming an evaluator — or a rationale that says why it is not asserted, or a connective drawn from a
+closed vocabulary. Preflight fails if any text is not wholly consumed, any span names an evaluator
+that is not implemented, or any rationale lacks its reason (R1). Compound expectations ("1 row
+affected, and the row is still attributed to alice afterwards") are therefore judged claim by
+claim: one met claim cannot outvote an unmet one, and prove-gates drops the second claim three
+ways (deleted, relabelled a connective, relabelled a reasonless rationale) and requires R1 to fire.
+Where the approved text compares two responses ("indistinguishable from a nonexistent id"), the
+reference is a second call on the same fresh identity: `player_public_profile` against an id no
+profile has, `join_private_room` against a code no room has.
+
+### D3.41 — A business prerequisite is not the security property
+
+`delete_own_account()` refuses a caller holding a live seat ("leave your table before deleting your
+account", P0001). That refusal is a business rule, not the caller-scoped invariant `.283` examines
+("only alice's own rows are returned or altered"). So `.283` gets a probe-scoped setup that stands
+alice up (`probe:alice_seat_left`), its reachability check requires her account to be gone
+afterwards, and a refusal by the active-seat rule — or any other prerequisite — is
+`control_not_reached` → `not_measured`, never effective and never deficient. Arc21's rule is not
+weakened; the fixture meets it. The same rule covers every F5 refusal: only the raise site(s) read
+from the function body as THE refusal the row examines can meet a "refusal" claim; any other raise
+is a prerequisite. `register_push_token` has no ownership refusal at all (its only raises are "no
+session" and "not a push token"), so its "refusal, or a row … that does NOT displace bob's" can be
+met only by the state guards, and the displacement it performs is preserved as a candidate finding
+— not fixed (D3.31).
+
+### D3.42 — Observation and verdict: which layer answered, and whether it was the one named
+
+`wp3-outcome.ts` classifies every outcome from PostgreSQL's own error fields (SQLSTATE, message,
+PL/pgSQL `where` stack, constraint) into a mechanism: none, harness, malformed, client_guard,
+privilege, rls_with_check, trigger_raise, function_raise, constraint, fk_truncate, other. A claim is
+**unmet** only when the control it names was exercised and the observation contradicts it. A
+refusal by a different layer is `not_reached`; a harness throw or a malformed probe is `harness`; a
+failed premise is `precondition`. Combined with precedence harness > registered contradiction >
+precondition > not_reached > unmet > met into one observation (as_predicted, not_as_predicted,
+harness_error, precondition_failed, control_not_reached, blocked_contradiction), which maps to the
+verdict separately (effective, deficient, characterized, gap, not_measured). 42501 satisfies an
+expectation only when it came from the mechanism the expectation names. "No effect" is judged only
+from a before/after state guard, never from a returned NULL or void (R4).
+
+**Added after prove-gates failed it:** whatever a row's claims are, the probe must have executed and
+been answered by the database. Six F5 rows have an approved expectation that is a pure state claim
+("no effect on the alice→bob request"); with a harness exception and satisfied guards they were
+judged **effective**. The judge now adds an "executed" premise to every probe, so a probe that never
+ran cannot pass.
+
+### D3.43 — Evidence schema `wp3-evidence/2`
+
+One record per Test ID: the approved row's frozen fields as planned; what was executed (statement,
+parameters, pre-statements, binding notes, runner notes); the session identity read back; the
+claims used; the probe-scoped setup and whether it verified; every premise, catalog fact and guard
+(before/after) with its detail; the reference call; the raw outcome and its classified mechanism;
+each claim's status and class; observation, verdict and the reason; the registered contradiction,
+if any; the isolation record (baseline epoch, rebuilt before, setup applied, relations changed, why
+a rebuild follows, fresh session); the system under test (schema hash, Arc21 commit, branch,
+dirty, uncommitted migrations, Arc21 fingerprint before); the harness version. `validateRecord`
+refuses a record missing a field, a non-`not_measured` verdict on any unmeasurable observation, and
+an "effective" with an unmet claim.
+
+### D3.44 — A socket's silence counts only inside a window an observer proved live
+
+Every F8 socket join declares `private: true` (D3.7). The negatives use alice, who holds a seat, as
+an authorised observer, and the positive uses a `service_role` subscriber that no row policy
+restricts; the server broadcasts onto the topic with `realtime.send`, and only when the observer
+receives it is carol's silence (or alice's receipt) counted. **Found while building it:** Realtime
+starts its broadcast pipeline lazily, so the first `realtime.send` after a join can be lost — an
+observer that joined and waited 8 s received nothing, the same observer 2 s later received
+everything. So each run first sends warm-up broadcasts until the observer receives one, and a window
+that never goes live makes every socket claim `precondition` → `not_measured`, never "refused" and
+never "did not receive". The expired-JWT boundary is judged the same way: its 401 is attributed to
+expiry only when the same request with a fresh token returns 200.
+
+### D3.45 — Isolation by rebuild (R7)
+
+The author's decision, literally: state-changing probe → commit → privileged state guard → rebuild
+the disposable database from Arc21's migrations (`supabase db reset --local`, the path `bringup`
+takes) → apply and verify the canonical baseline → next probe. A probe is dirty if it is statically
+classified as writing when its control holds, applied a probe-scoped setup, moved the post-probe
+whole-database digest (every table's content and every sequence), or ended in a harness error.
+Verified means: planned schema hash; every baseline fixture's own verification; per-table row counts
+equal to this run's first rebuild; the control-surface digest (policies and their expressions, ACLs,
+RLS flags, function ACLs and bodies, triggers, roles, memberships, schema ACLs) equal to the first
+rebuild's; Realtime healthy and PostgREST answering; and Arc21's fingerprint unchanged — checked
+after every rebuild, because the reset runs inside Arc21's tree. Every probe opens a fresh
+connection, so no session setting survives into another probe. Hand-written undo steps are not
+used, and no probe runs on the admin connection. A rebuild that fails, a baseline that does not
+verify, or Arc21 changing stops the run before the next probe: nothing executes on an unverified
+state, the records already made are kept and written with an ABORTED marker naming the reason, and
+the command exits 1 (3 if Arc21 changed). Proven by a smoke given a deliberately wrong expected
+schema: it stopped before its first probe, executed nothing, and said why.
+
+### D3.46 — Approved rows the system makes unmeasurable are registered, not worked around
+
+Ten registrations in `src/wp3-contradictions.ts`, 57 distinct Test IDs, each with a live catalog
+check (a stale registration fails preflight), the premises it may excuse (only C5 excuses one:
+the empty subject — never "dave is deleted"), the SQLSTATEs it predicts, and the smallest change the
+author could make. The executor still runs each probe exactly as approved and records
+`blocked_contradiction` → `not_measured`. They are pending author decisions:
+
+| Id | Test IDs | In one line |
+|---|---|---|
+| C2-grant-before-trigger | F9.319, .321 | alice holds no UPDATE/TRUNCATE on wallet_ledger; the privilege check refuses before the named trigger |
+| C2-fk-before-truncate-trigger | F9.322 | TRUNCATE of a referenced table is refused by the FK check (0A000) before BEFORE TRUNCATE triggers |
+| C2-definer-bypasses-named-policy | F5.259 | send_friend_request is SECURITY DEFINER; the named policy is never consulted |
+| C2-client-guard-before-grant | 34 F2 rows | UPDATE/DELETE with no WHERE: pg_safeupdate (preloaded for `authenticator`) refuses at parse analysis (21000) before the grant (D3.47) |
+| C3-sender-cannot-accept | F3.059 | only the receiver may accept (trigger, 42501) |
+| C3-username-literal-invalid | F3.151, F6.153 | 'attest-probe-username' violates profiles_username_check |
+| C3-cosmetic-literal-invalid | F6.117 | the cosmetic id exists nowhere (slot guard, 23503) |
+| C3-tier-literal-invalid | F2.094 | 'attest-probe-tier' is not a table_tier label (22P02) |
+| C4-anon-has-no-execute | F5.278 | EXECUTE is granted to authenticated only |
+| C5-deleted-user-subject-empty | 14 B rows | every owner FK is CASCADE or SET NULL: after a genuine deletion nothing names dave |
+
+### D3.47 — The client connection has a guard of its own, and it answers first
+
+**Found by running preflight's rebuilt baseline, not by reading.** Every client request — and every
+Attest role session — arrives through the `authenticator` login, and the local stack sets
+`session_preload_libraries = 'supautils, safeupdate'` for it. pg_safeupdate refuses an UPDATE or
+DELETE with no WHERE clause at parse analysis (21000 "UPDATE requires a WHERE clause"), which is
+before the executor checks a single privilege: as alice, `update public.game_sessions set tier =
+tier` returns 21000, not 42501. Thirty-four approved F2 grant-surface rows are exactly such
+statements. The previous evaluator read 21000 as "refused by a later layer, so the privilege check
+itself passed" — a **false deficiency on 34 rows** of a control that holds. The classifier now has a
+`client_guard` mechanism that every outcome evaluator treats as not reached; the rows are registered
+(C2-client-guard-before-grant) with a live check that `authenticator` still preloads safeupdate;
+preflight fails on any client UPDATE/DELETE without WHERE that is not registered; and prove-gates
+judges a genuine 21000 against every grant-surface negative. The platform guard is not Arc21's
+control and is not credited to it.
+
+### D3.48 — prove-gates, expanded: every gate broken through the function it uses
+
+`src/wp3-fault-injection.ts` no longer re-implements any gate. Plan defects run through
+`planChecks` — the static half of preflight — on a deep copy, and report the exit status preflight
+would give; world defects are staged inside a rolled-back transaction and run through the live check
+itself (`checkPremisesLive`, `checkInsertPositives`, `verifyOne`, `verifyBaselineState`, with a
+`stage` hook applied after the probe's own setup); judgement defects hand the judge a genuine outcome
+— a real 42601, a real 23505, a real 21000, the real active-seat refusal — with every other input
+satisfied, so only the evaluator can stop a false verdict. The first run caught 58 of 63 and the
+five misses were real: an R2 rule narrower than the binding's own, an injection that targeted the
+wrong row, the six state-only rows of D3.42, and a missing article check that let "naming a other
+party" through four drafts. All are fixed; see CHECKPOINTS for the final table.
+
+### D3.49 — What the targeted smoke showed: two harness defects, three candidates, one reading for the author
+
+**NOT WP3 evidence.** 42 representative Test IDs across every family, every runner and every
+special setup, then 5 re-run after fixes, through exactly the path the assessment takes; records
+under `.smoke/` (gitignored), each stamped `NOT_WP3_EVIDENCE`. Arc21 unchanged throughout.
+
+**Measured.** 17 rebuilds in 572 s (33.6 s each, schema + fixtures + counts + control surface +
+services + Arc21 fingerprint verified every time) for 42 probes; the probes themselves took 19 s.
+The full suite has 59 statically dirty probes (38 that write when their control holds, 27 with a
+probe-scoped setup, overlapping), so it needs at least 60 rebuilds: about 34–40 minutes of
+rebuilding plus a few minutes of probing, more if probes write unexpectedly (each such write is
+caught by the digest and costs one more rebuild). That is the price of R7 as decided, and it is
+paid once per assessment.
+
+**Harness defects the smoke found, fixed:**
+
+1. *Socket identity.* The three socket probes ran correctly — carol's private join was refused
+   ("Unauthorized: You do not have permissions to read from this Channel topic"), the authorised
+   observer received the server's broadcast, alice received it on the positive — but every one was
+   recorded `precondition_failed`, because the identity premise demanded a SQL session identity
+   and a websocket has none. The socket runner now authenticates the probed client as the row's own
+   structured subject and supplies the identity premise from the token it actually presented
+   (`role`, `sub`); re-run, all three are `as_predicted`. prove-gates now injects a socket token for
+   the wrong subject.
+2. *Guard evidence that says which rows.* The caller-scoped guards compared hashes, so `.283`'s
+   record said only that "a row naming bob or carol changed". The snapshot now keeps the rows
+   (auth.users represented by id and md5 only — its text carries password hashes) and the record
+   quotes every row gone and every row new.
+
+**Registered contradictions, confirmed live:** F2.239 → 21000 (client guard), F3.059 → 42501 (the
+transition trigger), F5.259 → PT404 (the definer body), F9.319 → 42501 (the grant), B.325 → the
+empty subject: each `blocked_contradiction` → `not_measured`, as registered.
+
+**Candidates — recorded, not fixed (D3.31), not findings until the authorised run:**
+
+| Test ID | Observed (smoke) | Mechanism |
+|---|---|---|
+| F5.register_push_token.269 | after alice registers bob's token string, no row for that token is owned by bob; one is attributed to alice | `on conflict (token) do update set user_id = v_me` inside a SECURITY DEFINER function (as D3.30 first saw) |
+| F5.leaderboard_weekly_xp.271 | the weekly XP board returns "Erin", an account whose privacy is `private`, among 3 rows | the leaderboard projection does not consult `profiles.privacy` |
+| F5.delete_own_account.283 | alice stood up (probe setup), deleted her account; the ONLY row naming another account that changed is `public.rooms` ATSTAB, whose `host_user_id` is now bob; no bob/carol row was altered otherwise; every other claim met | the documented host migration: `delete_own_account` calls `leave_room`, which hands a lobby to its longest-joined remaining member |
+
+**`.283` needs the author's reading, not a registration.** The property was exercised — the
+active-seat rule was satisfied by the fixture, not weakened, and the deletion ran — and the
+literal approved claim "no bob or carol row … changes" is false, by Arc21's documented design. It
+is not a contradiction in D3.46's sense (the claim is measurable, and was measured), and it is not
+a harness artefact (the record quotes the single changed row). Registering it would turn a
+measured result into `not_measured`; leaving it is a `deficient` verdict for designed behaviour.
+Which it is — an over-strict expectation to restate ("…other than the documented handover of a
+lobby the caller hosted") or a behaviour to weigh in WP5 — is the author's decision, and until it
+is made the executor records the literal result.

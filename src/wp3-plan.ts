@@ -178,10 +178,23 @@ export type SeedExtensionKind =
   /** A value deliberately chosen NOT to exist; setup verifies the absence. */
   | "absence";
 
+/**
+ * When a requirement's state is established (D3.38).
+ *
+ *   baseline  applied after every rebuild, before any probe; additive and
+ *             contradicted by no probe's premise
+ *   probe     applied to a verified baseline before the ONE probe that needs
+ *             it, because its premise contradicts the baseline; the executor
+ *             rebuilds afterwards
+ *   runtime   not database rows (roles made in-run, signed tokens, an absence)
+ */
+export type SeedExtensionScope = "baseline" | "probe" | "runtime";
+
 export interface SeedExtension {
   /** Stable key. The implementation is looked up by this and must match exactly. */
   readonly key: string;
   readonly kind: SeedExtensionKind;
+  readonly scope: SeedExtensionScope;
   /** What state must hold, in the plan's own words. */
   readonly state: string;
   /** Fixture references from rubric/fixtures.ts that this requirement materializes. */
@@ -212,6 +225,7 @@ const ANON_FALSIFYING_FIXTURE: Readonly<Record<string, readonly string[]>> = {
 interface SeedNeed {
   readonly key: string;
   readonly kind: SeedExtensionKind;
+  readonly scope: SeedExtensionScope;
   readonly state: string;
   readonly provides: readonly string[];
   readonly setup: string;
@@ -228,10 +242,312 @@ const needSeed = (
   kind: SeedExtensionKind = "rows",
   setup = "seed extension — attest seed-extensions, applied server-side after the standing seed",
   dependsOn: readonly string[] = [],
+  scope: SeedExtensionScope = kind === "rows" ? "baseline" : "runtime",
 ): string => {
-  if (!SEED_NEEDS.has(key)) SEED_NEEDS.set(key, { key, kind, state: what, provides, setup, dependsOn });
+  if (!SEED_NEEDS.has(key)) SEED_NEEDS.set(key, { key, kind, scope, state: what, provides, setup, dependsOn });
   return what;
 };
+
+const BASELINE_SETUP = "seed extension — attest seed-extensions, applied server-side after every rebuild, before any probe";
+const PROBE_SETUP =
+  "probe-scoped setup — applied server-side to a verified baseline immediately before the one probe that needs it; the executor rebuilds the disposable database afterwards";
+
+/**
+ * Requirements added by the structural pass after D3.36 (D3.38).
+ *
+ * Each is a state some approved row's own operation or expectation needs and
+ * the standing seed does not provide — so the row's `fixture` said "the
+ * standing seed" while its probe acted on an empty set (R2), could not succeed
+ * (R3), or rested on a premise the baseline contradicts (R5). The rows that
+ * need one get the requirement's text as their `fixture`; that is a metadata
+ * correction listed in the approved manifest, and no frozen field moves.
+ */
+const STRUCTURAL_NEEDS: Readonly<Record<string, Omit<SeedNeed, "key" | "kind" | "setup"> & { readonly kind?: SeedExtensionKind }>> = {
+  "account:erin": {
+    scope: "baseline", provides: ["erin"], dependsOn: [],
+    state: "a fifth synthetic account, fixtures.erin.id (erin), created through Arc21's own signup bootstrap, with profile privacy 'private'",
+  },
+  "owned_pair:public.career_attempts": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "one public.career_attempts row owned by alice and one owned by bob, inserted server-side",
+  },
+  "owned_pair:public.daily_entries": {
+    scope: "baseline", provides: [], dependsOn: ["f5_state:ensure_todays_daily_challenge", "account:erin"],
+    state: "today's daily challenge, with one completed public.daily_entries row each for alice, bob and erin (a private-privacy account), inserted server-side",
+  },
+  "session_hand": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "one settled hand at session fixtures.session.id: a public.hand_records row, a public.hand_players row for alice and one for bob, and one graded public.player_actions row each, inserted server-side",
+  },
+  "owned_pair:public.player_daily_xp": {
+    scope: "baseline", provides: [], dependsOn: ["account:erin"],
+    state: "one public.player_daily_xp row this UTC week each for alice, bob and erin (a private-privacy account), inserted server-side",
+  },
+  "owned_pair:public.player_decision_periods": {
+    scope: "baseline", provides: [], dependsOn: ["account:erin"],
+    state: "one public.player_decision_periods row for the current UTC week each for alice, bob and erin (a private-privacy account), each at or above the strategy-accuracy minimum, inserted server-side",
+  },
+  "owned_pair:public.player_mode_stats": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "one public.player_mode_stats row owned by alice and one owned by bob, inserted server-side",
+  },
+  "owned_pair:public.user_cosmetics": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "alice owning one default cosmetic and bob owning a different one, equipped in his loadout, with default cosmetics alice does not own remaining, inserted server-side",
+  },
+  "queue_population": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "alice, bob and carol each holding a waiting casual public.matchmaking_queue entry, inserted server-side",
+  },
+  "alice_sent_request": {
+    scope: "baseline", provides: [], dependsOn: ["account:erin"],
+    state: "exactly one friend request sent by alice: a pending alice->erin public.friend_requests row, inserted server-side",
+  },
+  "blocks_by_bob": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "a block authored by bob (bob->dave) alongside the seeded alice->dave block, inserted server-side",
+  },
+  "game_commands_trail": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "two accepted private.game_commands rows at session fixtures.session.id, one by alice and one by bob, inserted server-side",
+  },
+  "rate_limit_trail": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "public.rate_limit_events rows for bob and for carol on 'player_search', one inside the rate-limit window and one older than it, inserted server-side",
+  },
+  "completed_tournaments": {
+    scope: "baseline", provides: [], dependsOn: ["account:erin"],
+    state: "two completed tournaments: one won by erin (a private-privacy account) with bob second, one won by bob with alice second, inserted server-side",
+  },
+  "expired_room": {
+    scope: "baseline", provides: [], dependsOn: [],
+    state: "a private lobby room hosted by bob whose expires_at has passed (an ineligible room for a code-based join), inserted server-side",
+  },
+  "caller_scoped_population": {
+    scope: "baseline", provides: [],
+    dependsOn: [
+      "owned_pair:public.user_cosmetics", "queue_population", "rate_limit_trail", "alice_sent_request",
+      "blocks_by_bob", "pair_row_bob_carol:public.friendships", "pair_row_bob_carol:public.friend_requests",
+      "owned_pair:public.daily_entries", "owned_pair:public.player_decision_periods", "owned_pair:public.player_daily_xp",
+      "completed_tournaments",
+    ],
+    state: "the canonical baseline, in which bob and carol each hold rows in every table the caller-scoped SECURITY DEFINER functions read (wallets, ledger, profiles, notifications, loadouts, career progress, matchmaking, rate-limit history, friendships and friend requests)",
+  },
+  // --- probe-scoped ----------------------------------------------------------
+  "probe:alice_seat_left": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline with alice's seat at session fixtures.session.id marked 'left' (she has stood up), so she holds no active seat at an active session",
+  },
+  "probe:carol_no_tie_to_bob": {
+    scope: "probe", provides: [], dependsOn: ["pair_row_bob_carol:public.friendships", "pair_row_bob_carol:public.friend_requests"],
+    state: "the canonical baseline with the bob<->carol friendship and friend request removed, so carol shares no friendship or request with bob while the alice<->bob friendship remains",
+  },
+  "probe:carol_not_bobs_friend": {
+    scope: "probe", provides: [], dependsOn: ["pair_row_bob_carol:public.friendships"],
+    state: "the canonical baseline with the bob<->carol friendship removed, so carol and bob are not friends while the alice<->bob friendship remains",
+  },
+  "probe:alice_sent_bob_request": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline with the alice<->bob friendship replaced by a pending friend request alice sent to bob",
+  },
+  "probe:alice_bob_not_friends": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline with the alice<->bob friendship removed, so bob is a non-friend of alice whose privacy is 'public'",
+  },
+  "probe:carol_sent_alice_request": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline plus one pending friend request from carol to alice, the only request alice has received",
+  },
+  "probe:alice_has_no_loadout": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline with alice's loadout row removed, so a new loadout attributed to alice violates no unique key",
+  },
+  "probe:bob_has_no_loadout": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline with bob's loadout row removed, so a loadout attributed to bob would violate no unique key if the policy admitted it",
+  },
+  "probe:no_bob_to_carol_request": {
+    scope: "probe", provides: [], dependsOn: ["pair_row_bob_carol:public.friend_requests"],
+    state: "the canonical baseline with the pending bob->carol friend request removed, so a new bob->carol request would violate no unique key if the policy admitted it",
+  },
+  "probe:alice_low_balance": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline with alice's balance brought below 2,000 chips through apply_wallet_delta (a correction the ledger records), and no recovery grant in the last 12 hours",
+  },
+  "probe:alice_friend_is_erin": {
+    scope: "probe", provides: [], dependsOn: ["account:erin", "pair_row_bob_carol:public.friendships"],
+    state: "the canonical baseline with alice's only friendship being alice<->erin (the alice<->bob friendship removed) while the bob<->carol friendship remains",
+  },
+  "fixture:expiredJwt": {
+    scope: "runtime", kind: "credentials", provides: ["expiredJwt"], dependsOn: [],
+    state: "a token for alice signed with the local stack's JWT secret whose exp is in the past (fixtures.expiredJwt), and the local PostgREST endpoint reachable",
+  },
+  "probe:dave_deleted": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+  },
+};
+
+/** Register a structural requirement and return its state text. */
+const require_ = (key: string): string => {
+  if (key.startsWith("f5_state:")) {
+    const sig = Object.keys(NO_TARGET_STATE).find((s) => `f5_state:${s.split("(")[0]}` === key);
+    if (!sig) throw new Error(`no no-target state for "${key}"`);
+    return noTargetNeed(sig);
+  }
+  const d = STRUCTURAL_NEEDS[key];
+  if (!d) throw new Error(`no structural requirement "${key}"`);
+  // A requirement built on another registers that one too, so a dependency no
+  // row names directly (account:erin) is still in the requirement set.
+  for (const dep of d.dependsOn) if (STRUCTURAL_NEEDS[dep] || dep.startsWith("f5_state:")) require_(dep);
+  const setup = d.scope === "probe" ? PROBE_SETUP : d.scope === "runtime" ? "signed in-run from the local stack's JWT secret; never persisted" : BASELINE_SETUP;
+  return needSeed(key, d.state, d.provides, d.kind ?? "rows", setup, d.dependsOn, d.scope);
+};
+
+/** The concrete requirement for a no-target F5 function, keyed `f5_state:<fn>`. */
+function noTargetNeed(sig: string): string {
+  const d = NO_TARGET_STATE[sig];
+  if (!d) throw new Error(`no concrete state declared for no-target function ${sig}`);
+  for (const dep of d.dependsOn) if (STRUCTURAL_NEEDS[dep] || dep.startsWith("f5_state:")) require_(dep);
+  return needSeed(`f5_state:${sig.split("(")[0]}`, d.state, [], "rows",
+    d.scope === "probe" ? PROBE_SETUP : BASELINE_SETUP, d.dependsOn, d.scope);
+}
+
+/**
+ * Concrete state for the five no-target F5 functions. The first version read
+ * "state for <fn>: <attempt>", which restated the operation rather than naming
+ * the state (D3.38).
+ */
+const NO_TARGET_STATE: Readonly<Record<string, { state: string; scope: SeedExtensionScope; dependsOn: readonly string[] }>> = {
+  "ensure_todays_daily_challenge()": {
+    scope: "baseline", dependsOn: [],
+    state: "today's daily challenge present, open (opens_at <= now < closes_at) and unrevealed, inserted server-side with a seed commitment computed from its secret",
+  },
+  "latest_verifiable_daily_challenge()": {
+    scope: "baseline", dependsOn: ["f5_state:ensure_todays_daily_challenge"],
+    state: "yesterday's daily challenge closed and revealed, and today's later challenge still unrevealed, inserted server-side",
+  },
+  "join_matchmaking(p_tier table_tier)": {
+    scope: "probe", dependsOn: ["queue_population"],
+    state: "the canonical baseline with alice's seat marked 'left' and alice holding no queue entry, while bob and carol hold fresh waiting casual entries",
+  },
+  "poll_matchmaking()": {
+    scope: "probe", dependsOn: ["queue_population"],
+    state: "the canonical baseline with alice, bob and carol each holding a fresh waiting casual queue entry",
+  },
+  "create_private_room(p_max_seats integer)": {
+    scope: "baseline", dependsOn: [],
+    state: "the canonical baseline; the out-of-range seat count needs no row, only create_private_room(integer) present as a SECURITY DEFINER function",
+  },
+};
+
+/**
+ * Which approved rows need which structural requirement (D3.38).
+ *
+ * Matched on what the row IS — family, resource, control, polarity, function —
+ * never on a Test ID number, so a row can only receive a requirement its own
+ * operation or expectation calls for.
+ */
+function structuralFixtureFor(t: PlannedTest): string | null {
+  const fam = t.family.split(" ")[0];
+  const res = t.resource;
+  const pos = t.polarity === "positive";
+  const neg = t.polarity === "negative";
+  const ctl = t.control;
+
+  if (fam === "F1") {
+    const pairs: Record<string, string> = {
+      "public.career_attempts": "owned_pair:public.career_attempts",
+      "public.daily_entries": "owned_pair:public.daily_entries",
+      "public.player_daily_xp": "owned_pair:public.player_daily_xp",
+      "public.player_decision_periods": "owned_pair:public.player_decision_periods",
+      "public.player_mode_stats": "owned_pair:public.player_mode_stats",
+      "public.user_cosmetics": "owned_pair:public.user_cosmetics",
+      "public.matchmaking_queue": "queue_population",
+      "public.hand_players": "session_hand",
+      "public.hand_records": "session_hand",
+      "public.player_actions": "session_hand",
+    };
+    if (pairs[res]) return require_(pairs[res]!);
+    if (res === "public.friend_requests" && pos) return require_("alice_sent_request");
+    if (res === "public.blocks" && neg) return require_("blocks_by_bob");
+  }
+  if (fam === "F2" && ctl.includes("#policy:")) {
+    if (res === "public.blocks" && neg) return require_("blocks_by_bob");
+    if (res === "public.friend_requests" && pos) return require_("alice_sent_request");
+    if (res === "public.friend_requests" && neg) {
+      return needSeed(`pair_row_bob_carol:${res}`, `one ${res} row linking bob and carol, with alice named in neither sender_id nor receiver_id`, ["bobNotSentRequest"]);
+    }
+    if (res === "public.friendships" && neg) {
+      return needSeed(`pair_row_bob_carol:${res}`, `one ${res} row linking bob and carol, with alice named in neither user_id_a nor user_id_b`, ["bobCarolFriendship"]);
+    }
+  }
+  if (fam === "F3") {
+    if (res === "public.friend_requests" && neg) return require_("probe:no_bob_to_carol_request");
+    // The approved UPDATE positive targets alice's sent request; without one its
+    // WHERE names no row. (The row is blocked by C3 regardless — D3.39.)
+    if (res === "public.friend_requests" && pos && ctl.endsWith("friend_requests_update_participants")) return require_("alice_sent_request");
+    if (res === "public.loadouts" && pos) return require_("probe:alice_has_no_loadout");
+    if (res === "public.loadouts" && neg) return require_("probe:bob_has_no_loadout");
+  }
+  if (fam === "F6") {
+    if (res === "public.daily_challenges" && pos) return require_("f5_state:ensure_todays_daily_challenge");
+    if (res === "public.friend_requests" && pos) return require_("probe:carol_sent_alice_request");
+  }
+  if (fam === "F10") {
+    if (res === "private.game_commands" && (ctl.endsWith("#audit:exists") || /immutable:(UPDATE|DELETE)$/.test(ctl))) return require_("game_commands_trail");
+    if (res === "public.rate_limit_events" && (ctl.endsWith("#audit:exists") || /immutable:(UPDATE|DELETE)$/.test(ctl))) return require_("rate_limit_trail");
+    if (res === "public.game_events" && (ctl.endsWith("#audit:exists") || /immutable:(UPDATE|DELETE)$/.test(ctl))) {
+      return needSeed("game_events_visibility_pair",
+        `one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id`,
+        ["publicGameEvent", "bobScopedGameEvent"]);
+    }
+  }
+  if (fam === "B") {
+    if (ctl.endsWith("#boundary:deleted-user")) return require_("probe:dave_deleted");
+    if (t.testId === "B.suite.expired-session") return require_("fixture:expiredJwt");
+    if (ctl.endsWith("#boundary:null-identity")) {
+      if (res === "public.friend_requests") {
+        return needSeed(`pair_row_bob_carol:${res}`, `one ${res} row linking bob and carol, with alice named in neither sender_id nor receiver_id`, ["bobNotSentRequest"]);
+      }
+      if (res === "public.game_events") {
+        return needSeed("game_events_visibility_pair",
+          `one public-visibility game_events row and one seat-scoped row whose recipient_user_id is bob, both for session fixtures.session.id`,
+          ["publicGameEvent", "bobScopedGameEvent"]);
+      }
+      if (res === "public.tournament_entries") {
+        return needSeed("tournament_alice_bob", "one tournament with alice and bob holding tournament_entries rows, and carol holding none", ["tournamentAliceBob"]);
+      }
+    }
+  }
+  if (fam === "F5") {
+    const fn = res.replace(/^public\./, "").split("(")[0]!.trim();
+    if (/\[no_target, caller-scoped\]/.test(t.covers)) {
+      if (fn === "list_friends") return require_("probe:alice_friend_is_erin");
+      if (fn === "claim_recovery_grant") return require_("probe:alice_low_balance");
+      if (fn === "delete_own_account") return require_("probe:alice_seat_left");
+      return require_("caller_scoped_population");
+    }
+    const byFn: Record<string, string> = {
+      invite_friend_to_room: "pair_row_bob_carol:public.friendships",
+      decline_friend_request: "probe:alice_sent_bob_request",
+      remove_friend: "probe:carol_no_tie_to_bob",
+      viewer_is_friend_of: "probe:carol_not_bobs_friend",
+      join_private_room: "expired_room",
+      leaderboard_daily_challenge: "owned_pair:public.daily_entries",
+      leaderboard_strategy_accuracy: "owned_pair:public.player_decision_periods",
+      leaderboard_tournament_wins: "completed_tournaments",
+    };
+    if (fn === "leaderboard_weekly_xp" && t.identity !== ANON) return require_("owned_pair:public.player_daily_xp");
+    if (fn === "player_public_profile" && /non-friend projection/.test(res)) return require_("probe:alice_bob_not_friends");
+    const key = byFn[fn];
+    if (key === "pair_row_bob_carol:public.friendships") {
+      return needSeed(key, `one public.friendships row linking bob and carol, with alice named in neither user_id_a nor user_id_b`, ["bobCarolFriendship"]);
+    }
+    if (key) return require_(key);
+  }
+  return null;
+}
 
 export function planWp3(
   resources: readonly RiskInput[],
@@ -891,7 +1207,7 @@ export function planWp3(
       identity: callerNamedBy(spec.attempt),
       operation: spec.attempt,
       expected: spec.expectedSafe,
-      fixture: needSeed(`f5_state:${spec.fn.split("(")[0]}`, `state for ${spec.fn}: ${spec.attempt}`, []),
+      fixture: noTargetNeed(spec.fn),
       covers: `[no_target] ${spec.purpose}. Identity: ${spec.identitySource}. Reaches: ${spec.privileged}. LEGITIMATE shared effects: ${spec.legitimateSharedEffects}. Escalation would be: ${spec.escalationWouldBe}`,
       plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
     });
@@ -1189,11 +1505,19 @@ export function planWp3(
     }
   }
 
+  // Metadata only: a row whose own operation needs state the standing seed does
+  // not create states that requirement as its fixture (D3.38). No frozen field
+  // — operation, expected, covers, identity — is touched here.
+  const finalTests = tests.map((t) => {
+    const fx = structuralFixtureFor(t);
+    return fx === null || fx === t.fixture ? t : { ...t, fixture: fx };
+  });
+
   return {
-    tests,
+    tests: finalTests,
     notApplicable: na,
     f3Applicability: f3rows,
-    seedExtensions: buildSeedExtensions(tests),
+    seedExtensions: buildSeedExtensions(finalTests),
   };
 }
 
@@ -1272,6 +1596,7 @@ function buildSeedExtensions(tests: readonly PlannedTest[]): SeedExtension[] {
     out.set(`fixture:${fxKey}`, {
       key: `fixture:${fxKey}`,
       kind: absence ? "absence" : fxKey.endsWith("Jwt") ? "credentials" : "rows",
+      scope: absence || fxKey.endsWith("Jwt") ? "runtime" : "baseline",
       state: `${fx.ref} = ${fx.value} — ${fx.note}`,
       provides: [fxKey],
       setup: absence

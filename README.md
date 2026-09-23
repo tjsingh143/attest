@@ -59,9 +59,10 @@ deterministic seed, and writes a control inventory to `evidence/runs/<run-id>/`.
 | `npm run attest score` | apply the authored rubric, compute tiers, check the CP3 arithmetic |
 | `npm run attest plan-wp3` | generate and validate the WP3 test matrix — plans, executes nothing |
 | `npm run attest seed-extensions` | build the extra fixture state the WP3 matrix requires |
-| `npm run attest preflight-wp3` | check everything that must hold before WP3 may execute |
-| `npm run attest prove-gates` | inject 37 defects (copies, rolled-back transactions, a throwaway git repo) and require each gate to fire |
-| `npm run attest execute-wp3` | run the approved WP3 suite — **refused until preflight passes** |
+| `npm run attest preflight-wp3` | check everything that must hold before WP3 may execute (rebuilds the disposable database once) |
+| `npm run attest prove-gates` | break every gate on purpose — deep copies, rolled-back transactions, genuine database errors, a throwaway git repo — and require each to fire |
+| `npm run attest smoke-wp3 <Test ID>…` | plumbing smoke of named probes, at most 60; written under `.smoke/`, stamped NOT WP3 EVIDENCE |
+| `npm run attest execute-wp3 -- --confirm` | run the approved WP3 suite — **refused until `preflight-wp3 --for-execution` passes**, which requires all 240 intent sentences to be the author's |
 
 **This is destructive — to the disposable database, and only to it.** `bringup` drops and
 rebuilds the database. The harness refuses to run against anything but a loopback address, and
@@ -113,6 +114,24 @@ as an unprivileged, role-scoped session is load-bearing rather than decorative.
 The run exits non-zero if any control is broken without being noticed.
 
 Full transcript: `evidence/runs/<run-id>/wp1-validation.md`.
+
+The WP3 executor is held to the same standard, one level up (`DECISIONS.md` D3.38–D3.48):
+
+- **Every claim is judged.** Each approved expectation is partitioned into claims, and each claim
+  has an evaluator. A refusal counts only when it came from the layer the expectation names —
+  classified from PostgreSQL's own error fields — and a refusal by any other layer (an earlier
+  privilege check, a business rule inside a function, the client connection's pg_safeupdate guard)
+  is recorded as *not reached*, never as effective and never as deficient.
+- **Nothing passes on nothing.** Every probe that acts on rows first shows its subject is
+  non-empty; "no effect" is read from a before/after state guard, never from a returned NULL; a
+  socket's silence counts only inside a window an authorised observer proved live; and a probe that
+  never executed cannot meet any claim.
+- **Probes cannot contaminate each other.** After any probe that changed state, the disposable
+  database is rebuilt from Arc21's migrations and the baseline re-verified — fixtures, row counts,
+  control surface, services, and Arc21's own fingerprint — before the next probe runs.
+- **Approved rows the system makes unmeasurable are registered, not worked around**, each with a
+  live check, and recorded `not_measured` until the author decides.
+- **Every gate is proven by breaking it** (`attest prove-gates`).
 
 ## Layout
 
@@ -184,16 +203,15 @@ borrowed from those tools is cited where it is used.
 ## Not yet done
 
 **WP3 execution.** The matrix is planned, approved and frozen — 345 tests across the ten
-control families plus the boundary cases — and every row derives an executable probe. It has not
-been run, and `attest execute-wp3` refuses to run it for two reasons:
+control families plus the boundary cases — and every row derives an executable probe with a
+claim-by-claim evaluator, premises, state guards and rebuild isolation. Every structural gate in
+`attest preflight-wp3` passes. It has not been run, and `attest execute-wp3` refuses to run it for
+exactly one reason: the intent statement for each of the 240 negative tests is one of the four
+artifacts the author writes rather than the harness (brief §1.1), and all 240 currently hold
+AI-generated drafts marked `ai_draft` / `unreviewed` for the author to review, correct or replace.
 
-- the intent statement for each of the 240 negative tests is one of the four artifacts the author
-  writes rather than the harness (brief §1.1); all 240 currently hold AI-generated drafts marked
-  `ai_draft` / `unreviewed` for the author to review, correct or replace;
-- the executor is not yet able to produce verdicts that mean what they say: empty fixture
-  subjects, assertions that cannot judge a returned no-op, premises the shared fixture
-  contradicts, and no isolation between probes that commit changes. Preflight computes each class
-  and names every affected Test ID (`DECISIONS.md` D3.36).
+Ten approved-row contradictions (57 Test IDs) are registered for the author's decision; until
+decided, those probes run as approved and record `not_measured` (`DECISIONS.md` D3.46).
 
 Then WP4 drift detection, WP5 findings, risk prioritization and remediation guidance, WP6
 framework mapping, WP7 reporting.

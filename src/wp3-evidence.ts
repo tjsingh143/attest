@@ -1,33 +1,45 @@
 /**
- * Attest — WP3 evidence records.
+ * Attest — the WP3 evidence record.
  *
- * WP1's record (`src/evidence.ts`) already carries the core bundle: the
- * statement, its parameters, the identity read back out of the database, the
- * expectation, the outcome, the timestamp and the schema version. WP3 needs
- * more, and the additions are not cosmetic:
+ * WP1's record (`src/evidence.ts`) carries the core bundle the brief requires:
+ * the statement, its parameters, the identity read back out of the database,
+ * the expectation, the outcome, the timestamp and the schema version. A WP3
+ * record carries everything else a reader needs to re-run the probe and to
+ * check that its verdict means what it says (D3.43):
  *
- *   tier + polarity      so a reader can slice results the way the plan is
- *                        sliced, without joining back to the matrix
- *   authorIntent +       the sentence the author wrote, and WHO wrote it. A
- *   intentProvenance     record whose "attack simulated" field came from the
- *                        harness is not evidence of the attack; carrying the
- *                        provenance makes that visible in the artefact rather
- *                        than only in the process
- *   arc21                the commit, branch and dirty state of the system
- *                        under test — including which migrations were
- *                        uncommitted when it ran
- *   harness              version and source hash, so a record can be tied to
- *                        the code that produced it
- *
- * The observation/verdict split from WP1 (D3.6 #4) is preserved exactly. A
- * harness exception is `harness_error` / `not_measured` and can never satisfy
- * an expected refusal.
+ *   planned            the approved row, verbatim: family, tier, polarity,
+ *                      control, operation, expected, fixture
+ *   intent             the AUTHOR INTENT sentence and WHO wrote it; a record
+ *                      whose "attack simulated" field came from the harness is
+ *                      not evidence of the attack, and the provenance says so
+ *   executed           the exact statement / RPC / socket / HTTP action, its
+ *                      parameters, and every value the executor had to bind
+ *   identity + claims  read back from the database session, not asserted
+ *   setup              the probe-scoped fixture applied first, if any
+ *   premises           each premise the claim rests on, checked live before
+ *   guards             each state guard: before and after, as admin
+ *   reference          a second observation a comparative claim needed
+ *   actual + mechanism the raw outcome with every PostgreSQL error field, and
+ *                      the layer that refused, classified from those fields
+ *   claims             one result per claim span of the approved expectation
+ *   observation        what happened relative to the prediction
+ *   verdict            what that means for the control — a separate field,
+ *                      because "happened as expected" is not "control effective"
+ *   isolation          the baseline epoch the probe ran on, whether it was
+ *                      rebuilt first, and what the probe changed
+ *   provenance         schema version, Arc21 branch/HEAD/dirty state and
+ *                      fingerprint, and the harness source hash
  */
 import type { SessionIdentity } from "./db.ts";
-import type { Observation, Verdict, Expectation, Outcome } from "./evidence.ts";
+import type { Outcome } from "./evidence.ts";
 import type { Family, Polarity } from "./wp3-plan.ts";
-import type { IntentProvenance } from "./author-intents.ts";
+import type { IntentProvenance, IntentReviewStatus } from "./author-intents.ts";
 import type { Level } from "./scorer.ts";
+import type { Mechanism } from "./wp3-outcome.ts";
+import type { ClaimResult, CheckResult, Wp3Observation, Wp3Verdict } from "./wp3-evaluate.ts";
+
+/** Bumped whenever the record's shape changes; preflight checks a sample record against it. */
+export const WP3_EVIDENCE_SCHEMA_VERSION = "wp3-evidence/2";
 
 /** What the harness actually did, as opposed to what the plan described. */
 export interface ExecutedOperation {
@@ -38,7 +50,11 @@ export interface ExecutedOperation {
   readonly params: readonly unknown[];
   /** For an RPC: the fully-qualified function and its identity arguments. */
   readonly functionCall?: string;
-  /** Anything the executor needs a reader to know, e.g. concurrency ordering. */
+  /** Statements issued on the same session first (the realtime.topic GUC). */
+  readonly preStatements?: readonly { sql: string; params: readonly unknown[] }[];
+  /** Values the executor bound that the approved operation leaves unstated (D3.39). */
+  readonly bindingNotes?: readonly string[];
+  /** Anything a composite runner needs a reader to know, e.g. concurrency ordering. */
   readonly notes?: readonly string[];
 }
 
@@ -50,6 +66,8 @@ export interface SystemUnderTest {
     readonly branch: string;
     readonly dirty: boolean;
     readonly uncommittedMigrations: readonly string[];
+    /** The read-only guard's fingerprint of the checkout, taken before the run. */
+    readonly fingerprintBefore?: string;
   };
   readonly instance: string;
 }
@@ -60,29 +78,54 @@ export interface HarnessVersion {
   readonly fileCount: number;
 }
 
+export interface GuardRecord {
+  readonly name: string;
+  readonly describe: string;
+  readonly before: string | null;
+  readonly after: string | null;
+  readonly ok: boolean;
+  readonly detail: string;
+}
+
+export interface IsolationRecord {
+  /** The rebuilt baseline this probe ran on. */
+  readonly epoch: number;
+  /** A rebuild happened immediately before this probe. */
+  readonly rebuiltBefore: boolean;
+  /** A probe-scoped setup was applied before this probe. */
+  readonly setupApplied: string | null;
+  /** State relations whose content digest changed during this probe (setup excluded). */
+  readonly changedRelations: readonly string[];
+  /** Why the executor will rebuild before the next probe, if it will. */
+  readonly rebuildAfterBecause: string | null;
+  /** A fresh session was opened for this probe (no session state from another probe). */
+  readonly freshSession: boolean;
+}
+
 export interface Wp3EvidenceRecord {
+  readonly schema: typeof WP3_EVIDENCE_SCHEMA_VERSION;
   readonly recordId: string;
   readonly runId: string;
   readonly timestampUtc: string;
 
-  // --- what was planned -----------------------------------------------------
+  // --- what was planned (the approved row, verbatim) ------------------------
   readonly testId: string;
   readonly family: Family;
   readonly resource: string;
   readonly controlId: string;
   readonly tier: Level | "suite";
   readonly polarity: Polarity;
+  readonly identityPlanned: string;
   readonly operationPlanned: string;
   readonly expectedPlanned: string;
+  readonly fixturePlanned: string;
+  readonly verdictWhenPredicted: string;
 
   // --- what the author said this simulates ----------------------------------
-  /**
-   * Null on positives and characterizations, which simulate no attack. On a
-   * negative this is the author's sentence — and `intentProvenance` says
-   * whether "the author's" is true.
-   */
+  /** Null on positives and characterizations, which simulate no attack. */
   readonly authorIntent: string | null;
   readonly intentProvenance: IntentProvenance | null;
+  readonly intentReviewStatus: IntentReviewStatus | null;
 
   // --- what actually happened -----------------------------------------------
   readonly executed: ExecutedOperation;
@@ -90,57 +133,51 @@ export interface Wp3EvidenceRecord {
   readonly identity: SessionIdentity | null;
   /** The claims installed for this probe, for reproducibility. */
   readonly claims: Record<string, unknown> | null;
-  readonly expectation: Expectation | { readonly kind: "custom"; readonly describe: string };
+  readonly setup: { readonly key: string; readonly statements: readonly string[]; readonly verified: boolean; readonly detail: string } | null;
+  readonly premises: readonly CheckResult[];
+  readonly catalogFacts: readonly CheckResult[];
+  readonly guards: readonly GuardRecord[];
+  readonly reference: { readonly describe: string; readonly statement: string; readonly params: readonly unknown[]; readonly outcome: Outcome; readonly mechanism: Mechanism } | null;
   readonly actual: Outcome;
+  readonly mechanism: Mechanism;
   readonly actualSummary: string;
+  readonly runnerClaims: Readonly<Record<string, { ok: boolean; detail: string }>> | null;
 
   // --- what it means --------------------------------------------------------
-  readonly observation: Observation;
-  readonly verdict: Verdict;
-  /** Why the verdict is what it is, when it is not the obvious mapping. */
-  readonly verdictReason?: string;
+  readonly claimResults: readonly ClaimResult[];
+  readonly observation: Wp3Observation;
+  readonly verdict: Wp3Verdict;
+  readonly verdictReason: string;
+  /** Set when a registered approved-row contradiction decides the disposition. */
+  readonly contradiction: { readonly id: string; readonly reason: string } | null;
 
-  // --- provenance -----------------------------------------------------------
+  // --- isolation and provenance ---------------------------------------------
+  readonly isolation: IsolationRecord;
   readonly sut: SystemUnderTest;
   readonly harness: HarnessVersion;
 }
 
-/**
- * Decide observation and verdict from a matched/unmatched execution.
- *
- * The only rule that is not mechanical: a harness error is never a result.
- * Everything else follows the plan's declared `verdictWhenPredicted`, so a
- * probe that behaves exactly as predicted still records `characterized` or
- * `gap` where the plan said it should, rather than silently becoming a pass.
- */
-export function judge(
-  matched: boolean,
-  outcome: Outcome,
-  verdictWhenPredicted: "effective" | "characterized" | "gap",
-): { observation: Observation; verdict: Verdict; verdictReason?: string } {
-  if (outcome.harnessError) {
-    return {
-      observation: "harness_error",
-      verdict: "not_measured",
-      verdictReason:
-        "the harness threw rather than the database refusing; nothing was measured and this cannot satisfy an expected refusal",
-    };
+/** Fields every record must carry, for the preflight schema check (§26). */
+export const REQUIRED_FIELDS: readonly (keyof Wp3EvidenceRecord)[] = [
+  "schema", "recordId", "runId", "timestampUtc", "testId", "family", "resource", "controlId", "tier", "polarity",
+  "identityPlanned", "operationPlanned", "expectedPlanned", "fixturePlanned", "verdictWhenPredicted",
+  "authorIntent", "intentProvenance", "intentReviewStatus", "executed", "identity", "claims", "setup",
+  "premises", "catalogFacts", "guards", "reference", "actual", "mechanism", "actualSummary", "runnerClaims",
+  "claimResults", "observation", "verdict", "verdictReason", "contradiction", "isolation", "sut", "harness",
+];
+
+/** A record is well-formed: every required field present, and observation/verdict consistent. */
+export function validateRecord(r: Partial<Wp3EvidenceRecord>): string[] {
+  const problems: string[] = [];
+  for (const f of REQUIRED_FIELDS) if (!(f in r)) problems.push(`missing field ${String(f)}`);
+  if (r.schema !== WP3_EVIDENCE_SCHEMA_VERSION) problems.push(`schema ${String(r.schema)}, ${WP3_EVIDENCE_SCHEMA_VERSION} required`);
+  const notMeasured = ["harness_error", "precondition_failed", "control_not_reached", "blocked_contradiction"];
+  if (r.observation && notMeasured.includes(r.observation) && r.verdict !== "not_measured") {
+    problems.push(`observation ${r.observation} must carry verdict not_measured, not ${r.verdict}`);
   }
-  if (!matched) {
-    return {
-      observation: "not_as_predicted",
-      verdict: "deficient",
-      verdictReason: `execution did not match the plan's prediction`,
-    };
-  }
-  return {
-    observation: "as_predicted",
-    verdict: verdictWhenPredicted,
-    verdictReason:
-      verdictWhenPredicted === "effective"
-        ? undefined
-        : verdictWhenPredicted === "characterized"
-          ? "a fact was recorded; no control was asserted either way"
-          : "the control does not exist to be exercised — this is an absence, not a pass",
-  };
+  if (r.verdict === "effective" && r.observation !== "as_predicted") problems.push("an effective verdict requires observation as_predicted");
+  if (r.polarity === "negative" && r.authorIntent === null) problems.push("a negative record carries no intent sentence");
+  if (r.polarity !== "negative" && r.authorIntent !== null) problems.push("only negative records carry an intent sentence");
+  if (r.verdict === "effective" && (r.claimResults ?? []).some((c) => c.status !== "met")) problems.push("an effective verdict with a claim not met");
+  return problems;
 }

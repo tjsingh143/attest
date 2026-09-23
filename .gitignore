@@ -12,3 +12,7 @@ arc21 copy/
 # version control until the author decides whether this repository will be
 # published. Adding it later is trivial; removing it from history is not.
 PROJECT_BRIEF.md
+
+# Plumbing smoke runs of the WP3 executor. NOT evidence (see src/wp3-execute-run.ts);
+# kept out of version control so a smoke record can never be mistaken for a WP3 result.
+.smoke/

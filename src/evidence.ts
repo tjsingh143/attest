@@ -70,6 +70,35 @@ export interface Outcome {
   readonly harnessError: boolean;
   /** A small sample of returned rows, for a reader. Never used for pass/fail. */
   readonly sample: readonly unknown[];
+  /**
+   * Every field PostgreSQL's ErrorResponse carried, when the statement raised.
+   *
+   * WP3 needs more than the SQLSTATE. 42501 is what a missing grant, a
+   * row-level-security WITH CHECK and Arc21's write-guard triggers all raise,
+   * and which of them refused is the difference between "the control this Test
+   * ID names held" and "something earlier stopped the statement before that
+   * control was reached". `where` carries the PL/pgSQL call stack, `routine`
+   * the backend function that raised, `constraint` the constraint violated.
+   */
+  readonly error?: PgErrorFields;
+  /** Every returned row, for WP3 assertions over the full result. WP1 ignores it. */
+  readonly rows?: readonly Record<string, unknown>[];
+  /** Column names of the result, in order. */
+  readonly columns?: readonly string[];
+}
+
+export interface PgErrorFields {
+  readonly code: string | null;
+  readonly message: string | null;
+  readonly detail: string | null;
+  readonly hint: string | null;
+  readonly where: string | null;
+  readonly routine: string | null;
+  readonly file: string | null;
+  readonly constraint: string | null;
+  readonly schema: string | null;
+  readonly table: string | null;
+  readonly column: string | null;
 }
 
 /**
@@ -178,6 +207,7 @@ export async function execute(
       | { rows?: unknown[]; rowCount?: number | null }
       | undefined;
     const rows = last?.rows ?? [];
+    const fields = (last as { fields?: { name: string }[] } | undefined)?.fields;
     return {
       executed: true,
       raised: false,
@@ -186,12 +216,15 @@ export async function execute(
       message: null,
       harnessError: false,
       sample: rows.slice(0, 3),
+      rows: rows as Record<string, unknown>[],
+      columns: fields?.map((f) => f.name) ?? [],
     };
   } catch (err) {
-    const e = err as { code?: string; message?: string };
+    const e = err as Record<string, unknown> & { code?: string; message?: string };
     // A PostgreSQL error carries a five-character SQLSTATE. Anything else came
     // from this process, not from the database.
     const isSqlState = typeof e.code === "string" && /^[0-9A-Za-z]{5}$/.test(e.code);
+    const str = (k: string): string | null => (typeof e[k] === "string" ? (e[k] as string) : null);
     return {
       executed: true,
       raised: true,
@@ -200,6 +233,13 @@ export async function execute(
       message: (e.message ?? String(err)).split("\n")[0] ?? null,
       harnessError: !isSqlState,
       sample: [],
+      error: isSqlState
+        ? {
+            code: str("code"), message: str("message"), detail: str("detail"), hint: str("hint"),
+            where: str("where"), routine: str("routine"), file: str("file"), constraint: str("constraint"),
+            schema: str("schema"), table: str("table"), column: str("column"),
+          }
+        : undefined,
     };
   }
 }

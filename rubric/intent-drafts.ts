@@ -473,6 +473,12 @@ function draftF4(t: PlannedTest): string {
   return `Without ever signing in or holding an account, someone reads ${L.read}`;
 }
 
+/** "a sender", "an account", "another party" — the article the noun takes. */
+function withArticle(noun: string): string {
+  if (/^other\b/i.test(noun)) return `an${noun}`;
+  return /^[aeiou]/i.test(noun) && !/^(u[sn]i|use|one\b|eu)/i.test(noun) ? `an ${noun}` : `a ${noun}`;
+}
+
 function draftF5(t: PlannedTest): string {
   const fn = fnName(t.resource);
   const a = actor(t);
@@ -496,8 +502,13 @@ function draftF5(t: PlannedTest): string {
     }
     // The argument's own noun, read from the planner's identity note, so the
     // sentence names what was passed rather than listing every possibility.
-    const arg = /;\s*the ([a-z][a-z ]{0,24}?) comes? from the argument/.exec(t.covers)?.[1]?.trim();
-    const naming = arg ? `naming a ${arg} that is not theirs` : `with an argument that is not theirs to name`;
+    // "comes" or "come": the planner's own verb says whether the noun is plural.
+    const argM = /;\s*the ([a-z][a-z ]{0,24}?) (comes?) from the argument/.exec(t.covers);
+    const arg = argM?.[1]?.trim();
+    const plural = argM?.[2] === "come";
+    const naming = !arg ? `with an argument that is not theirs to name`
+      : plural ? `naming ${arg} that are not theirs`
+      : `naming ${withArticle(arg)} that is not theirs`;
     return `${a} calls ${fn}() ${naming}, getting its owner privilege to do what the caller's own policies forbid: ${esc}`;
   }
   return `${a} calls ${fn}() to reach, through its owner privilege, data or an effect their own policies forbid`;

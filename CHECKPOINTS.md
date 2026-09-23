@@ -36,7 +36,7 @@ detect.
 | **CP2** | after WP1 — deliberate-break validation | **approved** | reaffirmed 2026-09-22 |
 | **CP3** | after WP2 — rubric and tier assignments | **approved** | reaffirmed 2026-09-22 |
 | — | WP3 **planning**: the 345-row test matrix | **approved** | reaffirmed 2026-09-22 |
-| — | WP3 **execution**: running the 345 tests | **NOT APPROVED — blocked** (author intents, and structural blockers: see below) | — |
+| — | WP3 **execution**: running the 345 tests | **NOT APPROVED — blocked on the AUTHOR INTENT gate only** (every structural gate passes since 2026-09-23; see below) | — |
 | **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | not reached | — |
 | **CP5** | after WP6 — framework mapping and limitations | not reached | — |
 
@@ -63,8 +63,8 @@ tracked files differing from HEAD, 23 untracked files.
 
 ## The WP3 execution gate
 
-*As recorded before 2026-09-22's structural pass — still true, and no longer the only gate; see
-"What else is blocking" below.*
+*As recorded before 2026-09-22's structural pass. Since 2026-09-23 it is, again, the only gate:
+every structural check passes (see "2026-09-23 — the executor is hardened" below).*
 
 WP3 execution is blocked on one thing, and it is not an engineering task.
 
@@ -103,6 +103,11 @@ decision is the author's. `attest preflight-wp3 --for-execution` names all 17 an
 
 ## What else is blocking — structural, found 2026-09-22
 
+> **Resolved 2026-09-23 (D3.38–D3.48).** Every class below is closed on the Attest side, nothing
+> in Arc21 was touched, and `attest preflight-wp3` passes every structural gate on a freshly
+> rebuilt baseline. See "2026-09-23 — the executor is hardened" below. The table is the record of
+> what stood.
+
 Resolving C1 meant reconstructing the executor's state from disk, and that showed it is not ready
 to produce verdicts that mean what they say, for reasons that have nothing to do with Arc21 or with
 the intents. `attest preflight-wp3` now computes each class and refuses on it (`DECISIONS.md`
@@ -130,7 +135,42 @@ match is its own requirement, `tournament_alice_bob_match`, and seed extensions 
 (D3.34). The approved matrix is now frozen in `rubric/wp3-approved-matrix.json`, with the nineteen
 corrections to it listed (D3.35).
 
-## One candidate finding is already on the table
+## 2026-09-23 — the executor is hardened; only the author gate remains
+
+**State recorded 2026-09-23, from runs made that day, not inferred.** Every structural blocker of
+2026-09-22 is closed on the Attest side (`DECISIONS.md` D3.38–D3.49); Arc21 was not modified
+(fingerprint `13569cf0e2dd36c1…` before and after every command).
+
+| Gate | Result |
+|---|---|
+| `attest preflight-wp3` (planning) | **passes** — every plan, world and author check, on a freshly rebuilt and verified baseline |
+| `attest preflight-wp3 --for-execution` | **fails on exactly two checks, both the AUTHOR INTENT gate**: 240 of 240 sentences are still `ai_draft` / `unreviewed`; every structural gate passes |
+| `attest execute-wp3` | **refused** (exit 1) for that reason alone; nothing executed, no evidence written |
+| `attest prove-gates` | 64 of 64 injected defects caught, 3 of 3 controls held, real state restored |
+| targeted smoke (42 + 5 probes, NOT evidence) | every family, runner and setup exercised; two harness defects found and fixed; three candidates recorded (below) |
+
+**The full 345-probe assessment has not been run**, and no WP3 counts exist. WP4 has not begun.
+
+**Pending the author, before execution:**
+
+1. **240 AUTHOR INTENT sentences** — review, correct or replace each AI draft. Package:
+   `evidence/runs/20260923T094706Z-5695a4c3df2d/` (`author-intent-worksheet.md`, 13 files under
+   `batches/`, `author-intent-review.tsv`, `author-intent-worksheet.json`), every proposal labelled
+   *AI DRAFT — NOT YET ADOPTED BY AUTHOR*; adopt in `rubric/author-intents.json`.
+2. **Ten registered approved-row contradictions (57 Test IDs)** — each with evidence and a minimal
+   proposed resolution (`DECISIONS.md` D3.46, D3.47; `src/wp3-contradictions.ts`). They do not block
+   execution: until decided, those probes run as approved and record `not_measured`.
+3. **The reading of `F5.delete_own_account.283`** — its literal expectation is false by Arc21's
+   documented host migration (D3.49); restate it, or keep it and weigh it in WP5.
+
+## Candidate findings on the table (smoke, not WP3 results)
+
+> **Updated 2026-09-23.** The hardened executor's smoke reproduced the candidate below and
+> surfaced two more; D3.49 has the records. `F5.leaderboard_weekly_xp.271`: the weekly XP board
+> shows "Erin", an account whose privacy is `private`. `F5.delete_own_account.283`: deleting alice's
+> account hands the lobby she hosted to bob — Arc21's documented design, and the one row naming
+> another account that changed — which falsifies the approved expectation's literal "no bob or
+> carol row … changes"; that reading is the author's. None is a WP3 result; none is fixed.
 
 Proving the executor's plumbing on 23 probes surfaced a result the author should see before the
 real run: `F5.register_push_token.269` failed its post-probe state guard. Alice calling

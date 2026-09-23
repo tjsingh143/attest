@@ -125,6 +125,19 @@ export function validateDraftQuality(
       const doubled = /\b(\w+)\s+\1\b/i.exec(composed);
       if (doubled) add("says each thing once", t.testId, `doubled word: "${doubled[0]}"`);
     }
+    // Article agreement: composed fragments meet at "a" + noun, and a noun that
+    // starts with a vowel sound produced "naming a other party" in four drafts.
+    {
+      const aVowel = /\ba (?!u(?:s|ni|uid)|one\b|eu)([aeiou][a-z]*)/i.exec(d);
+      const anConsonant = /\ban (?!h(?:our|onest|onou?r))([b-df-hj-np-tv-z][a-z]*)/i.exec(d);
+      if (aVowel) add("article agreement", t.testId, `"a ${aVowel[1]}" — the noun takes "an" (or "another")`);
+      if (anConsonant) add("article agreement", t.testId, `"an ${anConsonant[1]}" — the noun takes "a"`);
+      // Number agreement: "naming a notification ids that is not theirs".
+      const aPlural = /\ban? (?:[a-z]+ )?(ids|tokens|rows|notifications|requests|entries)\b/i.exec(d);
+      const pluralIs = /\b(ids|tokens|rows|notifications|requests|entries) that is\b/i.exec(d);
+      if (aPlural) add("number agreement", t.testId, `"${aPlural[0]}" — a singular article on a plural noun`);
+      if (pluralIs) add("number agreement", t.testId, `"${pluralIs[0]}" — a plural noun with a singular verb`);
+    }
     if (OUTCOME_LEAK.test(d)) add("describes the objective, not the expected error", t.testId, `mentions the outcome: "${(OUTCOME_LEAK.exec(d) ?? [])[0]}"`);
     if (SQL_PARAPHRASE.test(d)) add("not a paraphrase of the SQL", t.testId, `contains SQL: "${(SQL_PARAPHRASE.exec(d) ?? [])[0]}"`);
 

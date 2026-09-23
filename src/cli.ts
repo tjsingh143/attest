@@ -13,6 +13,7 @@
  *   draft-intents                draft the 240 attack sentences for the author to review
  *   prove-gates                  break every gate on purpose and require each to fire
  *   preflight-wp3 --for-execution   everything that must hold before a real run
+ *   smoke-wp3 <Test ID>...       plumbing smoke of named probes (NOT evidence; .smoke/)
  *   execute-wp3 --confirm        run it. Refused until the author has adopted all 240.
  *
  * The brief's standard is that one command reproduces every number in the
@@ -238,6 +239,26 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       });
       break;
     }
+    case "freeze-fixture-corrections": {
+      // Deliberate, never part of `run`: lists fixture-metadata corrections in
+      // the frozen manifest (D3.38). Refuses unless every difference from the
+      // approved matrix is a fixture statement with a written reason.
+      console.log("list fixture corrections in the approved manifest (metadata only)");
+      const { planFixtureCorrections, writeCorrectedManifest } = await import("./wp3-manifest-corrections.ts");
+      const { plan } = await buildPlanInProcess();
+      const manifest = await loadApprovedManifest();
+      if (!manifest) { console.error("attest: rubric/wp3-approved-matrix.json is missing."); process.exitCode = 1; break; }
+      const cp = await planFixtureCorrections(plan, manifest);
+      if (cp.refusals.length) {
+        for (const r of cp.refusals) console.error(`  REFUSED ${r}`);
+        process.exitCode = 1;
+        break;
+      }
+      const added = cp.corrections.length - manifest.corrections.length;
+      const rebuilt = await writeCorrectedManifest(manifest, cp.corrections);
+      console.log(`  ${added} fixture correction(s) listed; the manifest now lists ${rebuilt.corrections.length} in total`);
+      break;
+    }
     case "draft-intents": {
       console.log("draft AUTHOR INTENT sentences (drafts only — the author adopts them)");
       const { plan, runId, schemaVersion } = await buildPlanInProcess();
@@ -251,7 +272,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     case "prove-gates": {
-      console.log("prove the WP3 gates by breaking them (copies, rolled-back transactions and a throwaway repo; nothing real is changed)");
+      console.log("prove the WP3 gates by breaking them (deep copies, rolled-back transactions and a throwaway repo; nothing real is changed)");
       const { plan, resources } = await buildPlanInProcess();
       const store = await loadIntentStore();
       if (!store) { console.error("attest: no canonical intent store; run draft-intents first."); process.exitCode = 1; break; }
@@ -273,15 +294,19 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
           realtimeUrl: REALTIME_HEALTH_URL,
         });
       });
-      const missed = rs.filter((r) => !r.caught);
-      const controls = rs.filter((r) => r.defect.startsWith("(control)"));
       console.log(renderInjections(rs));
+      const controls = rs.filter((r) => r.control);
+      const injected = rs.filter((r) => !r.control);
+      const missed = injected.filter((r) => !r.caught);
+      const falseAlarms = controls.filter((r) => !r.caught);
       console.log(
-        `\n  ${rs.length - controls.length - missed.filter((r) => !controls.includes(r)).length}/${rs.length - controls.length} injected defects were caught, ` +
-          `${controls.filter((r) => r.caught).length}/${controls.length} controls held; real state restored: ${rs.every((r) => r.restored)}`,
+        `\n  ${injected.length - missed.length}/${injected.length} injected defects were caught; ` +
+          `${controls.length - falseAlarms.length}/${controls.length} controls held; real state restored: ${rs.every((r) => r.restored)}`,
       );
-      if (missed.length || !rs.every((r) => r.restored)) {
-        console.error(`\nattest: ${missed.length} injected defect(s) produced no failure, or state was not restored — a gate that does not fire is a finding.`);
+      if (missed.length || falseAlarms.length || !rs.every((r) => r.restored)) {
+        for (const r of missed) console.error(`  NOT CAUGHT: ${r.defect}`);
+        for (const r of falseAlarms) console.error(`  CONTROL FAILED: ${r.defect} — ${r.firedCheck}`);
+        console.error(`\nattest: ${missed.length} injected defect(s) produced no failure, ${falseAlarms.length} control(s) failed, or state was not restored — a gate that does not fire is a finding.`);
         process.exitCode = 1;
       }
       break;
@@ -305,11 +330,16 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
           console.log(`      proposed resolution: ${g.proposedResolution}`);
         }
       }
-      console.log(`\n  PREFLIGHT ${r.passed ? "PASSED" : "FAILED"}`);
+      const failing = r.checks.filter((c) => !c.passed && (forExecution || !c.executionOnly));
+      console.log(`\n  PREFLIGHT ${r.passed ? "PASSED" : "FAILED"}${!r.passed && r.onlyAuthorGatesFail ? " — ONLY the AUTHOR INTENT gate is closed; every structural gate passed" : ""}`);
+      if (!r.passed) console.log(`  failing: ${failing.map((c) => c.name).join(" | ")}`);
       if (!r.passed) process.exitCode = 1;
       break;
     }
     case "execute-wp3": {
+      // The one command for the WP3 assessment (§27). Refused unless preflight
+      // passes FOR EXECUTION — which requires every AUTHOR INTENT sentence to
+      // be the author's — and unless --confirm is given.
       console.log("execute WP3");
       const { plan, resources, schemaVersion } = await buildPlanInProcess();
       const r = await preflight(plan, resources, { forExecution: true, expectedSchemaSha: schemaVersion, arc21Pre });
@@ -319,21 +349,63 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
         console.log(renderReadiness(r));
       }
       if (!r.passed) {
+        const why = r.onlyAuthorGatesFail
+          ? "the AUTHOR INTENT gate is closed: every structural gate passed, and the only failing checks are that the intent sentences are not yet the author's"
+          : "preflight did not pass";
         console.error(
-          "\nattest: REFUSED — preflight did not pass, so the WP3 suite was not run.\n" +
+          `\nattest: REFUSED — ${why}, so the WP3 suite was not run.\n` +
             "         Nothing was executed and no evidence was written.",
         );
         process.exitCode = 1;
         break;
       }
-      console.error(
-        "\nattest: preflight passed, but execution is gated behind an explicit flag.\n" +
-          "         Re-run with --confirm once you intend the full 345-probe assessment.",
-      );
-      if (!process.argv.includes("--confirm")) { process.exitCode = 2; break; }
+      if (!process.argv.includes("--confirm")) {
+        console.error(
+          "\nattest: preflight passed, but execution is gated behind an explicit flag.\n" +
+            "         Re-run with --confirm once you intend the full 345-probe assessment.",
+        );
+        process.exitCode = 2;
+        break;
+      }
       const { executeWp3 } = await import("./wp3-execute-run.ts");
-      const ex = await executeWp3(plan, r.specs, (m: string) => console.log(m), undefined, arc21Pre);
-      if (!ex.arc21Unchanged) process.exitCode = ARC21_GUARD_EXIT_CODE;
+      const ex = await executeWp3(plan, r.specs, arc21Pre, schemaVersion, (m: string) => console.log(m));
+      console.log(`\n  ${ex.summary.records.length} records written to ${ex.path}`);
+      console.log(`  by observation: ${JSON.stringify(ex.summary.byObservation)}`);
+      console.log(`  by verdict: ${JSON.stringify(ex.summary.byVerdict)}`);
+      console.log(`  ${ex.summary.rebuilds} rebuild(s), ${ex.summary.rebuildSeconds.toFixed(0)}s rebuilding, ${ex.summary.elapsedSeconds.toFixed(0)}s in total`);
+      if (!ex.arc21Unchanged || ex.summary.aborted?.arc21Changed) process.exitCode = ARC21_GUARD_EXIT_CODE;
+      else if (ex.summary.aborted) {
+        console.error(`\nattest: the run was ABORTED before ${ex.summary.aborted.beforeTestId} (${ex.summary.aborted.reason}); ${ex.summary.records.length} of 345 recorded. Not a complete assessment. Exit 1.`);
+        process.exitCode = 1;
+      } else if (ex.summary.harnessErrors > 0) {
+        console.error(`\nattest: ${ex.summary.harnessErrors} probe(s) ended in a harness error; those records carry no verdict. Exit 1.`);
+        process.exitCode = 1;
+      }
+      break;
+    }
+    case "smoke-wp3": {
+      // Plumbing smoke on named Test IDs (§25). NOT evidence: written under
+      // .smoke/ (gitignored), every record stamped NOT WP3 EVIDENCE, at most
+      // SMOKE_MAX_TEST_IDS, and it runs only when every static gate passes.
+      const ids = process.argv.slice(3).filter((a) => !a.startsWith("--"));
+      console.log(`smoke WP3 plumbing on ${ids.length} named Test ID(s) — NOT evidence, NOT the assessment`);
+      const { plan, resources, schemaVersion } = await buildPlanInProcess();
+      const { planChecks } = await import("./wp3-preflight.ts");
+      const pc = await planChecks(plan, resources, await loadApprovedManifest(), { reproducibility: false });
+      const bad = pc.checks.filter((c) => !c.passed);
+      if (bad.length) {
+        for (const c of bad) console.error(`  FAIL ${c.name}: ${c.detail}`);
+        console.error("\nattest: REFUSED — a static gate fails, so even a smoke run would not mean anything.");
+        process.exitCode = 1;
+        break;
+      }
+      const { smokeWp3 } = await import("./wp3-execute-run.ts");
+      const ex = await smokeWp3(plan, pc.specs, ids, arc21Pre, schemaVersion, (m: string) => console.log(m));
+      console.log(`\n  smoke records (NOT evidence) written to ${ex.path}`);
+      console.log(`  by observation: ${JSON.stringify(ex.summary.byObservation)}`);
+      console.log(`  ${ex.summary.rebuilds} rebuild(s), ${ex.summary.rebuildSeconds.toFixed(0)}s rebuilding, ${ex.summary.elapsedSeconds.toFixed(0)}s in total`);
+      if (!ex.arc21Unchanged || ex.summary.aborted?.arc21Changed) process.exitCode = ARC21_GUARD_EXIT_CODE;
+      else if (ex.summary.aborted || ex.summary.harnessErrors > 0) process.exitCode = 1;
       break;
     }
     case "plan-wp3": {
@@ -402,7 +474,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         execute-wp3 [--confirm]|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|run]`);
       process.exitCode = 2;
   }
 }

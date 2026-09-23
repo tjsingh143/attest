@@ -1,6 +1,6 @@
 {
   "WARNING": "EVERY SENTENCE MARKED ai_draft WAS WRITTEN BY THE HARNESS, NOT BY THE AUTHOR. Brief §1.1 reserves these sentences for the author. Drafts exist to be reviewed, corrected or replaced — not to be adopted by default. attest execute-wp3 refuses to run while any required intent is still an ai_draft.",
-  "matrixRunId": "20260922T234324Z-5695a4c3df2d",
+  "matrixRunId": "20260923T094706Z-5695a4c3df2d",
   "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
   "provenanceMeanings": {
     "ai_draft": "The harness generated this sentence. NOT the author's. Does not satisfy the execution gate.",
@@ -1183,7 +1183,7 @@
     },
     {
       "testId": "F5.mark_notifications_read.251",
-      "intent": "A signed-in player calls mark_notifications_read() naming a notification ids that is not theirs, getting its owner privilege to do what the caller's own policies forbid: marking another account's notification read, or learning that an id exists.",
+      "intent": "A signed-in player calls mark_notifications_read() naming notification ids that are not theirs, getting its owner privilege to do what the caller's own policies forbid: marking another account's notification read, or learning that an id exists.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1279,7 +1279,7 @@
     },
     {
       "testId": "F5.remove_friend.262",
-      "intent": "A signed-in player with no claim on it calls remove_friend() naming a other party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: dissolving a friendship the caller is not part of.",
+      "intent": "A signed-in player with no claim on it calls remove_friend() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: dissolving a friendship the caller is not part of.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1339,19 +1339,19 @@
     },
     {
       "testId": "F5.viewer_has_blocked.266",
-      "intent": "A signed-in player with no claim on it calls viewer_has_blocked() naming a other party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: reporting another account's block list.",
+      "intent": "A signed-in player with no claim on it calls viewer_has_blocked() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: reporting another account's block list.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.viewer_is_blocked_by.267",
-      "intent": "A signed-in player with no claim on it calls viewer_is_blocked_by() naming a other party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: letting a caller enumerate who has blocked whom beyond their own position.",
+      "intent": "A signed-in player with no claim on it calls viewer_is_blocked_by() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: letting a caller enumerate who has blocked whom beyond their own position.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.viewer_is_friend_of.265",
-      "intent": "A signed-in player with no claim on it calls viewer_is_friend_of() naming a other party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning true where no friendship exists, which would widen profiles_select_visible.",
+      "intent": "A signed-in player with no claim on it calls viewer_is_friend_of() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning true where no friendship exists, which would widen profiles_select_visible.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
