@@ -332,9 +332,24 @@ export const TEMPLATES: readonly ClaimTemplate[] = [
     S("refusal", "outcome", "refusal"), DASH,
     S("the loadouts_guard_slots trigger validates each slot against ownership and kind", "mechanism", "mech:trigger:loadouts_guard_slots"),
   ]},
-  { id: "refusal_by_policy", spans: [
-    S("refusal", "outcome", "refusal"), DASH,
-    S("friend_requests_insert_as_sender requires NOT viewer_has_blocked(receiver_id)", "mechanism", "mech:policy:friend_requests_insert_as_sender"),
+  // Gate A, C2-definer-bypasses-named-policy (D3.54). Approved as "refusal —
+  // friend_requests_insert_as_sender requires …" (template refusal_by_policy),
+  // which named a policy the SECURITY DEFINER function never consults.
+  { id: "send_request_blocked", spans: [
+    S("error PT404", "outcome", "error_sqlstate:PT404"), DASH,
+    S("the SECURITY DEFINER body raises", "mechanism", "mech:function_body"), C(" "),
+    S("'no such player'", "outcome", "message"), C(" "),
+    S("because is_blocked_between(caller, receiver) holds", "catalog", "catalog:body_contains"),
+  ]},
+  // Gate A, D-283 (D3.54): delete_own_account's function-specific invariant.
+  { id: "delete_own_account_invariant", spans: [
+    S("delete_own_account() completes", "outcome", "completes"), C(" and "),
+    S("alice's own account is removed", "state", "state:caller_account_removed"), C("; "),
+    S("rows of other accounts change only through its documented deletion effects", "state", "state:documented_effects_only"), DASH,
+    S(/a lobby alice hosted passes to its longest-joined remaining member, other players' queue entries pointing at a room she still hosts are cancelled, notifications about her are deleted, rows involving her are deleted or have her id cleared by their foreign keys, and her seats are anonymised/, "rationale",
+      "enumerates the documented effects the documented_effects_only guard permits; each is checked there against its own before and after rows"),
+    C("; and "),
+    S("no row in a table the account's foreign keys do not reach changes", "state", "state:no_unrelated_change"),
   ]},
   { id: "mark_read", spans: [
     S("returns 0", "outcome", "returns:0"), C(" and "),

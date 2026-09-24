@@ -50,7 +50,7 @@ import { requiresIntent, type IntentStore } from "./author-intents.ts";
 import { FIXTURES } from "../rubric/fixtures.ts";
 import { implFor } from "./seed-extensions.ts";
 import {
-  rebuildBaseline, stateDigest, diffDigests, catalogDigest, accountRowsSnapshot, diffAccountRows,
+  rebuildBaseline, stateDigest, stateRelations, diffDigests, catalogDigest, accountRowsSnapshot, diffAccountRows,
   type BaselineEpoch, type Canonical, REST_BASE, Arc21ChangedError,
 } from "./wp3-isolation.ts";
 import type { Arc21SourceState } from "./arc21-guard.ts";
@@ -117,10 +117,45 @@ async function runCheck(admin: Session, c: { id: string; describe: string; sql: 
   }
 }
 
+/** Every row naming any of `ids`, as sorted JSON [relation, key, row]. auth.users by id and md5 only. */
+async function accountRowsJson(admin: Session, ids: readonly string[]): Promise<string> {
+  const rels = await stateRelations(admin);
+  const inc = ids.map((u) => `x::text like '%${u}%'`).join(" or ");
+  const parts = rels.map((r) => r === "auth.users"
+    ? `select '${r}' as rel, x.id::text as k, jsonb_build_object('id', x.id, 'md5', md5(x::text)) as j from ${r} x where ${inc}`
+    : `select '${r}' as rel, coalesce(to_jsonb(x)->>'id', md5(x::text)) as k, to_jsonb(x) as j from ${r} x where ${inc}`);
+  const { rows } = await admin.query(`select rel, k, j from (${parts.join("\nunion all\n")}) y order by rel, k`);
+  return JSON.stringify(rows.map((r) => [String(r.rel), String(r.k), r.j]));
+}
+
+/**
+ * Digests of the state tables the foreign-key graph does not connect to
+ * auth.users: descendants are found by walking pg_constraint from auth.users
+ * (a table referencing a descendant is one), and everything else is digested.
+ */
+export async function unrelatedTablesDigest(admin: Session): Promise<string> {
+  const rels = await stateRelations(admin);
+  const { rows } = await admin.query(`
+    with recursive d(oid) as (
+      select 'auth.users'::regclass::oid
+      union
+      select c.conrelid from pg_constraint c join d on c.confrelid = d.oid where c.contype = 'f'
+    )
+    select (quote_ident(n.nspname) || '.' || quote_ident(cl.relname)) as rel, n.nspname || '.' || cl.relname as plain
+      from d join pg_class cl on cl.oid = d.oid join pg_namespace n on n.oid = cl.relnamespace`);
+  const reached = new Set(rows.map((r) => String(r.plain)));
+  const unrelated = rels.filter((r) => !reached.has(r));
+  const digest = unrelated.length ? await stateDigest(admin, unrelated) : {};
+  // Only the tables: sequences are advanced by refused writes and are not state here.
+  return JSON.stringify(Object.fromEntries(Object.entries(digest).filter(([k]) => !k.startsWith("seq:")).sort()));
+}
+
 async function snapshot(admin: Session, s: Snapshot): Promise<string> {
   switch (s.kind) {
     case "sql": return String((await one(admin, s.sql, s.params))?.snap ?? "");
     case "account_rows": return accountRowsSnapshot(admin, s.include, s.exclude);
+    case "account_rows_json": return accountRowsJson(admin, s.include);
+    case "unrelated_tables": return unrelatedTablesDigest(admin);
     case "tables": return JSON.stringify(await stateDigest(admin, s.tables));
     case "database": return JSON.stringify(await stateDigest(admin));
     case "catalog": return catalogDigest(admin);
@@ -136,7 +171,16 @@ function describeSnapDiff(s: Snapshot, before: string, after: string): string {
     return `changed — ${removed.length} row(s) gone or altered away (${byRel(removed) || "none"}), ${added.length} row(s) new or altered to (${byRel(added) || "none"}). ` +
       `BEFORE: ${show(removed) || "—"}. AFTER: ${show(added) || "—"}`;
   }
-  if (s.kind === "database" || s.kind === "tables") {
+  if (s.kind === "account_rows_json") {
+    const a = JSON.parse(before || "[]") as [string, string, unknown][];
+    const b = JSON.parse(after || "[]") as [string, string, unknown][];
+    const key = (p: [string, string, unknown]) => `${p[0]} ${p[1]}`;
+    const ka = new Map(a.map((p) => [key(p), JSON.stringify(p[2])])), kb = new Map(b.map((p) => [key(p), JSON.stringify(p[2])]));
+    const gone = [...ka.keys()].filter((k) => !kb.has(k)), added = [...kb.keys()].filter((k) => !ka.has(k));
+    const altered = [...ka.keys()].filter((k) => kb.has(k) && kb.get(k) !== ka.get(k));
+    return `changed — ${gone.length} row(s) gone, ${added.length} new, ${altered.length} altered: ${[...altered, ...gone, ...added].slice(0, 12).join(", ")}`;
+  }
+  if (s.kind === "database" || s.kind === "tables" || s.kind === "unrelated_tables") {
     try {
       const moved = diffDigests(JSON.parse(before), JSON.parse(after));
       return `changed: ${moved.join(", ")}`;
@@ -198,22 +242,32 @@ export async function runOne(
       const impl = implFor(b.setupKey);
       if (!impl) throw new Error(`no implementation for probe-scoped setup ${b.setupKey}`);
       const statements: string[] = [];
+      let before: CheckResult | null = null;
+      // Admin statements first, then the client step (D3.54: a setup may have both).
+      for (const sql of impl.statements) { await admin.query(sql); statements.push(sql.replace(/\s+/g, " ").trim()); }
       if (impl.asClient) {
         const { signJwt } = await import("./jwt.ts");
         const token = await signJwt(claimsFor(impl.asClient.subject));
         claims = JSON.parse(Buffer.from(token.split(".")[1]!, "base64url").toString("utf8")) as Record<string, unknown>;
         const s = await roleSession({ role: "authenticated", claims, label: `setup:${impl.asClient.subject}` });
         try {
-          await s.query(impl.asClient.statement);
-          statements.push(`as ${impl.asClient.subject} (claims of a token signed before the deletion): ${impl.asClient.statement}`);
+          if (impl.asClient.before) {
+            // Read AS the client while the account is live: the access the
+            // later probe asks about existed, so a refusal then is the deletion's doing.
+            before = await runCheck(s, { id: "setup-before", describe: impl.asClient.before.describe, sql: impl.asClient.before.sql, params: [] });
+            statements.push(`as ${impl.asClient.subject}, before: ${impl.asClient.before.describe} — ${before.ok ? "holds" : "DOES NOT HOLD"}: ${before.detail}`);
+          }
+          if (!before || before.ok) {
+            await s.query(impl.asClient.statement);
+            statements.push(`as ${impl.asClient.subject} (claims of a token signed before the deletion): ${impl.asClient.statement}`);
+          }
         } finally {
           await s.close();
         }
-      } else {
-        for (const sql of impl.statements) { await admin.query(sql); statements.push(sql.replace(/\s+/g, " ").trim()); }
       }
       const v = await runCheck(admin, { id: "setup", describe: b.setupKey, sql: impl.verify, params: [] });
-      setupRecord = { key: b.setupKey, statements, verified: v.ok, detail: v.detail };
+      const beforeOk = !before || before.ok;
+      setupRecord = { key: b.setupKey, statements, verified: v.ok && beforeOk, detail: beforeOk ? v.detail : `${before!.describe}: ${before!.detail}; ${v.detail}` };
     }
 
     // --- premises, catalog facts, and everything read BEFORE the probe
@@ -277,7 +331,7 @@ export async function runOne(
         break;
       }
       case "f9": {
-        const r = await runF9(spec.variant!, spec.caller);
+        const r = await runF9(spec.variant!, spec.caller, spec.statement);
         outcome = r.outcome; runnerClaims = r.claims; identity = r.identity ?? null;
         executed = { ...executed, statement: r.statement, notes: r.notes };
         break;
@@ -306,9 +360,15 @@ export async function runOne(
       if (g.snap) {
         before = guardBefore[name] ?? null;
         after = await snapshot(admin, g.snap);
-        const same = before === after;
-        ok = ok && same;
-        parts.push(describeSnapDiff(g.snap, before ?? "", after));
+        if (g.judge) {
+          const j = g.judge(before ?? "", after);
+          ok = ok && j.ok;
+          parts.push(j.detail);
+        } else {
+          const same = before === after;
+          ok = ok && same;
+          parts.push(describeSnapDiff(g.snap, before ?? "", after));
+        }
       }
       if (g.after) {
         const r = await runCheck(admin, { id: name, describe: g.describe, sql: g.after.sql, params: g.after.params });
@@ -559,12 +619,19 @@ const ALICE = FIXTURES.alice.value;
 async function runF9(
   variant: string,
   caller: Caller,
+  approved: string,
 ): Promise<{ outcome: Outcome; statement: string; notes: string[]; claims: Record<string, { ok: boolean; detail: string }> | null; identity?: SessionIdentity }> {
   if (variant === "ledger_update" || variant === "ledger_truncate") {
     // Client and server probes are SEPARATE Test IDs on purpose (D3.18 #3).
+    // The TRUNCATE is the approved statement verbatim: since Gate A the
+    // server-side row truncates with CASCADE (C2-fk-before-truncate-trigger,
+    // D3.54) and the client row does not. Anything else is refused, not run.
+    if (variant === "ledger_truncate" && !/^truncate public\.wallet_ledger( cascade)?$/i.test(approved.trim())) {
+      throw new Error(`unexpected approved TRUNCATE "${approved}"`);
+    }
     const s = await openCaller(caller, claimsForCaller(caller));
     try {
-      const sql = variant === "ledger_truncate" ? `truncate public.wallet_ledger` : `update public.wallet_ledger set delta = 1 where user_id = $1`;
+      const sql = variant === "ledger_truncate" ? approved.trim() : `update public.wallet_ledger set delta = 1 where user_id = $1`;
       const o = await execute(s, sql, variant === "ledger_truncate" ? [] : [ALICE]);
       return { outcome: o, statement: sql, notes: [caller.kind === "admin" ? "issued on the privileged server connection" : `issued as ${caller.label}`], claims: null, identity: s.identity };
     } finally {

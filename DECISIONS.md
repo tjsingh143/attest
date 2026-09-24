@@ -2326,3 +2326,102 @@ the author says so. A row left undecided keeps running as approved and records `
 **Not decided here, deliberately.** Whether `.283`'s observed handover is a finding (WP5, the
 author's narrative); the severity of any smoke candidate (none has one); and anything about
 fixing Arc21 (never, A1).
+
+### D3.54 — Gate A applied: the author's decisions, exactly as given
+
+**Source.** The author's Gate A reply in the project-completion session on 2026-09-24 (about
+20:00 UTC), answering the packet committed as `50e983b`. It is recorded verbatim in substance in
+`rubric/wp3-gate-a-decisions.json` (`recordedFrom` names it; `applied` records what was done). No
+decision below was made by Attest.
+
+**Intents — 240 of 240 approved, 0 `user_authored`.**
+
+| | Rows | Recorded as |
+|---|---:|---|
+| Category A, approved as written | 117 | `user_reviewed_ai_draft` / `approved` |
+| Category B, approved as written | 107 | `user_reviewed_ai_draft` / `approved` |
+| Category C, eleven deleted-user rows kept `not_measured`, approved as written | 11 | `user_reviewed_ai_draft` / `approved` |
+| Category C, five rows whose probe changed, with wording the author supplied | 5 | `user_reviewed_ai_draft` / `approved` — the author's instruction: AI-assisted wording they reviewed and adopted, not their own authorship |
+
+"As written" was enforced, not assumed: `apply-gate-a` approves an entry only if its text is
+byte-identical to the Gate A review table the author read
+(`evidence/runs/20260924T175203Z-5695a4c3df2d/gate-a-intent-review.json`), and refuses the whole
+application otherwise. Each entry carries a `note` saying which decision adopted it. The five
+supplied sentences were checked against the final semantics before being recorded (each describes
+exactly what its corrected probe does), so none was left unapproved. The draft generator now emits
+the same five sentences, so a regenerated worksheet cannot diverge from the store.
+
+**Frozen-manifest corrections — 51, each tied to one decision.** `src/gate-a-apply.ts` compares the
+plan with the approved matrix (the approved run plus every correction already listed) field by
+field, and lists a correction only where a Gate A decision authorises that exact Test ID and field;
+an unauthorised difference, or an authorised change the plan does not make, refuses the whole
+application. The manifest now lists 165 corrections (100 fixture, 18 identity, 43 operation,
+2 expected, 2 covers); the counts are unchanged at 345 = 63 / 240 / 42.
+
+| Decision | Rows | Field(s) | Change |
+|---|---:|---|---|
+| C2-client-guard-before-grant | 34 | operation | `… where true` on every grant-surface UPDATE/DELETE |
+| C3-tier-literal-invalid | 1 (F2.094) | operation | `tier = 'casual' where true` |
+| C2-fk-before-truncate-trigger | 1 (F9.322) | operation | `truncate public.wallet_ledger cascade` |
+| C2-definer-bypasses-named-policy | 1 (F5.259) | expected | the body's PT404 `'no such player'` on `is_blocked_between`, not the bypassed policy |
+| C3-sender-cannot-accept | 1 (F3.059) | operation | `status = 'cancelled'` |
+| C3-username-literal-invalid | 2 (F3.151, F6.153) | operation | `'attest_probe_user'` |
+| C3-cosmetic-literal-invalid | 1 (F6.117) | operation | `avatar_cosmetic_id = NULL` |
+| C4-anon-has-no-execute | 1 (F5.278) | identity, operation | runs as alice |
+| C5 (three rows) | 3 (B.331–.333) | operation, fixture | read the surviving session state after a genuine deletion |
+| D-283 | 1 (F5.283) | expected, covers | the function-specific invariant |
+| O-269 | 1 (F5.269) | covers | the takeover's consequence stated the right way round |
+
+**Kept `not_measured`, still registered: 13 Test IDs.** `C2-grant-before-trigger` (F9.319, .321:
+the client can never reach the ledger's triggers; the privilege refusal is not evidence they fired;
+F9.320 and, now, F9.322 carry the trigger evidence) and `C5-deleted-user-subject-empty` narrowed to
+its eleven CASCADE rows (Arc21's deletion model removes the subject — an honest limit on what a
+stale-identity probe can measure). The eight resolved registrations are kept as
+`RESOLVED_CONTRADICTIONS`, the record of what stood and what was decided; no gate reads them.
+
+**How the three new mechanisms work.**
+
+- *The retargeted deleted-user rows (C5).* A new probe-scoped fixture,
+  `probe:dave_left_seat_then_deleted`, seats dave at the session with status `left` (which
+  `delete_own_account()` permits), then — **as dave, while his account is live** — reads the
+  session's seats and requires at least one, then calls Arc21's own `delete_own_account()`. Its
+  verification requires dave's `auth.users` and profile rows gone and his seat surviving with
+  `user_id` NULL and the name "Deleted player". The probes then read that session's seats, row and
+  event stream with his still-valid claims. Referential integrity is untouched, nothing is
+  orphaned, and the target is non-empty and provably was readable by the live account. Setups may
+  now combine admin statements with a client step (both paths: the executor's real client session,
+  and preflight's in-transaction emulation, which switches to `authenticated` for the pre-read).
+- *The function-specific invariant (D-283).* Three claims replace the caller-scoped pair: the call
+  completes (a business-prerequisite refusal is `not_reached`, never a verdict — new evaluator
+  `completes`); alice's account is gone; and a classified diff (`classifyAccountDeletion`) over every
+  row naming alice, bob, carol, dave or erin, taken before and after as JSON. Category A (a row
+  naming only the caller) may change freely. Category B permits exactly: a row involving the caller
+  removed (the schema's cascades, the function's deletion of notifications about the caller); the
+  caller's id cleared by a foreign key's SET NULL, the row otherwise unchanged (a seat may also
+  become "Deleted player"); a lobby the caller hosted handed to the joined member with the earliest
+  `joined_at` (`release_room_seat`'s own rule), nothing else changed; another player's queue entry
+  pointing at a room the caller still hosts after the handovers, cancelled with room and match
+  cleared. Anything else on a row naming another account — including any new row — is category C
+  and fails the guard. A third guard digests every table the foreign-key graph does not connect to
+  `auth.users` (rulesets, career nodes, tournaments, daily challenges, cosmetics, rate-limit
+  policies, and `realtime.messages`), which must not change at all. `prove-gates` hands the
+  classifier the documented handover (must pass) and five forbidden changes (each must fail), and
+  stages a change to a global table the digest must see.
+  *Limitation, stated:* a row that reaches another account only through another table's id (a
+  tournament match naming entry ids, not user ids) is outside the row classifier; its table is
+  FK-connected, so the unrelated-tables digest does not cover it either.
+- *The ledger TRUNCATE.* The F9 runner used to hard-code `truncate public.wallet_ledger` whatever
+  the approved statement said; it now issues the approved statement verbatim, accepting only
+  `truncate public.wallet_ledger` or `… cascade`.
+
+**Not changed, though it could have been.** `F5.278`'s approved `covers` still says the function is
+"deliberately callable without an account", which D3.52 showed is an Attest planning misreading
+(Arc21 revokes EXECUTE from anon on purpose). The author's C4 decision changed the identity and
+operation only, so the covers text stays as approved; the evidence record carries it, and this
+entry is where its inaccuracy is recorded.
+
+**Output wording corrected in passing.** `plan-wp3` said "240 negative tests awaiting AUTHOR
+INTENT" (it was counting rows that require one) and `draft-intents` called reviewed AI drafts
+"author-written"; both now say what they count. Two planning run directories generated minutes
+earlier with the stale wording were deleted and regenerated; they were superseded output, not
+evidence of anything.

@@ -56,8 +56,8 @@ import {
   checkBindingsComplete, checkNoEffectFromState, checkVacuityPremises, checkPremisesLive, checkInsertPositives,
   checkClaimCoverage, type ReadinessCheck,
 } from "./wp3-readiness.ts";
-import { prepareAll, f7RoleClaims, dirtyReason, F7_SCRATCH, type PreparedProbe } from "./wp3-execute.ts";
-import { bindingFor, type Binding } from "./wp3-bindings.ts";
+import { prepareAll, f7RoleClaims, dirtyReason, unrelatedTablesDigest, F7_SCRATCH, type PreparedProbe } from "./wp3-execute.ts";
+import { bindingFor, classifyAccountDeletion, type Binding } from "./wp3-bindings.ts";
 import { judgeProbe, evaluatorExists, evaluatorFor, type Observed, type CheckResult, type Judgement } from "./wp3-evaluate.ts";
 import { classify } from "./wp3-outcome.ts";
 import { TEMPLATES, validateClaimCoverage, spansFor, type ClaimTemplate } from "./wp3-claims.ts";
@@ -309,7 +309,9 @@ export async function runInjections(
       defect: `${victim.testId}: a client UPDATE loses its WHERE clause — pg_safeupdate would refuse it before the policy under test`,
       gate: "preflight: no client probe is refused by the connection's own guard before its control, unless registered",
       caught: unregistered.includes(victim.testId) && specClientGuardHazards(real.specs).every((id) => registeredContradictionsFor(id).length > 0),
-      firedCheck: `unregistered hazards: ${unregistered.join(", ") || "none"}; the real plan's ${specClientGuardHazards(real.specs).length} hazards are all registered`,
+      // Since Gate A (D3.54) the real plan has no hazard at all: every client
+      // UPDATE/DELETE carries a WHERE, so the guard can only fire on the injection.
+      firedCheck: `unregistered hazards: ${unregistered.join(", ") || "none"}; the real plan carries ${specClientGuardHazards(real.specs).length} such probe(s)`,
       consequence: EXIT_PREFLIGHT,
     });
   }
@@ -611,14 +613,74 @@ export async function runInjections(
       const j = judgeProbe(p.t, p.spec, p.binding, p.spans, maximallySatisfied(p, o, triggerFns));
       if (j.verdict !== "not_measured" || j.observation !== "control_not_reached") bad.push(`${p.t.testId}: ${j.observation}/${j.verdict}`);
     }
-    const p095 = P("F2.public_game_sessions.095");
-    const registered = judgeProbe(p095.t, p095.spec, p095.binding, p095.spans, maximallySatisfied(p095, o, triggerFns, { contradiction: contradictionDisposition(p095.t.testId) }));
+    // Since Gate A (C2-client-guard-before-grant, D3.54) no grant row is
+    // registered, and every real grant-surface UPDATE/DELETE ends in `where
+    // true`, so a real run can no longer meet this refusal — which the gate
+    // also checks, rather than assuming.
+    const grantRows = [...prepared.values()].filter((p) => /#grant:authenticated:(UPDATE|DELETE)$/.test(p.t.control));
+    const withoutWhere = grantRows.filter((p) => !/\swhere true$/.test(p.spec.statement)).map((p) => p.t.testId);
+    const stillRegistered = grantRows.filter((p) => contradictionDisposition(p.t.testId) !== null).map((p) => p.t.testId);
     push({
       defect: `a client guard's genuine ${o.sqlstate} ('${o.error?.message ?? o.message}') is read as the grant surface's answer`,
-      gate: "judge: pg_safeupdate refuses BEFORE the privilege check, so the privilege claim was not reached (never 'passed', never 'deficient')",
-      caught: o.sqlstate === "21000" && bad.length === 0 && registered.observation === "blocked_contradiction",
-      firedCheck: bad.length ? `${bad.length} grant negative(s) mis-read it: ${bad.slice(0, 3).join("; ")}` : `all ${n} grant-surface negatives → control_not_reached / not_measured when unregistered; F2.public_game_sessions.095 as registered → ${registered.observation}`,
-      consequence: `record: control_not_reached → not_measured (unregistered) / blocked_contradiction → not_measured (registered)`,
+      gate: "judge: pg_safeupdate refuses BEFORE the privilege check, so the privilege claim was not reached (never 'passed', never 'deficient'); and no real grant statement can meet it",
+      caught: o.sqlstate === "21000" && bad.length === 0 && withoutWhere.length === 0 && stillRegistered.length === 0 && grantRows.length === 34,
+      firedCheck: bad.length ? `${bad.length} grant negative(s) mis-read it: ${bad.slice(0, 3).join("; ")}` :
+        `all ${n} grant-surface negatives → control_not_reached / not_measured; the real plan's ${grantRows.length} UPDATE/DELETE grant statements: ${withoutWhere.length} without a WHERE, ${stillRegistered.length} still registered`,
+      consequence: `record: control_not_reached → not_measured, never effective and never deficient`,
+    });
+  }
+  {
+    // Gate A, D-283 (D3.54): delete_own_account's invariant must tell the
+    // documented cleanup (B) from any other change to another account (C). The
+    // classifier is handed synthetic before/after states: the documented
+    // handover must pass; each forbidden change must fail on its own.
+    const Al = FIXTURES.alice.value, Bo = FIXTURES.bob.value, Ca = CAROL, others = [Bo, Ca];
+    const room = { id: "r1", host_user_id: Al, status: "lobby", code: "ATSTAB" };
+    const mAl = { id: "m1", room_id: "r1", user_id: Al, status: "joined", joined_at: "2026-09-24T00:00:00Z" };
+    const mBo = { id: "m2", room_id: "r1", user_id: Bo, status: "joined", joined_at: "2026-09-24T00:01:00Z" };
+    const mCa = { id: "m3", room_id: "r1", user_id: Ca, status: "joined", joined_at: "2026-09-24T00:02:00Z" };
+    const wallet = { id: "w1", user_id: Bo, balance: 25000 };
+    const friendsBC = { id: "f1", user_id_a: Bo, user_id_b: Ca };
+    const friendsAB = { id: "f2", user_id_a: Al, user_id_b: Bo };
+    const before = [
+      ["public.friendships", "f1", friendsBC], ["public.friendships", "f2", friendsAB],
+      ["public.room_members", "m1", mAl], ["public.room_members", "m2", mBo], ["public.room_members", "m3", mCa],
+      ["public.rooms", "r1", room], ["public.wallets", "w1", wallet],
+    ];
+    // The documented deletion: alice's membership and friendship cascade away,
+    // the lobby passes to bob (the earliest joined remaining member).
+    const documented = [
+      ["public.friendships", "f1", friendsBC], ["public.room_members", "m2", mBo], ["public.room_members", "m3", mCa],
+      ["public.rooms", "r1", { ...room, host_user_id: Bo }], ["public.wallets", "w1", wallet],
+    ];
+    const swap = (rows: unknown[][], rel: string, id: string, row: unknown | null) => {
+      const out = rows.filter((r) => !(r[0] === rel && r[1] === id));
+      return row === null ? out : [...out, [rel, id, row]];
+    };
+    const cases: [string, unknown[][], boolean][] = [
+      ["the documented handover to the longest-joined member, with alice's rows cascaded", documented, true],
+      ["the lobby handed to carol, who joined after bob", swap(documented, "public.rooms", "r1", { ...room, host_user_id: Ca }), false],
+      ["bob's wallet balance altered", swap(documented, "public.wallets", "w1", { ...wallet, balance: 0 }), false],
+      ["the bob<->carol friendship, which does not involve alice, removed", swap(documented, "public.friendships", "f1", null), false],
+      ["a new row naming bob appears", [...documented, ["public.notifications", "n9", { id: "n9", user_id: Bo }]], false],
+      ["carol's membership row altered", swap(documented, "public.room_members", "m3", { ...mCa, status: "left" }), false],
+    ];
+    const got = cases.map(([what, after, want]) => {
+      const r = classifyAccountDeletion(JSON.stringify(before), JSON.stringify(after), Al, others);
+      return { what, ok: r.ok === want, detail: `${r.ok ? "permitted" : "refused"}` };
+    });
+    // The unrelated-tables digest sees a change to a table no account reaches.
+    const u0 = await unrelatedTablesDigest(ctx.admin);
+    const u1 = await inRollback(ctx.admin, async () => {
+      await ctx.admin.query(`update public.rulesets set description = coalesce(description, '') || ' (prove-gates)' where id = (select id from public.rulesets order by id limit 1)`);
+      return unrelatedTablesDigest(ctx.admin);
+    });
+    push({
+      defect: "delete_own_account's invariant: a lobby handed to the wrong member, another account's wallet altered, an unrelated friendship removed, a new row naming another account, another member's row altered — and a global table changed",
+      gate: "guard: documented_effects_only permits exactly the documented deletion effects (B) and refuses any other cross-account change (C); no_unrelated_change sees a table no account reaches",
+      caught: got.every((g) => g.ok) && u0 !== u1,
+      firedCheck: `${got.map((g) => `${g.what}: ${g.detail}${g.ok ? "" : " (WRONG)"}`).join("; ")}; rulesets changed → unrelated digest ${u0 !== u1 ? "moved" : "DID NOT MOVE"}`,
+      consequence: "record: not_as_predicted → deficient for a category-C change; as_predicted only when every change is documented",
     });
   }
   {
@@ -791,8 +853,13 @@ export async function runInjections(
   intentGate("the store carries an entry the matrix does not require", "intent validation: no entry that the matrix does not require", /does not require/, (s) => { intents(s).push({ testId: "F1.not.a.real.test", intent: "x", provenance: "user_authored", reviewStatus: "approved" }); }, false);
   intentGate("an intent is blank", "intent validation: no entry carries a blank sentence", /blank/, (s) => { intents(s)[0] = { ...intents(s)[0]!, intent: "   " }; }, false);
   intentGate("a Test ID appears twice in the store", "intent validation: no duplicate Test ID", /duplicate/, (s) => { intents(s).push({ ...intents(s)[0]! }); }, false);
-  intentGate("every required intent is still an unreviewed AI draft, and a real run is requested", "intent validation: every required intent is authored or reviewed by the author", /authored or reviewed/, () => {});
-  intentGate("an ai_draft is marked approved without changing its provenance", "intent validation: no ai_draft is marked approved", /no ai_draft is marked approved/, (s) => { intents(s)[0] = { ...intents(s)[0]!, reviewStatus: "approved" }; }, false);
+  // Both used to rely on the real store BEING all AI drafts — which stopped
+  // being true when the author adopted every sentence at Gate A (D3.54), and
+  // both then "passed" by catching nothing. They inject the state now.
+  intentGate("every required intent is still an unreviewed AI draft, and a real run is requested", "intent validation: every required intent is authored or reviewed by the author", /authored or reviewed/, (s) => {
+    for (const e of intents(s)) Object.assign(e, { provenance: "ai_draft", reviewStatus: "unreviewed" });
+  });
+  intentGate("an ai_draft is marked approved without changing its provenance", "intent validation: no ai_draft is marked approved", /no ai_draft is marked approved/, (s) => { intents(s)[0] = { ...intents(s)[0]!, provenance: "ai_draft", reviewStatus: "approved" }; }, false);
   intentGate("a draft relabelled user_reviewed_ai_draft but left unreviewed", "intent validation: every required intent is authored or reviewed by the author", /authored or reviewed/, (s) => {
     for (const e of intents(s)) Object.assign(e, { provenance: "user_reviewed_ai_draft", reviewStatus: "approved" });
     intents(s)[0] = { ...intents(s)[0]!, reviewStatus: "unreviewed" };

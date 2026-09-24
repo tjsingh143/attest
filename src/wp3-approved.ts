@@ -54,7 +54,13 @@ export interface ApprovedRow {
 
 export interface ApprovedCorrection {
   readonly testId: string;
-  readonly field: "identity" | "fixture";
+  /**
+   * `identity` and `fixture` are metadata corrections (D3.33, D3.34, D3.38).
+   * `operation`, `expected` and `covers` are frozen fields: each such correction
+   * exists only because the author decided it at Gate A (D3.54) and names that
+   * decision; `apply-gate-a` refuses one no decision authorises.
+   */
+  readonly field: "identity" | "fixture" | "operation" | "expected" | "covers";
   readonly from: string;
   readonly to: string;
   readonly reason: string;

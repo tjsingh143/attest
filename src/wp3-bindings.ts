@@ -46,14 +46,32 @@ export type Snapshot =
   | { readonly kind: "sql"; readonly sql: string; readonly params: readonly unknown[] }
   /** Rows (in every public/private table and auth.users) whose text names any `include` id and no `exclude` id. */
   | { readonly kind: "account_rows"; readonly include: readonly string[]; readonly exclude: readonly string[] }
+  /**
+   * Every row naming any `include` id, as JSON keyed by relation and id (auth.users
+   * by id and md5 only — its text carries password hashes). For a guard that must
+   * tell one KIND of change from another rather than any change from none (D3.54).
+   */
+  | { readonly kind: "account_rows_json"; readonly include: readonly string[] }
+  /**
+   * Digests of every table the foreign-key graph does NOT connect to auth.users:
+   * state no account's deletion can legitimately reach (D3.54).
+   */
+  | { readonly kind: "unrelated_tables" }
   | { readonly kind: "tables"; readonly tables: readonly string[] }
   | { readonly kind: "database" }
   | { readonly kind: "catalog" };
 
 export interface Guard {
   readonly describe: string;
-  /** Taken before and after; the guard requires them equal. */
+  /** Taken before and after; the guard requires them equal — unless `judge` is given. */
   readonly snap?: Snapshot;
+  /**
+   * Classify the change between the two snapshots instead of requiring none:
+   * for a function whose documented behaviour legitimately changes other rows
+   * (D3.54, delete_own_account). Returns ok only when every change is one the
+   * judge can name as permitted.
+   */
+  readonly judge?: (before: string, after: string) => { ok: boolean; detail: string };
   /** Evaluated after; returns ok/detail. */
   readonly after?: { readonly sql: string; readonly params: readonly unknown[] };
   /** For "stale entries MAY be expired": the snapshot deliberately excludes stale-entry transitions. */
@@ -345,6 +363,97 @@ const CALLER_SCOPED: Readonly<Record<string, CallerScopedSpec>> = {
 };
 
 // ---------------------------------------------------------------------------
+// delete_own_account: the function-specific invariant (Gate A, D-283, D3.54)
+// ---------------------------------------------------------------------------
+
+type JRow = Record<string, unknown>;
+
+/**
+ * Classify every change delete_own_account() made to a row naming an account,
+ * into the author's three categories:
+ *
+ *   A  caller-owned: a row naming the caller and no other account — any change
+ *   B  documented cleanup and reassignment, and nothing more:
+ *        - a row involving the caller REMOVED (the schema's cascades; the
+ *          function's deletion of other players' notifications about the caller)
+ *        - the caller's id CLEARED from a row (a foreign key's SET NULL), the
+ *          row otherwise unchanged (a seat may also become 'Deleted player')
+ *        - a lobby the caller hosted handed to the joined member with the
+ *          earliest joined_at (release_room_seat's rule), nothing else changed
+ *        - another player's queue entry that pointed at a room the caller still
+ *          hosts after the handovers cancelled (status 'cancelled', room_id and
+ *          matched_at cleared), nothing else changed
+ *   C  anything else on a row naming another account — including a new one —
+ *      which makes the guard fail
+ *
+ * Rows naming no account at all are the other guard's (unrelated tables); rows
+ * that reach an account only through another table's id (a match naming entry
+ * ids) are outside both, which is recorded as a limitation (D3.54).
+ */
+export function classifyAccountDeletion(before: string, after: string, caller: string, others: readonly string[]): { ok: boolean; detail: string } {
+  type P = [string, string, JRow];
+  const a = JSON.parse(before || "[]") as P[];
+  const b = JSON.parse(after || "[]") as P[];
+  const key = (p: P) => `${p[0]} ${p[1]}`;
+  const A = new Map(a.map((p) => [key(p), p])), B = new Map(b.map((p) => [key(p), p]));
+  const names = (row: JRow, ids: readonly string[]) => { const t = JSON.stringify(row); return ids.some((i) => t.includes(i)); };
+
+  // release_room_seat's heir, from the BEFORE state: the joined member other
+  // than the caller with the earliest joined_at (ties: any of them).
+  const members = a.filter((p) => p[0] === "public.room_members").map((p) => p[2]);
+  const heirs = new Map<string, Set<string>>();
+  const heirless = new Set<string>();
+  for (const [rel, , row] of a) {
+    if (rel !== "public.rooms" || row.host_user_id !== caller) continue;
+    const joined = members.filter((m) => m.room_id === row.id && m.status === "joined" && m.user_id !== caller);
+    if (!joined.length) { heirless.add(String(row.id)); continue; }
+    const first = Math.min(...joined.map((m) => new Date(String(m.joined_at)).getTime()));
+    heirs.set(String(row.id), new Set(joined.filter((m) => new Date(String(m.joined_at)).getTime() === first).map((m) => String(m.user_id))));
+  }
+  const changedCols = (x: JRow, y: JRow) => [...new Set([...Object.keys(x), ...Object.keys(y)])].filter((c) => JSON.stringify(x[c]) !== JSON.stringify(y[c]));
+
+  const documented: string[] = [];
+  const violations: string[] = [];
+  let removedInvolvingCaller = 0, cleared = 0, callerOwned = 0;
+  for (const k of new Set([...A.keys(), ...B.keys()])) {
+    const pb = A.get(k), pa = B.get(k);
+    const rel = (pb ?? pa)![0];
+    if (pb && pa && JSON.stringify(pb[2]) === JSON.stringify(pa[2])) continue;
+    const rb = pb?.[2], ra = pa?.[2];
+    const othersBefore = !!rb && names(rb, others), othersAfter = !!ra && names(ra, others);
+    if (!othersBefore && !othersAfter) { callerOwned++; continue; }                         // A
+    if (rb && !ra) {
+      if (names(rb, [caller])) { removedInvolvingCaller++; continue; }                        // B: cascade / notification cleanup
+      violations.push(`${k}: a row naming another account and not the caller was removed`);
+      continue;
+    }
+    if (!rb && ra) { violations.push(`${k}: a row naming another account appeared`); continue; }
+    const cols = changedCols(rb!, ra!);
+    if (rel === "public.rooms" && cols.length === 1 && cols[0] === "host_user_id" && rb!.host_user_id === caller) {
+      const want = heirs.get(String(rb!.id));
+      if (want && want.has(String(ra!.host_user_id))) { documented.push(`${k}: the lobby the caller hosted passed to ${String(ra!.host_user_id)}, its longest-joined remaining member`); continue; }
+      violations.push(`${k}: host moved from the caller to ${String(ra!.host_user_id)}, not the longest-joined remaining member (${[...(want ?? [])].join(" or ") || "none"})`);
+      continue;
+    }
+    if (rel === "public.matchmaking_queue" && rb!.user_id !== caller && heirless.has(String(rb!.room_id))
+        && cols.every((c) => ["status", "room_id", "matched_at"].includes(c))
+        && ra!.status === "cancelled" && ra!.room_id === null && ra!.matched_at === null) {
+      documented.push(`${k}: another player's queue entry pointing at a room the caller still hosted was cancelled`);
+      continue;
+    }
+    const setNull = cols.every((c) => (rb![c] === caller && ra![c] === null) || (rel === "public.game_session_seats" && c === "display_name" && ra![c] === "Deleted player"));
+    if (setNull && cols.some((c) => rb![c] === caller)) { cleared++; continue; }             // B: foreign-key SET NULL
+    violations.push(`${k}: ${cols.join(", ")} changed on a row naming another account — not a documented deletion effect`);
+  }
+  const summary =
+    `caller-owned rows changed: ${callerOwned}; rows involving the caller removed: ${removedInvolvingCaller}; ` +
+    `rows with the caller's id cleared by a foreign key: ${cleared}; documented reassignments: ${documented.length ? documented.join(" | ") : "none"}`;
+  return violations.length
+    ? { ok: false, detail: `${violations.length} change(s) outside the documented deletion effects: ${violations.slice(0, 8).join(" | ")}. (${summary})` }
+    : { ok: true, detail: `every change to a row naming another account is a documented deletion effect — ${summary}` };
+}
+
+// ---------------------------------------------------------------------------
 // the binding
 // ---------------------------------------------------------------------------
 
@@ -565,7 +674,9 @@ export function bindingFor(
         premises.push(count("relationship", "requests from alice received by carol (carol is not the receiver of the alice->bob request)", `public.friend_requests where sender_id = $1 and receiver_id = $2`, "= 0", [A, CA]));
         break;
       case "send_friend_request":
-        namedPolicy = "friend_requests_insert_as_sender";
+        // Gate A, C2-definer-bypasses-named-policy (D3.54): the refusal is the
+        // SECURITY DEFINER body's own — the caller's policies never apply to its insert.
+        catalog.body_contains = bodyContains("send_friend_request", "if public.is_blocked_between(v_me, p_to) then");
         premises.push(count("relationship", "alice->dave blocks", `public.blocks where blocker_id = $1 and blocked_id = $2`, "= 1", [A, D]));
         premises.push(count("relationship", "dave's profile (the receiver exists)", `public.profiles where id = $1`, "= 1", [D]));
         break;
@@ -697,6 +808,30 @@ export function bindingFor(
       case "create_private_room":
         guards.guard = { describe: "no rooms row is created", snap: { kind: "tables", tables: ["public.rooms"] } };
         break;
+    }
+
+    // Gate A, D-283 (D3.54): delete_own_account's function-specific invariant.
+    if (fn === "delete_own_account") {
+      const others = [B, CA, D, E];
+      reachability = CALLER_SCOPED.delete_own_account!.reach;
+      guards.caller_account_removed = {
+        describe: "alice's account is gone: no auth.users row and no profile",
+        after: {
+          sql: `select (u = 0 and p = 0) as ok, 'auth.users rows for alice: ' || u::text || ', profiles rows for alice: ' || p::text as detail
+                  from (select (select count(*) from auth.users where id = $1) u, (select count(*) from public.profiles where id = $1) p) x`,
+          params: [A],
+        },
+      };
+      guards.documented_effects_only = {
+        describe: "every change to a row naming another account (bob, carol, dave or erin) is a documented deletion effect",
+        snap: { kind: "account_rows_json", include: [A, ...others] },
+        judge: (before, after) => classifyAccountDeletion(before, after, A, others),
+      };
+      guards.no_unrelated_change = {
+        describe: "no table the foreign keys do not connect to an account changes",
+        snap: { kind: "unrelated_tables" },
+      };
+      premises.push(check("relationship", "bob and carol hold rows in every table the function reads", implFor("caller_scoped_population")!.verify));
     }
 
     // Caller-scoped: the shared invariant, made concrete per function (D3.41).

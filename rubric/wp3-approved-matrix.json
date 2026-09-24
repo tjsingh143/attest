@@ -934,6 +934,414 @@
       "to": "a token for alice signed with the local stack's JWT secret whose exp is in the past (fixtures.expiredJwt), and the local PostgREST endpoint reachable",
       "reason": "The expired-session probe needs a correctly signed but expired token; the approved fixture named only the standing seed. The credential is now a stated requirement. Operation, expected and covers are unchanged.",
       "decision": "D3.38"
+    },
+    {
+      "testId": "F2.private_career_drill_seeds.002",
+      "field": "operation",
+      "from": "update private.career_drill_seeds set created_at = '2026-01-01T00:00:00Z'",
+      "to": "update private.career_drill_seeds set created_at = '2026-01-01T00:00:00Z' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.private_career_drill_seeds.003",
+      "field": "operation",
+      "from": "delete from private.career_drill_seeds",
+      "to": "delete from private.career_drill_seeds where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.private_game_commands.008",
+      "field": "operation",
+      "from": "update private.game_commands set created_at = '2026-01-01T00:00:00Z'",
+      "to": "update private.game_commands set created_at = '2026-01-01T00:00:00Z' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.private_game_commands.009",
+      "field": "operation",
+      "from": "delete from private.game_commands",
+      "to": "delete from private.game_commands where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.private_game_state_private.017",
+      "field": "operation",
+      "from": "update private.game_state_private set updated_at = '2026-01-01T00:00:00Z'",
+      "to": "update private.game_state_private set updated_at = '2026-01-01T00:00:00Z' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.private_game_state_private.018",
+      "field": "operation",
+      "from": "delete from private.game_state_private",
+      "to": "delete from private.game_state_private where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_daily_challenges.042",
+      "field": "operation",
+      "from": "update public.daily_challenges set revealed_seed = 'attest-probe-revealed_seed'",
+      "to": "update public.daily_challenges set revealed_seed = 'attest-probe-revealed_seed' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_daily_challenges.043",
+      "field": "operation",
+      "from": "delete from public.daily_challenges",
+      "to": "delete from public.daily_challenges where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F3.public_friend_requests.059",
+      "field": "operation",
+      "from": "UPDATE public.friend_requests set status = 'accepted' where sender_id = fixtures.alice.id",
+      "to": "UPDATE public.friend_requests set status = 'cancelled' where sender_id = fixtures.alice.id",
+      "reason": "The caller is the request's sender, and guard_friend_request_transition lets only the receiver accept (42501, a BEFORE trigger that runs before WITH CHECK). 'cancelled' is the sender's one legitimate transition. Same property: a participant's legitimate update is admitted and the row stays attributed to them.",
+      "decision": "Gate A 2026-09-24 — C3-sender-cannot-accept (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_game_events.075",
+      "field": "operation",
+      "from": "update public.game_events set recipient_user_id = '00000000-0000-4000-8000-0000000000ff'",
+      "to": "update public.game_events set recipient_user_id = '00000000-0000-4000-8000-0000000000ff' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_game_events.076",
+      "field": "operation",
+      "from": "delete from public.game_events",
+      "to": "delete from public.game_events where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_game_session_seats.086",
+      "field": "operation",
+      "from": "update public.game_session_seats set user_id = '00000000-0000-4000-8000-0000000000ff'",
+      "to": "update public.game_session_seats set user_id = '00000000-0000-4000-8000-0000000000ff' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_game_session_seats.087",
+      "field": "operation",
+      "from": "delete from public.game_session_seats",
+      "to": "delete from public.game_session_seats where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_game_sessions.094",
+      "field": "operation",
+      "from": "update public.game_sessions set tier = 'attest-probe-tier'",
+      "to": "update public.game_sessions set tier = 'casual' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged. 'attest-probe-tier' is not a table_tier label, so the statement failed enum parsing (22P02) before any privilege or client-guard check; 'casual' is a label, and `where true` carries the statement past pg_safeupdate (C2-client-guard-before-grant). Same property.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant + C3-tier-literal-invalid (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_game_sessions.095",
+      "field": "operation",
+      "from": "delete from public.game_sessions",
+      "to": "delete from public.game_sessions where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_hand_records.105",
+      "field": "operation",
+      "from": "update public.hand_records set dealer_total = 1",
+      "to": "update public.hand_records set dealer_total = 1 where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_hand_records.106",
+      "field": "operation",
+      "from": "delete from public.hand_records",
+      "to": "delete from public.hand_records where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F6.public_loadouts.117",
+      "field": "operation",
+      "from": "UPDATE public.loadouts set avatar_cosmetic_id = '00000000-0000-4000-8000-0000000000ff' where user_id = fixtures.alice.id",
+      "to": "UPDATE public.loadouts set avatar_cosmetic_id = NULL where user_id = fixtures.alice.id",
+      "reason": "The approved uuid names no cosmetic, so guard_loadout_slots refused it (23503) before the granted column could be shown writable. NULL (unequip) is accepted and adds no cosmetic-ownership prerequisite. Same property.",
+      "decision": "Gate A 2026-09-24 — C3-cosmetic-literal-invalid (author's decision; D3.54)"
+    },
+    {
+      "testId": "F3.public_profiles.151",
+      "field": "operation",
+      "from": "UPDATE public.profiles set username = 'attest-probe-username' where id = fixtures.alice.id",
+      "to": "UPDATE public.profiles set username = 'attest_probe_user' where id = fixtures.alice.id",
+      "reason": "'attest-probe-username' is refused by guard_profile_username (23514) before the write can be admitted; 'attest_probe_user' is accepted. Same property: the granted column on the caller's own profile is writable.",
+      "decision": "Gate A 2026-09-24 — C3-username-literal-invalid (author's decision; D3.54)"
+    },
+    {
+      "testId": "F6.public_profiles.153",
+      "field": "operation",
+      "from": "UPDATE public.profiles set username = 'attest-probe-username' where id = fixtures.alice.id",
+      "to": "UPDATE public.profiles set username = 'attest_probe_user' where id = fixtures.alice.id",
+      "reason": "'attest-probe-username' is refused by guard_profile_username (23514) before the write can be admitted; 'attest_probe_user' is accepted. Same property: the granted column on the caller's own profile is writable.",
+      "decision": "Gate A 2026-09-24 — C3-username-literal-invalid (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rate_limit_events.167",
+      "field": "operation",
+      "from": "update public.rate_limit_events set occurred_at = '2026-01-01T00:00:00Z'",
+      "to": "update public.rate_limit_events set occurred_at = '2026-01-01T00:00:00Z' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rate_limit_events.168",
+      "field": "operation",
+      "from": "delete from public.rate_limit_events",
+      "to": "delete from public.rate_limit_events where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rate_limit_policies.176",
+      "field": "operation",
+      "from": "update public.rate_limit_policies set rationale = 'attest-probe-rationale'",
+      "to": "update public.rate_limit_policies set rationale = 'attest-probe-rationale' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rate_limit_policies.177",
+      "field": "operation",
+      "from": "delete from public.rate_limit_policies",
+      "to": "delete from public.rate_limit_policies where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_room_members.184",
+      "field": "operation",
+      "from": "update public.room_members set last_seen_at = '2026-01-01T00:00:00Z'",
+      "to": "update public.room_members set last_seen_at = '2026-01-01T00:00:00Z' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_room_members.185",
+      "field": "operation",
+      "from": "delete from public.room_members",
+      "to": "delete from public.room_members where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rooms.192",
+      "field": "operation",
+      "from": "update public.rooms set ruleset_id = '00000000-0000-4000-8000-0000000000ff'",
+      "to": "update public.rooms set ruleset_id = '00000000-0000-4000-8000-0000000000ff' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rooms.193",
+      "field": "operation",
+      "from": "delete from public.rooms",
+      "to": "delete from public.rooms where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rulesets.198",
+      "field": "operation",
+      "from": "update public.rulesets set description = 'attest-probe-description'",
+      "to": "update public.rulesets set description = 'attest-probe-description' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_rulesets.199",
+      "field": "operation",
+      "from": "delete from public.rulesets",
+      "to": "delete from public.rulesets where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_tournament_entries.207",
+      "field": "operation",
+      "from": "update public.tournament_entries set bracket_seed = 1",
+      "to": "update public.tournament_entries set bracket_seed = 1 where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_tournament_entries.208",
+      "field": "operation",
+      "from": "delete from public.tournament_entries",
+      "to": "delete from public.tournament_entries where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_tournament_matches.215",
+      "field": "operation",
+      "from": "update public.tournament_matches set entry_a_id = '00000000-0000-4000-8000-0000000000ff'",
+      "to": "update public.tournament_matches set entry_a_id = '00000000-0000-4000-8000-0000000000ff' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_tournament_matches.216",
+      "field": "operation",
+      "from": "delete from public.tournament_matches",
+      "to": "delete from public.tournament_matches where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_wallet_ledger.228",
+      "field": "operation",
+      "from": "update public.wallet_ledger set reference_type = 'attest-probe-reference_type'",
+      "to": "update public.wallet_ledger set reference_type = 'attest-probe-reference_type' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_wallet_ledger.229",
+      "field": "operation",
+      "from": "delete from public.wallet_ledger",
+      "to": "delete from public.wallet_ledger where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_wallets.239",
+      "field": "operation",
+      "from": "update public.wallets set updated_at = '2026-01-01T00:00:00Z'",
+      "to": "update public.wallets set updated_at = '2026-01-01T00:00:00Z' where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F2.public_wallets.240",
+      "field": "operation",
+      "from": "delete from public.wallets",
+      "to": "delete from public.wallets where true",
+      "reason": "Every client connection arrives through authenticator, which preloads pg_safeupdate; it refuses an UPDATE or DELETE with no WHERE clause at parse analysis (21000), before the privilege check this row examines. `where true` satisfies the guard and reads no column, so the statement reaches the same privilege check. The property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-client-guard-before-grant (author's decision; D3.54)"
+    },
+    {
+      "testId": "F5.send_friend_request.259",
+      "field": "expected",
+      "from": "refusal — friend_requests_insert_as_sender requires NOT viewer_has_blocked(receiver_id)",
+      "to": "error PT404 — the SECURITY DEFINER body raises 'no such player' because is_blocked_between(caller, receiver) holds",
+      "reason": "send_friend_request is SECURITY DEFINER, so the RLS policy the approved text named is never consulted; the refusal is the function body's own PT404 'no such player' on is_blocked_between(caller, receiver). The mechanism attribution is corrected; the property — no friend request across a block — is unchanged.",
+      "decision": "Gate A 2026-09-24 — C2-definer-bypasses-named-policy (author's decision; D3.54)"
+    },
+    {
+      "testId": "F5.register_push_token.269",
+      "field": "covers",
+      "from": "[target_opaque] a device registers itself for push. Identity: caller from auth.uid() owns the row; the token string comes from the argument. Reaches: public.push_tokens, which has a unique constraint on token. Escalation would be: registering a token string already belonging to another account, which would redirect their notifications to the caller's device",
+      "to": "[target_opaque] a device registers itself for push. Identity: caller from auth.uid() owns the row; the token string comes from the argument. Reaches: public.push_tokens, which has a unique constraint on token. Escalation would be: registering a token string already belonging to another account, which reassigns that device's registration to the caller: the token still identifies the same physical device, so its previous owner may stop receiving their notifications on it and notifications for the caller may be delivered to it instead",
+      "reason": "The approved covers stated the takeover's consequence backwards ('redirect their notifications to the caller's device'). The function reassigns the device-token row to the caller; the token still identifies the same physical device, so its previous owner may stop receiving their notifications there and the caller's may be delivered to it instead. Only the factual description changed; the verdict is not prejudged.",
+      "decision": "Gate A 2026-09-24 — O-269 (author's decision; D3.54)"
+    },
+    {
+      "testId": "F5.latest_verifiable_daily_challenge.278",
+      "field": "operation",
+      "from": "as anon, call latest_verifiable_daily_challenge() while one revealed and one unrevealed challenge both exist",
+      "to": "as alice, call latest_verifiable_daily_challenge() while one revealed and one unrevealed challenge both exist",
+      "reason": "Arc21 revokes EXECUTE on latest_verifiable_daily_challenge() from anon on purpose (migration 20260903130000_daily_seed_reveal), so as anon the body never ran. The row's property is the revealed-only filter, which does not read the caller, so it runs as a signed-in caller. The approved covers wording ('deliberately callable without an account') was not in the decision and is left as approved.",
+      "decision": "Gate A 2026-09-24 — C4-anon-has-no-execute (author's decision; D3.54)"
+    },
+    {
+      "testId": "F5.latest_verifiable_daily_challenge.278",
+      "field": "identity",
+      "from": "anon",
+      "to": "authenticated:alice",
+      "reason": "Arc21 revokes EXECUTE on latest_verifiable_daily_challenge() from anon on purpose (migration 20260903130000_daily_seed_reveal), so as anon the body never ran. The row's property is the revealed-only filter, which does not read the caller, so it runs as a signed-in caller. The approved covers wording ('deliberately callable without an account') was not in the decision and is left as approved.",
+      "decision": "Gate A 2026-09-24 — C4-anon-has-no-execute (author's decision; D3.54)"
+    },
+    {
+      "testId": "F5.delete_own_account.283",
+      "field": "expected",
+      "from": "only alice's own rows are returned or altered; no bob or carol row appears in the result or changes",
+      "to": "delete_own_account() completes and alice's own account is removed; rows of other accounts change only through its documented deletion effects — a lobby alice hosted passes to its longest-joined remaining member, other players' queue entries pointing at a room she still hosts are cancelled, notifications about her are deleted, rows involving her are deleted or have her id cleared by their foreign keys, and her seats are anonymised; and no row in a table the account's foreign keys do not reach changes",
+      "reason": "delete_own_account() is not caller-scoped: its body documents a host handover, a queue release, notification cleanup and seat anonymisation, so the shared caller-scoped expectation forbade documented behaviour. The row now carries a function-specific invariant: (A) the caller's own effects, (B) exactly the documented cleanup and reassignment, and (C) any other change to another account's data, authority or unrelated state, which is forbidden. Operation, identity and fixture are unchanged.",
+      "decision": "Gate A 2026-09-24 — D-283 (author's decision; D3.54)"
+    },
+    {
+      "testId": "F5.delete_own_account.283",
+      "field": "covers",
+      "from": "[no_target, caller-scoped] this function takes no argument naming another account or resource AND has no shared or global effect — it reads and writes only rows keyed to auth.uid(). Verified against its body, so the caller-scoped invariant is asserted rather than assumed. The escalation question is whether the definer privilege leaks past the caller's own data",
+      "to": "[no_target, function-specific invariant] deletes the caller's own account. NOT caller-scoped: its body has documented cross-account effects — it stands the caller up from every lobby through leave_room (a hosted lobby passes to its longest-joined remaining member), cancels other players' queue entries that point at a room it still hosts, deletes other players' notifications about the account and anonymises the caller's seats — and the schema's foreign keys then cascade or set null. The escalation question is whether the definer privilege changes another account's data, authority or unrelated state beyond those documented effects",
+      "reason": "delete_own_account() is not caller-scoped: its body documents a host handover, a queue release, notification cleanup and seat anonymisation, so the shared caller-scoped expectation forbade documented behaviour. The row now carries a function-specific invariant: (A) the caller's own effects, (B) exactly the documented cleanup and reassignment, and (C) any other change to another account's data, authority or unrelated state, which is forbidden. Operation, identity and fixture are unchanged.",
+      "decision": "Gate A 2026-09-24 — D-283 (author's decision; D3.54)"
+    },
+    {
+      "testId": "F9.public_wallets.322",
+      "field": "operation",
+      "from": "truncate public.wallet_ledger",
+      "to": "truncate public.wallet_ledger cascade",
+      "reason": "Four foreign keys reference wallet_ledger, so a plain TRUNCATE is refused by the foreign-key check (0A000) before any BEFORE TRUNCATE trigger fires. With CASCADE the keys no longer refuse and wallet_ledger_deny_truncate is what answers. Same property; the statement is destructive only if the trigger were absent, and then only in the disposable database, which is rebuilt after any change.",
+      "decision": "Gate A 2026-09-24 — C2-fk-before-truncate-trigger (author's decision; D3.54)"
+    },
+    {
+      "testId": "B.public_game_events.331",
+      "field": "operation",
+      "from": "select from public.game_events where the owner column names fixtures.dave.id, the deleted account",
+      "to": "select from public.game_events for the game session fixtures.session.id that the deleted account had joined, after its deletion",
+      "reason": "After a genuine deletion no row names the account, so the approved filter measured referential actions rather than a control. Retargeted at the state Arc21's own deletion leaves behind — the seats, session and event stream of a session the account had joined and left (its seat survives by ON DELETE SET NULL) — read with the account's still-valid claims, after a read AS the live account shows it had that access. Same property: a token outliving its account must not become a key to what the deletion left behind.",
+      "decision": "Gate A 2026-09-24 — C5-deleted-user-subject-empty (author's decision; D3.54)"
+    },
+    {
+      "testId": "B.public_game_events.331",
+      "field": "fixture",
+      "from": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "to": "the canonical baseline in which dave held a seat at session fixtures.session.id and stood up from it (status 'left'), was shown to read that session as a participant, and then deleted his own account through Arc21's delete_own_account(); his seat survives with user_id NULL (ON DELETE SET NULL) and the name 'Deleted player', and a token for dave signed before the deletion",
+      "reason": "After a genuine deletion no row names the account, so the approved filter measured referential actions rather than a control. Retargeted at the state Arc21's own deletion leaves behind — the seats, session and event stream of a session the account had joined and left (its seat survives by ON DELETE SET NULL) — read with the account's still-valid claims, after a read AS the live account shows it had that access. Same property: a token outliving its account must not become a key to what the deletion left behind.",
+      "decision": "Gate A 2026-09-24 — C5-deleted-user-subject-empty (author's decision; D3.54)"
+    },
+    {
+      "testId": "B.public_game_session_seats.332",
+      "field": "operation",
+      "from": "select from public.game_session_seats where the owner column names fixtures.dave.id, the deleted account",
+      "to": "select from public.game_session_seats for the game session fixtures.session.id that the deleted account had joined, after its deletion",
+      "reason": "After a genuine deletion no row names the account, so the approved filter measured referential actions rather than a control. Retargeted at the state Arc21's own deletion leaves behind — the seats, session and event stream of a session the account had joined and left (its seat survives by ON DELETE SET NULL) — read with the account's still-valid claims, after a read AS the live account shows it had that access. Same property: a token outliving its account must not become a key to what the deletion left behind.",
+      "decision": "Gate A 2026-09-24 — C5-deleted-user-subject-empty (author's decision; D3.54)"
+    },
+    {
+      "testId": "B.public_game_session_seats.332",
+      "field": "fixture",
+      "from": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "to": "the canonical baseline in which dave held a seat at session fixtures.session.id and stood up from it (status 'left'), was shown to read that session as a participant, and then deleted his own account through Arc21's delete_own_account(); his seat survives with user_id NULL (ON DELETE SET NULL) and the name 'Deleted player', and a token for dave signed before the deletion",
+      "reason": "After a genuine deletion no row names the account, so the approved filter measured referential actions rather than a control. Retargeted at the state Arc21's own deletion leaves behind — the seats, session and event stream of a session the account had joined and left (its seat survives by ON DELETE SET NULL) — read with the account's still-valid claims, after a read AS the live account shows it had that access. Same property: a token outliving its account must not become a key to what the deletion left behind.",
+      "decision": "Gate A 2026-09-24 — C5-deleted-user-subject-empty (author's decision; D3.54)"
+    },
+    {
+      "testId": "B.public_game_sessions.333",
+      "field": "operation",
+      "from": "select from public.game_sessions where the owner column names fixtures.dave.id, the deleted account",
+      "to": "select from public.game_sessions for the game session fixtures.session.id that the deleted account had joined, after its deletion",
+      "reason": "After a genuine deletion no row names the account, so the approved filter measured referential actions rather than a control. Retargeted at the state Arc21's own deletion leaves behind — the seats, session and event stream of a session the account had joined and left (its seat survives by ON DELETE SET NULL) — read with the account's still-valid claims, after a read AS the live account shows it had that access. Same property: a token outliving its account must not become a key to what the deletion left behind.",
+      "decision": "Gate A 2026-09-24 — C5-deleted-user-subject-empty (author's decision; D3.54)"
+    },
+    {
+      "testId": "B.public_game_sessions.333",
+      "field": "fixture",
+      "from": "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
+      "to": "the canonical baseline in which dave held a seat at session fixtures.session.id and stood up from it (status 'left'), was shown to read that session as a participant, and then deleted his own account through Arc21's delete_own_account(); his seat survives with user_id NULL (ON DELETE SET NULL) and the name 'Deleted player', and a token for dave signed before the deletion",
+      "reason": "After a genuine deletion no row names the account, so the approved filter measured referential actions rather than a control. Retargeted at the state Arc21's own deletion leaves behind — the seats, session and event stream of a session the account had joined and left (its seat survives by ON DELETE SET NULL) — read with the account's still-valid claims, after a read AS the live account shows it had that access. Same property: a token outliving its account must not become a key to what the deletion left behind.",
+      "decision": "Gate A 2026-09-24 — C5-deleted-user-subject-empty (author's decision; D3.54)"
     }
   ],
   "rows": [
@@ -952,7 +1360,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "51e51ec9b3e7935460cfb8add4a8f778897ec58ac77700edaffff66eed5ead36",
+      "frozenSha256": "bd81d30386add6a2dca098d8358bfe19b4509a24f20fe154d77f9b49de002e20",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -961,7 +1369,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "23aebfa27d78997e7959ffddfeb81aff6f4638ff474e17898c19c0862506c257",
+      "frozenSha256": "60f0ddec1066b97d4e41cf1d56f1338c14f7b7f410058090a9cd2c30255c7135",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1006,7 +1414,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "c5591baa3b081e4ce592575c6c3253efa47fed3b62c7c8b78d84d49764f804c6",
+      "frozenSha256": "93c638d25c9dbd337655fcf73a7217b17efee044a17abee73e49d7c94ba5391d",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1015,7 +1423,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "23910f66b2cbcbdbd573d66d71d62a7e9c48150d8cc4f10f03c779bf4a692f47",
+      "frozenSha256": "5fb81833dc5104937aaa59118bb991b3f361d5a471e494bdd770d98aaf7b5c03",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1087,7 +1495,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "de9e010afafd8dc6c25fd4da6f8da6c21d7f568d34c847530ce47b606bb84f3f",
+      "frozenSha256": "788e84ee4f733893590f80e80438c4cc4ccec84f3a29b4817c5928ac0f72f782",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1096,7 +1504,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "d8e2ba989337d82de653bca46f408b3d9d04342cbdd8d81df5dbf217b3f25fa5",
+      "frozenSha256": "7368235a04febda34709f5b73f1e234508c87b37e2d7401dd67b0e3cdabc4e06",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1312,7 +1720,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "9b9856f21caaead71ebd337c903d45cd87b0639cf2aca10b7ceee6e18ac1c20c",
+      "frozenSha256": "b469e15e92778adf5229876d15e0613aa44c0e4ac299f23178c49f801fab737d",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1321,7 +1729,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "9c3cb81f35edb3ab8377043df99629429374ca8bbc026034a4999324a8c4c54d",
+      "frozenSha256": "af5f4419b257fadf4406b954d301dbe206fcb5fcf2094d2abeebbb0731df8435",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1465,7 +1873,7 @@
       "polarity": "positive",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "4e3a201bed979c58ffead533decc16e5ad96aeef40372df949b64277c472a6c3",
+      "frozenSha256": "3d95969f328079aa9b89c7fae4a80309ca1d28c5c0353a8388289ad53aae62c5",
       "fixtureSha256": "67e51c89758d35f2064e0964f8034f68e92cc459ccc228e6fa9dbe036adc722b"
     },
     {
@@ -1609,7 +2017,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "709b65d819b31b03c1068f74f0470df8432076a6a224de100d4f6501db156b20",
+      "frozenSha256": "4ce4a71c189bd8648b0d4caf92acffd1b125e104863b5afaf499f3895468ca53",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1618,7 +2026,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "b3b41c3cb82ed442815c513e553efbfad4422216e870786d8232547d3faffa68",
+      "frozenSha256": "747dc648970a6c59ececdea48977de40ab17d87d1be22cd2b44cd3e1635ad8e4",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1708,7 +2116,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "06d97f2d18ec7f17bd532bd93c55e3469d54437c8f0601316b57610619eab50e",
+      "frozenSha256": "29e861146422e7ad843e8e669bdd9d2e93dde290067103973dfcecc63c51a8e7",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1717,7 +2125,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "22ccbe7b8d8f6fc7015dc7e47ed943f8de7cae5bb0212711111d4d710e8ca705",
+      "frozenSha256": "102e1d9e7ed16ba32bf7df1a9f04db7ccd55d4d102104242ce29d24eca093750",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1780,7 +2188,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "09037f10c8c6eb111461c85a7b2db88e2963ba0d2ecff09176a9f385c5d9402c",
+      "frozenSha256": "3d3133447f56a4add4e41eb0b53f64d2cbf6aaf1e59a4baab9cd82d2e5fc278d",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1789,7 +2197,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "909e77cd4647777b891276ae39774a9a6fee97c1b08cf85b7845c3b5b2880b15",
+      "frozenSha256": "b602aad6c5a30f389935481262207b9f2b39b1081a654aa6181725e61281af15",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1879,7 +2287,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "3f2acbe73b56c2995bbcf983e6763756b00204a81689434a99b75a2c2a017fab",
+      "frozenSha256": "adf9f58098b9ce20ce815383a0f136b0fd5d0ae80f03b5f7c3d1547bcfbc5f38",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1888,7 +2296,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "440db676354809876af512651366d73c6a01d70e1630ed1cd606d21ca39027dd",
+      "frozenSha256": "eb89ce25808c15b0f0c89cc4f3a0bd752abb5fd3abd2b6cfc94468c0d9475eae",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -1987,7 +2395,7 @@
       "polarity": "positive",
       "tier": "Medium",
       "identity": "authenticated:alice",
-      "frozenSha256": "58bd8b17a8fc51e6316877cd869ea39ccda579a037f00d2b78229de60145e78d",
+      "frozenSha256": "b5dad4ca971ceb1671c6cb0e01fdef1d1335cfa2df1249207b7f9b80602bab6a",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2293,7 +2701,7 @@
       "polarity": "positive",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "19743315a6ad394f6d54c03fa0ded611bed93ded0f07816145fcd80b2c3af63d",
+      "frozenSha256": "19a2bd09e7ae87d5011fdee1d974b0c5ca3d11b9159fbbf91add1ce8658d28f2",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2311,7 +2719,7 @@
       "polarity": "positive",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "6b4fea26e4ea019a353e60be0f7835cdd4e1894914bc715da4f997e28b5dc111",
+      "frozenSha256": "eeda34a3817b23a858f36e3c3be8629c9cb82ab62aa2a466aca4c64a59c03c34",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2437,7 +2845,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "fa8cc3869a5caaf39190f259d491f935a164f524ae0556dc4fda415cee8ab5a2",
+      "frozenSha256": "5adafa5a5928059e5cd80deffa77450ebf322597c66b61951604098efbb99350",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2446,7 +2854,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "bba182cda22a2c0fb1f3821dbbbf7d4fb2ab7505cce3497242c96cd8f0e3c939",
+      "frozenSha256": "25295757fd054ec0dfbf26e44068f89f816322c16faa76c67ed2484675f12797",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2518,7 +2926,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "eddd45f0029aed350a1174002493bf502c99148dd2d9f9fb8b3806cee7ac780a",
+      "frozenSha256": "4a8f49f8bde79bb99aca32140ed01e51ebbf760af7af8df19d3ab18b6998071a",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2527,7 +2935,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "501d187128294a6e621c2034ba745fb076db89fb3eebb2910f89ad95e964edeb",
+      "frozenSha256": "e922033fc75bf3fb6f29353662e87df8f60499e1dec31fd614df7fe93f34f8da",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2590,7 +2998,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "1039f3f255b13da7b963144bbe8853e8c90eea75161def44d016eb36b8dd0a41",
+      "frozenSha256": "afd9ebf5b490afc9dfa0ef5bc120ac4939a7d6f215998d4deb1e952a00b44d41",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2599,7 +3007,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "4172399841a16a51eec7fbf5ccc02023f643e43a6ed11338a822d03bb94262e8",
+      "frozenSha256": "6b763b746b769c00c55f35a711b0b91a2d712f90ca000524e5535fd20f949c28",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2662,7 +3070,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "65f7140985078cba79ead32320d6ad56357abdf6d9c7b1af2a110a08ffafbdda",
+      "frozenSha256": "9827eb02f03c1d0ab14c9e7deab7b89622a86fe81e24aa2b700939102e7bb7f2",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2671,7 +3079,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "a324057c65a04c091d9929558be4e814040676fd330d0845c4641883d0dc61f6",
+      "frozenSha256": "7967c76b82f7efef507a954bc0fa9e52c9720d7ca3bd7eea34d06776c2f60e12",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2716,7 +3124,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "d929a4697cc2d3b67ffd87f57857cf17b253f6cf12b6aa3927a701b2b0317911",
+      "frozenSha256": "c8036826f0ffa0b7a9fc5d71632da69a49bf91fb667be02b56f00771f9ae1826",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2725,7 +3133,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "1517868974144ece7a3a6228fc61a6069205b6d518d78ce195fc761c7ed44d8b",
+      "frozenSha256": "c41f5c9b43cf44a05ed32ae5378ef3dce72f3c0f48fd2c8b06abf7fc5302544a",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2797,7 +3205,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "a9deec1a669d27aaf5f8e1941b96ee6d667fb68f886c7b20dce4227d46eed71d",
+      "frozenSha256": "1c7d0776fee311774d87a2242970f0729e36805c86db6413e115814ccc0c4225",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2806,7 +3214,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "9fba8b6e412c90e83dab57783c30ddf41518338572b55a382787675c5f9c5243",
+      "frozenSha256": "44a3bee992b59b1e3bb99909a977f3cc45b5ca3d5b6c283a524c187b601f4589",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2869,7 +3277,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "167ba877bdb8fcf25abd3a6c9aede3dee5f3c0458f7663808a4f0392a2bf9ddc",
+      "frozenSha256": "cb1e3c2efe456837c20da5040ef06c10c0ecc2d715ec54fab7b8f23043d3c1f8",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2878,7 +3286,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "db9a14c8da16abb6547d07b6ed12b051893a00de49a13886604efe4c4d1973f4",
+      "frozenSha256": "74697dd5674b4ee4c848b00c46e6c533d9ed443ee8a4734a1b1ad8c5b1e4300f",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2986,7 +3394,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "47d2bdaa1a480f9a91560eb5fba88eebb8ed7751601ca90d44546c6ac5e30b67",
+      "frozenSha256": "0e6d05c810d7bfa09293804c744d6b5087a5c4244432d320717381a5efa8cd97",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -2995,7 +3403,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "37184f577aace85f582fa635b00f7328c4ff634887bc536a40bb649366861333",
+      "frozenSha256": "3e7d1b4437444394d0171889d8378637371687d3fa0c604aee0f9c8ea9873576",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -3085,7 +3493,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "7e09eb18f58159237495c76747fbf15dc8e94fd323ba668b037f9e1636684eeb",
+      "frozenSha256": "53869ba70880b53de2d8ff8b8e928d3cef1c3fc00051077a699c9a1267e9ec1b",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -3094,7 +3502,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "93fd75541bc4257ccc0b6557c69f75b6a3be636d18367e38f3f8b29796eed64a",
+      "frozenSha256": "6a2966342d03645e85d6728d7fdb45c5d59ea118e7b7e929041057f0a1aae8db",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -3265,7 +3673,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "e7dd5e7f21f08da2202c99d60ac835769b4a3c0c749f3701c985c4911c54edba",
+      "frozenSha256": "ed71eb835e1020baada69144c17151e9e4fdda7bde2ad1208cdc081ad8bcd62e",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -3355,7 +3763,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "d710de589c59259ad822fa7fb4269f4c9238ba33d3da153c54b0b8b939a6f0e4",
+      "frozenSha256": "291cc5f9a3d258349ac4de1e38314d102a36c1c30343a1c0f3ea1479529b0194",
       "fixtureSha256": "ab150c20f13ce82043d2abc14d8c272a9a68a50d9b6f9dd67358605b0d8dce06"
     },
     {
@@ -3435,8 +3843,8 @@
       "family": "F5 SECURITY DEFINER escalation",
       "polarity": "negative",
       "tier": "High",
-      "identity": "anon",
-      "frozenSha256": "37a98522d2ee8d9e54197f8a9b2d6893175d7d91b256538b0a6fbba9569beb23",
+      "identity": "authenticated:alice",
+      "frozenSha256": "4b453893be14a17a4381f494d5c0e4a88f26f09039d77e73fa68c4063ea7a76f",
       "fixtureSha256": "fe842d901daf64f33f981d8fe1f005885788f2b5ab39069bf0fa27644dda677c"
     },
     {
@@ -3481,7 +3889,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated:alice",
-      "frozenSha256": "daeebaf0fa14b27a7c95f5523ce517c1467b2f5424ff965c9794f5938303e419",
+      "frozenSha256": "5381aa540dced8f0ea31c21a6b43afc5a6d3dd1e554a56cfb971eeb6072218f6",
       "fixtureSha256": "8dd3fae2d0e6dfb45f9c96c8e6b2b384ade2d77890cf48a99fd630d673d411f5"
     },
     {
@@ -3832,7 +4240,7 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "server-side (direct Postgres connection)",
-      "frozenSha256": "54dd679f4f8fdf494f57dee3ae1e3f71e601474fbacea5f9df0afd832fbb114f",
+      "frozenSha256": "8b2f3970907ae930c4d31fca7a890502e37c21cd3719f0101c2d5417cb5381a0",
       "fixtureSha256": "02f4388d4fe229dbf4653d58ba52a7d243edc795b1537b241afdeb98bd4ee45f"
     },
     {
@@ -3913,8 +4321,8 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
-      "frozenSha256": "614b99fd7a0ac819d3e342826f376714b6eda915305b75a58b5c8e4542b6e4e0",
-      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
+      "frozenSha256": "13629ba75e2f24505471f5cda3339a1878efe07fd084be23987875b6ed1221e5",
+      "fixtureSha256": "13321ab80338567eaed969d9de2b0fcf00c705575c3ad954aea6498885411447"
     },
     {
       "testId": "B.public_game_session_seats.332",
@@ -3922,8 +4330,8 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
-      "frozenSha256": "56189ab46a939278450bbf3b616f7bd6616f3a1f54e5f596470990e045cabfb5",
-      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
+      "frozenSha256": "18077f7608556227135e068f32906054ceeee12cefba5d15a7a04c7fb31db724",
+      "fixtureSha256": "13321ab80338567eaed969d9de2b0fcf00c705575c3ad954aea6498885411447"
     },
     {
       "testId": "B.public_game_sessions.333",
@@ -3931,8 +4339,8 @@
       "polarity": "negative",
       "tier": "High",
       "identity": "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
-      "frozenSha256": "a1fc4031485c302d3de972731b7739c13ec1c06f589d78422cc61e05b9c15ed8",
-      "fixtureSha256": "b0097e48ae8e883858f84dcb50c26a7cb4caf4405690d4b4835331e63cd54aa2"
+      "frozenSha256": "771fceba7047884f0342303d8b0708692760724c0d9bdebdbf6391866041c44a",
+      "fixtureSha256": "13321ab80338567eaed969d9de2b0fcf00c705575c3ad954aea6498885411447"
     },
     {
       "testId": "B.public_profiles.334",

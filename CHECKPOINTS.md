@@ -36,7 +36,8 @@ detect.
 | **CP2** | after WP1 — deliberate-break validation | **approved** | reaffirmed 2026-09-22 |
 | **CP3** | after WP2 — rubric and tier assignments | **approved** | reaffirmed 2026-09-22 |
 | — | WP3 **planning**: the 345-row test matrix | **approved** | reaffirmed 2026-09-22 |
-| — | WP3 **execution**: running the 345 tests | **NOT APPROVED — blocked on Gate A** (the author's intent sentences, plus the contradiction and `.283` decisions that do not block but are asked together; see "2026-09-24 — Gate A" below) | — |
+| — | **Gate A** — every author decision before WP3 execution | **answered by the author 2026-09-24 (~20:00 UTC) and applied** (D3.54; `rubric/wp3-gate-a-decisions.json`) | 2026-09-24 |
+| — | WP3 **execution**: running the 345 tests | **authorised by the author's Gate A reply, once every gate passes** | 2026-09-24 |
 | **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | not reached | — |
 | **CP5** | after WP6 — framework mapping and limitations | not reached | — |
 
@@ -184,6 +185,21 @@ generated review table `evidence/runs/20260924T175203Z-5695a4c3df2d/gate-a-inten
 
 **A correction to the 2026-09-23 record.** "54 of the 240 rows also carry a pending contradiction"
 (`WP3_AUTHOR_REVIEW.md`) should read **53**: 57 contradicted Test IDs, four of them positives.
+
+## 2026-09-24 — Gate A answered and applied
+
+The author answered Gate A in the project-completion session on 2026-09-24 and authorised WP3
+execution once every gate passes; the next human stop is CP4, after WP5. Applied exactly
+(`DECISIONS.md` D3.54, `npm run attest apply-gate-a`):
+
+| | |
+|---|---|
+| AUTHOR INTENT | **240 of 240 adopted**: 117 (A) + 107 (B) + 11 (C) approved as written, 5 (C) with wording the author supplied — all recorded `user_reviewed_ai_draft` / `approved`; **0 `user_authored`** (the author's instruction) |
+| Contradictions corrected | 8 registrations resolved, 51 frozen-field corrections listed in the manifest (43 operation, 2 expected, 2 covers, 1 identity, 3 fixture) — 345 = 63/240/42 unchanged |
+| Kept `not_measured` | 13 Test IDs: `C2-grant-before-trigger` (F9.319, .321) and `C5-deleted-user-subject-empty` (11 CASCADE rows) |
+| `F5.delete_own_account.283` | a function-specific invariant: caller-owned effects, only the documented cleanup/reassignment, anything else forbidden |
+| `F5.register_push_token.269` | `covers` corrected to the direction the function body establishes; verdict not prejudged |
+| Gates after applying | semantic validation clean; draft quality clean; planning preflight passes (241 premises); `prove-gates` 67/67 caught, 3/3 controls held |
 
 ## Candidate findings on the table (smoke, not WP3 results)
 

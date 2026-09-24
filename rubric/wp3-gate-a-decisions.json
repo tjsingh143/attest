@@ -6,25 +6,100 @@
     "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
     "approvedMatrix": "rubric/wp3-approved-matrix.json"
   },
-  "recordedFrom": null,
+  "recordedFrom": "The author's Gate A resolution, given in conversation in the Claude Code project-completion session on 2026-09-24 (message received about 20:00 UTC), replying to the Gate A packet committed as 50e983b. Recorded here by Attest exactly as decided; nothing in this file was decided by Attest.",
   "intents": {
     "howToAnswer": "For each category choose 'approve_as_written' (every draft in it becomes user_reviewed_ai_draft / approved) or 'review_individually' (list each decision under perRow). perRow always wins over the category default. A replacement sentence is stored as user_authored.",
     "categories": {
       "A": {
         "rows": 117,
-        "decision": "pending"
+        "decision": "approve_as_written"
       },
       "B": {
         "rows": 107,
-        "decision": "pending"
+        "decision": "approve_as_written"
       },
       "C": {
         "rows": 16,
-        "decision": "pending",
+        "decision": "per_row",
         "note": "C rows depend on C4, C5 and D-283 below; their drafts may need to change once those are decided"
       }
     },
-    "perRow": {},
+    "perRow": {
+      "B.private_game_commands.323": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_blocks.325": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_friend_requests.327": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_friendships.329": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_profiles.335": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_rate_limit_events.336": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_room_members.337": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_rooms.338": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_tournament_entries.340": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_wallet_ledger.342": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "B.public_wallets.344": {
+        "decision": "approve_as_written",
+        "note": "the probe stays registered under C5 and records not_measured; an approved intent does not change that"
+      },
+      "F5.latest_verifiable_daily_challenge.278": {
+        "decision": "adopt_given_wording",
+        "sentence": "A signed-in player calls latest_verifiable_daily_challenge() and receives the seed of a challenge that has not yet been revealed.",
+        "provenance": "user_reviewed_ai_draft",
+        "condition": "verbatim, provided it stays factually consistent with the final executable semantics after the authorised corrections; otherwise left unapproved and raised as an author contradiction"
+      },
+      "B.public_game_events.331": {
+        "decision": "adopt_given_wording",
+        "sentence": "A token issued to an account that has since been deleted is replayed to retain participant access to the surviving event stream of a game session that account previously joined.",
+        "provenance": "user_reviewed_ai_draft",
+        "condition": "verbatim, provided it stays factually consistent with the final executable semantics after the authorised corrections; otherwise left unapproved and raised as an author contradiction"
+      },
+      "B.public_game_session_seats.332": {
+        "decision": "adopt_given_wording",
+        "sentence": "A token issued to an account that has since been deleted is replayed to retain participant access to the surviving seat list, stacks, and buy-ins of a game session that account previously joined.",
+        "provenance": "user_reviewed_ai_draft",
+        "condition": "verbatim, provided it stays factually consistent with the final executable semantics after the authorised corrections; otherwise left unapproved and raised as an author contradiction"
+      },
+      "B.public_game_sessions.333": {
+        "decision": "adopt_given_wording",
+        "sentence": "A token issued to an account that has since been deleted is replayed to retain participant access to the surviving metadata of a game session that account previously joined.",
+        "provenance": "user_reviewed_ai_draft",
+        "condition": "verbatim, provided it stays factually consistent with the final executable semantics after the authorised corrections; otherwise left unapproved and raised as an author contradiction"
+      },
+      "F5.delete_own_account.283": {
+        "decision": "adopt_given_wording",
+        "sentence": "A signed-in player uses delete_own_account() to alter another account's data or authority beyond the function's documented account-deletion cleanup and reassignment effects.",
+        "provenance": "user_reviewed_ai_draft",
+        "condition": "verbatim, provided it stays factually consistent with the final executable semantics after the authorised corrections; otherwise left unapproved and raised as an author contradiction"
+      }
+    },
     "perRowExample": {
       "F1.public_blocks.023": {
         "decision": "approve_as_written"
@@ -33,72 +108,10 @@
         "decision": "replace",
         "sentence": "(the author's own sentence)"
       }
-    }
+    },
+    "provenanceRule": "Accepted AI wording, including the five sentences the author supplied as AI-assisted wording they reviewed and adopted, is recorded as user_reviewed_ai_draft / approved — never user_authored (the author's instruction). An approval applies to the exact Gate A text; if a later correction materially changes a probe, the approval does not carry to new wording."
   },
   "contradictions": {
-    "C2-grant-before-trigger": {
-      "testIds": [
-        "F9.public_wallets.319",
-        "F9.public_wallets.321"
-      ],
-      "decision": "pending"
-    },
-    "C2-fk-before-truncate-trigger": {
-      "testIds": [
-        "F9.public_wallets.322"
-      ],
-      "decision": "pending"
-    },
-    "C2-definer-bypasses-named-policy": {
-      "testIds": [
-        "F5.send_friend_request.259"
-      ],
-      "decision": "pending"
-    },
-    "C3-sender-cannot-accept": {
-      "testIds": [
-        "F3.public_friend_requests.059"
-      ],
-      "decision": "pending"
-    },
-    "C3-username-literal-invalid": {
-      "testIds": [
-        "F3.public_profiles.151",
-        "F6.public_profiles.153"
-      ],
-      "decision": "pending"
-    },
-    "C3-cosmetic-literal-invalid": {
-      "testIds": [
-        "F6.public_loadouts.117"
-      ],
-      "decision": "pending"
-    },
-    "C4-anon-has-no-execute": {
-      "testIds": [
-        "F5.latest_verifiable_daily_challenge.278"
-      ],
-      "decision": "pending"
-    },
-    "C5-deleted-user-subject-empty": {
-      "testIds": [
-        "B.private_game_commands.323",
-        "B.public_blocks.325",
-        "B.public_friend_requests.327",
-        "B.public_friendships.329",
-        "B.public_game_events.331",
-        "B.public_game_session_seats.332",
-        "B.public_game_sessions.333",
-        "B.public_profiles.335",
-        "B.public_rate_limit_events.336",
-        "B.public_room_members.337",
-        "B.public_rooms.338",
-        "B.public_tournament_entries.340",
-        "B.public_wallet_ledger.342",
-        "B.public_wallets.344"
-      ],
-      "decision": "pending"
-    },
     "C2-client-guard-before-grant": {
       "testIds": [
         "F2.private_career_drill_seeds.002",
@@ -136,26 +149,115 @@
         "F2.public_wallets.239",
         "F2.public_wallets.240"
       ],
-      "decision": "pending"
+      "decision": "correct",
+      "resolution": "append WHERE TRUE to each affected client UPDATE/DELETE so pg_safeupdate no longer intercepts before the privilege check; the property (no client UPDATE/DELETE privilege) and the expected refusal are unchanged; each operation correction listed with old value, new value, reason and this decision"
     },
     "C3-tier-literal-invalid": {
       "testIds": [
         "F2.public_game_sessions.094"
       ],
-      "decision": "pending"
+      "decision": "correct",
+      "resolution": "tier = 'casual' and WHERE TRUE"
+    },
+    "C2-grant-before-trigger": {
+      "testIds": [
+        "F9.public_wallets.319",
+        "F9.public_wallets.321"
+      ],
+      "decision": "keep",
+      "resolution": "retain the approved trigger property and not_measured; do not redefine as grant tests; the client privilege refusal is not evidence the trigger fired; server-side probes carry the trigger evidence"
+    },
+    "C2-fk-before-truncate-trigger": {
+      "testIds": [
+        "F9.public_wallets.322"
+      ],
+      "decision": "correct",
+      "resolution": "Alternative A: TRUNCATE public.wallet_ledger CASCADE, so deny_truncate() is exercised; rebuild isolation preserved; disposable assessment database only"
+    },
+    "C2-definer-bypasses-named-policy": {
+      "testIds": [
+        "F5.send_friend_request.259"
+      ],
+      "decision": "correct",
+      "resolution": "mechanism attribution: the expected result names the SECURITY DEFINER body's PT404 refusal, not the bypassed RLS policy; the property (no friend request across a block) is unchanged"
+    },
+    "C3-sender-cannot-accept": {
+      "testIds": [
+        "F3.public_friend_requests.059"
+      ],
+      "decision": "correct",
+      "resolution": "the sender's legitimate status = 'cancelled' transition"
+    },
+    "C3-username-literal-invalid": {
+      "testIds": [
+        "F3.public_profiles.151",
+        "F6.public_profiles.153"
+      ],
+      "decision": "correct",
+      "resolution": "'attest_probe_user'"
+    },
+    "C3-cosmetic-literal-invalid": {
+      "testIds": [
+        "F6.public_loadouts.117"
+      ],
+      "decision": "correct",
+      "resolution": "NULL for avatar_cosmetic_id; if NULL is not a valid same-property operation in the authoritative schema, register a new contradiction rather than substitute"
+    },
+    "C4-anon-has-no-execute": {
+      "testIds": [
+        "F5.latest_verifiable_daily_challenge.278"
+      ],
+      "decision": "correct",
+      "resolution": "Alternative A: run as a signed-in caller; the property is the revealed-only filter; anonymous EXECUTE is intentionally revoked and is not this row's property; structured identity and operation updated transparently"
+    },
+    "C5-deleted-user-subject-empty": {
+      "testIds": [
+        "B.private_game_commands.323",
+        "B.public_blocks.325",
+        "B.public_friend_requests.327",
+        "B.public_friendships.329",
+        "B.public_game_events.331",
+        "B.public_game_session_seats.332",
+        "B.public_game_sessions.333",
+        "B.public_profiles.335",
+        "B.public_rate_limit_events.336",
+        "B.public_room_members.337",
+        "B.public_rooms.338",
+        "B.public_tournament_entries.340",
+        "B.public_wallet_ledger.342",
+        "B.public_wallets.344"
+      ],
+      "decision": "correct_three_keep_eleven",
+      "resolution": "retarget B.public_game_events.331, B.public_game_session_seats.332 and B.public_game_sessions.333 at the surviving session state of a session dave joined, after Arc21's own deletion; keep the other eleven not_measured; no disabled referential integrity, no prevented CASCADE or SET NULL, no orphan rows, no artificial target, and an empty target is never evidence of authorization"
     }
   },
-  "contradictionOptions": "the options for each contradiction, with their consequences, are listed in WP3_AUTHOR_DECISIONS_REQUIRED.md §2",
   "d283": {
     "testId": "F5.delete_own_account.283",
-    "decision": "pending",
-    "options": "WP3_AUTHOR_DECISIONS_REQUIRED.md §3"
+    "decision": "function_specific_invariant",
+    "resolution": "three categories: (A) caller-owned effects permitted as designed; (B) only the documented account-deletion cleanup/reassignment — host handover, queue release, notification cleanup, seat anonymisation — permitted; (C) any other change to another account's data, authorization, assets, identity, privileges or unrelated state is forbidden and makes the property deficient; no blanket exception; guards must tell B from C; Test ID preserved; the semantic correction recorded in the frozen manifest"
   },
   "optional": {
     "covers269": {
       "testId": "F5.register_push_token.269",
-      "decision": "pending",
-      "options": "WP3_AUTHOR_DECISIONS_REQUIRED.md §4 — the approved `covers` text states the takeover's consequence backwards; correct it, or leave it and let the evidence record say so"
+      "decision": "correct",
+      "resolution": "correct only the factual covers description: the device-token row is reassigned to the caller; the token still identifies the same physical device; the previous owner may stop receiving their notifications on that device; the new owner's notifications may be delivered to it instead; the verdict is not prejudged"
     }
+  },
+  "applied": {
+    "at": "2026-09-24T20:17:09.813Z",
+    "manifestCorrectionsAdded": 51,
+    "byField": {
+      "operation": 43,
+      "expected": 2,
+      "covers": 2,
+      "identity": 1,
+      "fixture": 3
+    },
+    "manifestCorrectionsTotal": 165,
+    "intentsApprovedAsWritten": 235,
+    "intentsAdoptedFromGivenWording": 5,
+    "intentsApprovedTotal": 240,
+    "intentsRequired": 240,
+    "userAuthored": 0
   }
 }

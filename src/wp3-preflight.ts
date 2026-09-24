@@ -213,7 +213,9 @@ export async function planChecks(
   const guarded = specClientGuardHazards(specs).filter((id) => !registeredContradictionsFor(id).some((c) => (c.predictedSqlstates ?? []).includes("21000")));
   add("no client probe is refused by the client connection's own guard before its control (pg_safeupdate: UPDATE/DELETE without WHERE), unless registered for the author",
     guarded.length === 0,
-    guarded.length ? `${guarded.length} unregistered: ${guarded.slice(0, 6).join(", ")}` : `${specClientGuardHazards(specs).length} such probes, every one registered (C2-client-guard-before-grant)`);
+    guarded.length ? `${guarded.length} unregistered: ${guarded.slice(0, 6).join(", ")}`
+      : specClientGuardHazards(specs).length ? `${specClientGuardHazards(specs).length} such probes, every one registered`
+      : "none: every client UPDATE/DELETE carries a WHERE clause (the 34 grant-surface statements since Gate A, D3.54)");
 
   const contradictions = findContradictions(plan);
   add("no Test ID carries an unresolved plan contradiction (C1 class)", contradictions.length === 0,

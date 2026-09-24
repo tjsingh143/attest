@@ -421,8 +421,11 @@ const F5_DRAFTS: Readonly<Record<string, string>> = {
     "A signed-in player calls search_players() with the handle of an account they have blocked and finds it, although search is meant to hide accounts on either side of a block",
   "public.ensure_todays_daily_challenge()":
     "A signed-in player calls ensure_todays_daily_challenge() and gets back the day's seed_secret, or causes the seed of a challenge still open to be revealed — either of which tells them the shoe before they play it",
+  // Gate A (D3.54): the row now runs as a signed-in caller (C4), and the author
+  // adopted this wording (recorded as user_reviewed_ai_draft in the store). The
+  // generator emits the same text so a regenerated worksheet cannot diverge.
   "public.latest_verifiable_daily_challenge()":
-    "A signed-out visitor calls latest_verifiable_daily_challenge() and receives the seed of a challenge that has not yet been revealed, learning the shoe of a challenge still being played",
+    "A signed-in player calls latest_verifiable_daily_challenge() and receives the seed of a challenge that has not yet been revealed",
   "public.join_matchmaking(p_tier table_tier)":
     "A signed-in player calls join_matchmaking(), whose housekeeping legitimately expires other accounts' stale queue entries, and gets it to enqueue or seat an account other than themselves or to disturb another player's fresh entry",
   "public.poll_matchmaking()":
@@ -435,8 +438,10 @@ const F5_DRAFTS: Readonly<Record<string, string>> = {
   // hosts, deletes other players' notifications about the account and anonymises
   // shared seats. The sentence states the literal approved claim; the reading of
   // that claim is the author's (WP3_AUTHOR_DECISIONS_REQUIRED.md, D-283).
+  // Gate A (D3.54): the row carries a function-specific invariant (D-283), and the
+  // author adopted this wording (user_reviewed_ai_draft in the store).
   "public.delete_own_account()":
-    "A signed-in player calls delete_own_account() and, through its owner privilege, deletes or alters rows belonging to other accounts rather than only their own",
+    "A signed-in player uses delete_own_account() to alter another account's data or authority beyond the function's documented account-deletion cleanup and reassignment effects",
 };
 
 // ---------------------------------------------------------------------------
@@ -718,8 +723,23 @@ const DELETED_OBJECT: Readonly<Record<string, string>> = {
   "public.wallets": "that account's chip balance",
 };
 
+/**
+ * Gate A (D3.54, C5): the three deleted-user rows retargeted at the surviving
+ * state of a session the deleted account had joined, with the wording the author
+ * adopted (user_reviewed_ai_draft in the store).
+ */
+const DELETED_SURVIVING: Readonly<Record<string, string>> = {
+  "public.game_events": "A token issued to an account that has since been deleted is replayed to retain participant access to the surviving event stream of a game session that account previously joined",
+  "public.game_session_seats": "A token issued to an account that has since been deleted is replayed to retain participant access to the surviving seat list, stacks, and buy-ins of a game session that account previously joined",
+  "public.game_sessions": "A token issued to an account that has since been deleted is replayed to retain participant access to the surviving metadata of a game session that account previously joined",
+};
+
 function draftBoundary(t: PlannedTest): string {
   const L = lex(t.resource);
+  if (/deleted-user/.test(t.control) && / for the game session .* that the deleted account had joined/.test(t.operation)) {
+    const own = DELETED_SURVIVING[t.resource];
+    if (own) return own;
+  }
   if (/deleted-user/.test(t.control)) {
     const obj = DELETED_OBJECT[t.resource] ?? `whatever ${t.resource} still holds keyed to that account`;
     return `A token issued to an account that has since been deleted is replayed to read ${obj}, anything the deletion left keyed to it`;

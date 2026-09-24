@@ -114,14 +114,15 @@ export function renderWp3PlanMarkdown(
   p(`| Schema version | \`${meta.schemaVersion}\` |`);
   p(`| Harness version | \`${meta.harness}\` |`);
   p(`| Planned tests | ${rec.totalPlanned} |`);
-  p(`| Negative tests awaiting AUTHOR INTENT | **${rec.negativesAwaitingIntent}** |`);
+  p(`| Negative tests requiring an AUTHOR INTENT (held, with its provenance, in \`rubric/author-intents.json\`) | **${rec.negativesAwaitingIntent}** |`);
   p();
   p(`**Polarity invariant.** ${rec.polarityTotals.positive} positive + ${rec.polarityTotals.negative} negative + ${rec.polarityTotals.characterization} characterization = **${rec.polarityTotals.positive + rec.polarityTotals.negative + rec.polarityTotals.characterization}**, against ${rec.polarityTotals.total} Test IDs — ${rec.polarityTotals.balances ? "balances" : "**DOES NOT BALANCE**"}.`);
   p();
-  p(`> **${rec.negativesAwaitingIntent} negative tests carry an empty AUTHOR INTENT field.** Brief §1.1`);
+  p(`> **The matrix's AUTHOR INTENT field is empty on all ${rec.negativesAwaitingIntent} negative tests, by design.** Brief §1.1`);
   p(`> reserves that sentence — one line naming the attack or misuse each negative test simulates —`);
-  p(`> for the author. The harness does not write it, and the suite is not implemented until they`);
-  p(`> are supplied.`);
+  p(`> to the author. It lives, with its provenance, in \`rubric/author-intents.json\`, and each evidence`);
+  p(`> record takes it from there. The harness does not write it, and \`execute-wp3\` refuses while any`);
+  p(`> sentence is not the author's.`);
   p();
 
   // --- reconciliation ------------------------------------------------------

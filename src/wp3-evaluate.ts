@@ -165,6 +165,16 @@ const EVALUATORS: Readonly<Record<string, Evaluator>> = {
   "rows_affected=0": affected(0),
   "rows_affected=1": affected(1),
 
+  // Gate A, D-283 (D3.54): the call ran to completion. A refusal by a business
+  // prerequisite (the active-seat rule) or a privilege is "not reached" — the
+  // behaviour the row examines never ran — never a pass and never a finding.
+  completes: ({ ob }) => {
+    const bp = brokenProbe(ob); if (bp) return bp;
+    if (!ob.outcome.raised) return met("the call returned without error");
+    const k = ob.mechanism.kind;
+    if (k === "function_raise" || k === "privilege" || k === "trigger_raise") return notReached(`the call was refused before its behaviour ran: ${raisedBy(ob)}`);
+    return unmet(`raised: ${raisedBy(ob)}`);
+  },
   no_raise: ({ ob }) => {
     const bp = brokenProbe(ob); if (bp) return bp;
     return ob.outcome.raised ? unmet(`raised: ${raisedBy(ob)}`) : met("no error");

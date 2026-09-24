@@ -169,7 +169,11 @@ export const F5_SPECS: readonly EscalationSpec[] = [
     "public.friend_requests",
     "sending as somebody else, or sending to an account that has blocked the caller",
     "as alice, call send_friend_request(fixtures.dave.id), whom alice has blocked",
-    "refusal — friend_requests_insert_as_sender requires NOT viewer_has_blocked(receiver_id)"),
+    // Gate A, C2-definer-bypasses-named-policy (D3.54). Approved as "refusal —
+    // friend_requests_insert_as_sender requires NOT viewer_has_blocked(receiver_id)";
+    // the function is SECURITY DEFINER, so that policy is never consulted and the
+    // refusal is the body's own. The property (no request across a block) is unchanged.
+    "error PT404 — the SECURITY DEFINER body raises 'no such player' because is_blocked_between(caller, receiver) holds"),
   G("block_player", "p_other uuid", "target_user",
     "a user blocks another account",
     "caller from auth.uid() is the blocker; the target comes from the argument",
@@ -239,7 +243,10 @@ export const F5_SPECS: readonly EscalationSpec[] = [
     "a device registers itself for push",
     "caller from auth.uid() owns the row; the token string comes from the argument",
     "public.push_tokens, which has a unique constraint on token",
-    "registering a token string already belonging to another account, which would redirect their notifications to the caller's device",
+    // Gate A, O-269 (D3.54): approved as "…which would redirect their notifications to
+    // the caller's device" — the reverse of what the body does. Corrected to the
+    // consequence the source establishes; the verdict is not prejudged.
+    "registering a token string already belonging to another account, which reassigns that device's registration to the caller: the token still identifies the same physical device, so its previous owner may stop receiving their notifications on it and notifications for the caller may be delivered to it instead",
     "as alice, call register_push_token('ExponentPushToken[attest-bob]', 'ios', ...)",
     "refusal, or a row attributed to alice that does NOT displace bob's. Bob's row must still exist with user_id = bob"),
   G("join_private_room", "p_code text", "target_opaque",
@@ -342,7 +349,11 @@ export const F5_NO_TARGET_SPECS: readonly NoTargetSpec[] = [
     "public.daily_challenges, selecting challenge_date, seed_commitment, revealed_seed, seed_revealed_at",
     "YES: it returns a row that belongs to no account and is meant to be public. There is no caller-scoping to assert",
     "returning a seed for a challenge that has NOT been revealed — the body's `where revealed_seed is not null` is the entire control",
-    "as anon, call latest_verifiable_daily_challenge() while one revealed and one unrevealed challenge both exist",
+    // Gate A, C4-anon-has-no-execute (D3.54): approved "as anon"; Arc21 revokes
+    // EXECUTE from anon on purpose, so the row runs as a signed-in caller. The body
+    // does not read auth.uid(), so the revealed-only filter is identity-independent.
+    // `identitySource` above is the approved wording and is left as approved.
+    "as alice, call latest_verifiable_daily_challenge() while one revealed and one unrevealed challenge both exist",
     "exactly the revealed challenge is returned; the unrevealed one does not appear, and no seed_secret column is exposed"),
   N("join_matchmaking(p_tier table_tier)",
     "enqueues the caller for a public seat at the requested tier",
@@ -386,3 +397,34 @@ export const F5_CALLER_SCOPED: readonly string[] = [
 ];
 
 export const CALLER_SCOPED_INVARIANT = CALLER_SCOPED;
+
+/**
+ * Gate A, D-283 (D3.54): delete_own_account() is NOT caller-scoped, and its row
+ * carries a function-specific invariant instead of the shared one.
+ *
+ * Its body documents four cross-account effects: it stands the caller up from
+ * every lobby through leave_room (release_room_seat hands a hosted lobby to the
+ * joined member with the earliest joined_at), cancels other players' queue
+ * entries that point at a room it still hosts, deletes other players'
+ * notifications about the account, and anonymises the caller's seats; then the
+ * schema's own foreign keys cascade or set null. The invariant separates
+ * (A) the caller's own effects, (B) exactly those documented effects, and
+ * (C) any other change to another account's data, authority or unrelated state,
+ * which stays forbidden. Keeping the function in F5_CALLER_SCOPED keeps its
+ * position, and so its Test ID.
+ */
+export const DELETE_OWN_ACCOUNT_INVARIANT = {
+  expected:
+    "delete_own_account() completes and alice's own account is removed; rows of other accounts change only through its " +
+    "documented deletion effects — a lobby alice hosted passes to its longest-joined remaining member, other players' queue " +
+    "entries pointing at a room she still hosts are cancelled, notifications about her are deleted, rows involving her are " +
+    "deleted or have her id cleared by their foreign keys, and her seats are anonymised; and no row in a table the " +
+    "account's foreign keys do not reach changes",
+  covers:
+    "[no_target, function-specific invariant] deletes the caller's own account. NOT caller-scoped: its body has documented " +
+    "cross-account effects — it stands the caller up from every lobby through leave_room (a hosted lobby passes to its " +
+    "longest-joined remaining member), cancels other players' queue entries that point at a room it still hosts, deletes " +
+    "other players' notifications about the account and anonymises the caller's seats — and the schema's foreign keys then " +
+    "cascade or set null. The escalation question is whether the definer privilege changes another account's data, " +
+    "authority or unrelated state beyond those documented effects",
+} as const;

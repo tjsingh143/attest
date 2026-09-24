@@ -118,6 +118,8 @@ export const AUX = {
   entryAliceInDoneBob: "aaaa0000-0000-4000-8000-000000000008",
   seatAlice: "f0000000-0000-4000-8000-000000000001",
   seatBob: "f0000000-0000-4000-8000-000000000002",
+  /** Gate A, C5 (D3.54): the seat dave held and left before deleting his account. */
+  seatDaveLeft: "f0000000-0000-4000-8000-00000000000d",
 } as const;
 
 /** The display name Arc21 gives erin, the one private-privacy account. */
@@ -142,10 +144,19 @@ export interface SeedExtensionImpl {
   /** Set when the state is not database rows and cannot be verified by SQL. */
   readonly runtimeOnly?: string;
   /**
-   * A probe-scoped setup that must run as a client through Arc21's own
-   * function rather than as admin. Only `probe:dave_deleted` uses it.
+   * A probe-scoped setup step that must run as a client through Arc21's own
+   * function rather than as admin — after `statements`, which run first as
+   * admin. `before`, when present, is a read made AS that client before the
+   * statement (returning `ok boolean, detail text`): it shows the account had
+   * the access in question while it was live, so a later refusal is the
+   * deletion's doing and not a state that never existed. The deleted-user
+   * setups use it (`probe:dave_deleted`, `probe:dave_left_seat_then_deleted`).
    */
-  readonly asClient?: { readonly subject: "dave"; readonly statement: string };
+  readonly asClient?: {
+    readonly subject: "dave";
+    readonly statement: string;
+    readonly before?: { readonly describe: string; readonly sql: string };
+  };
 }
 
 const RULESET = `(select id from public.rulesets where is_active order by key, version limit 1)`;
@@ -1107,6 +1118,39 @@ export const SEED_EXTENSION_IMPLS: readonly SeedExtensionImpl[] = [
              from (select
                      (select count(*) from auth.users where id = '${F.dave.value}') u,
                      (select count(*) from public.profiles where id = '${F.dave.value}') p) x`,
+  },
+  {
+    // Gate A, C5 (D3.54). The surviving state three deleted-user rows measure:
+    // dave holds a seat at the session and has stood up from it ('left', which
+    // delete_own_account() permits), is shown AS DAVE to read the session as a
+    // participant, then deletes his own account through Arc21's function. The
+    // schema's ON DELETE SET NULL leaves his seat behind, anonymised by the
+    // function. Nothing about referential integrity is disabled or bypassed.
+    key: "probe:dave_left_seat_then_deleted",
+    scope: "probe",
+    statements: [
+      `insert into public.game_session_seats (id, game_session_id, seat_index, user_id, display_name, stack, buy_in, status)
+       values ('${AUX.seatDaveLeft}', '${F.session.value}', 2, '${F.dave.value}', 'Dave', 0, 0, 'left')`,
+    ],
+    asClient: {
+      subject: "dave",
+      before: {
+        describe: "dave, while his account is live, reads the session's seats as a participant",
+        sql: `select count(*) >= 1 as ok,
+                     'seats of session ${F.session.value} visible to dave while his account is live: ' || count(*)::text || ' (need >= 1)' as detail
+                from public.game_session_seats where game_session_id = '${F.session.value}'`,
+      },
+      statement: `select public.delete_own_account()`,
+    },
+    verify: `select (u = 0 and p = 0 and seat = 1) as ok,
+                    ${need("auth.users rows for dave", "u", "0")} || ', ' || ${need("profiles rows for dave", "p", "0")} || ', ' ||
+                    ${need("dave's former seat surviving with user_id NULL and the name 'Deleted player'", "seat", "1")} as detail
+             from (select
+                     (select count(*) from auth.users where id = '${F.dave.value}') u,
+                     (select count(*) from public.profiles where id = '${F.dave.value}') p,
+                     (select count(*) from public.game_session_seats
+                       where id = '${AUX.seatDaveLeft}' and game_session_id = '${F.session.value}'
+                         and user_id is null and display_name = 'Deleted player' and status = 'left') seat) x`,
   },
 
   // ===========================================================================

@@ -18,7 +18,7 @@
  * sentence for the author, and the planner does not write it.
  */
 import type { RiskInput } from "./risk-inputs.ts";
-import { F5_CALLER_SCOPED, F5_NO_TARGET_SPECS, F5_SPECS } from "../rubric/f5-escalation.ts";
+import { DELETE_OWN_ACCOUNT_INVARIANT, F5_CALLER_SCOPED, F5_NO_TARGET_SPECS, F5_SPECS } from "../rubric/f5-escalation.ts";
 import { FIXTURES, literalFor } from "../rubric/fixtures.ts";
 import type { Level } from "./scorer.ts";
 
@@ -149,6 +149,43 @@ function ownerCol(f: RiskInput): string | null {
 }
 
 const slug = (r: string) => r.replace(/[^a-z0-9]+/gi, "_");
+
+/**
+ * Gate A (2026-09-24, D3.54): approved literals Arc21 refuses for a reason that
+ * has nothing to do with the control the row examines, replaced by the author's
+ * decision. Keyed by resource and column, and consulted only where a probe must
+ * reach its control: the grant-surface UPDATE (C3-tier-literal-invalid) and the
+ * F3/F6 UPDATE positives (C3-username-literal-invalid,
+ * C3-cosmetic-literal-invalid). `literalFor()` reads neither enum labels, CHECK
+ * constraints nor triggers, which is how each invalid literal arose.
+ */
+const GATE_A_LITERALS: Readonly<Record<string, string>> = {
+  "public.game_sessions.tier": "'casual'",
+  "public.profiles.username": "'attest_probe_user'",
+  "public.loadouts.avatar_cosmetic_id": "NULL",
+};
+const probeLiteral = (resource: string, column: string, type: string): string =>
+  GATE_A_LITERALS[`${resource}.${column}`] ?? literalFor(column, type);
+
+/**
+ * Gate A, C2-client-guard-before-grant (D3.54). Every client connection preloads
+ * pg_safeupdate, which refuses an UPDATE or DELETE with no WHERE clause at parse
+ * analysis — before the privilege check a grant-surface row examines. `where
+ * true` satisfies the guard and reads no column, so the statement reaches the
+ * same privilege check and nothing else about the question changes.
+ */
+const WHERE_PAST_CLIENT_GUARD = " where true";
+
+/**
+ * Gate A, C5-deleted-user-subject-empty (D3.54): the three deleted-user rows
+ * whose resource Arc21 leaves behind after a genuine deletion — the session's
+ * seats (user_id ON DELETE SET NULL), the session itself and its event stream —
+ * are retargeted at that surviving state. The other eleven keep the approved
+ * operation and stay registered (not_measured).
+ */
+const DELETED_USER_SURVIVING_SESSION: ReadonlySet<string> = new Set([
+  "public.game_events", "public.game_session_seats", "public.game_sessions",
+]);
 
 /** The seed as it stands after seed/seed.sql. */
 const FIXTURE_DEFAULT =
@@ -386,6 +423,11 @@ const STRUCTURAL_NEEDS: Readonly<Record<string, Omit<SeedNeed, "key" | "kind" | 
     scope: "probe", provides: [], dependsOn: [],
     state: "the canonical baseline after dave deleted his own account through Arc21's delete_own_account(), with a token for dave signed before the deletion",
   },
+  // Gate A, C5 (D3.54): the surviving state three deleted-user rows are retargeted at.
+  "probe:dave_left_seat_then_deleted": {
+    scope: "probe", provides: [], dependsOn: [],
+    state: "the canonical baseline in which dave held a seat at session fixtures.session.id and stood up from it (status 'left'), was shown to read that session as a participant, and then deleted his own account through Arc21's delete_own_account(); his seat survives with user_id NULL (ON DELETE SET NULL) and the name 'Deleted player', and a token for dave signed before the deletion",
+  },
 };
 
 /** Register a structural requirement and return its state text. */
@@ -504,7 +546,9 @@ function structuralFixtureFor(t: PlannedTest): string | null {
     }
   }
   if (fam === "B") {
-    if (ctl.endsWith("#boundary:deleted-user")) return require_("probe:dave_deleted");
+    if (ctl.endsWith("#boundary:deleted-user")) {
+      return require_(DELETED_USER_SURVIVING_SESSION.has(res) ? "probe:dave_left_seat_then_deleted" : "probe:dave_deleted");
+    }
     if (t.testId === "B.suite.expired-session") return require_("fixture:expiredJwt");
     if (ctl.endsWith("#boundary:null-identity")) {
       if (res === "public.friend_requests") {
@@ -522,6 +566,8 @@ function structuralFixtureFor(t: PlannedTest): string | null {
   }
   if (fam === "F5") {
     const fn = res.replace(/^public\./, "").split("(")[0]!.trim();
+    // Its own invariant since Gate A (D3.54); the fixture is unchanged.
+    if (fn === "delete_own_account") return require_("probe:alice_seat_left");
     if (/\[no_target, caller-scoped\]/.test(t.covers)) {
       if (fn === "list_friends") return require_("probe:alice_friend_is_erin");
       if (fn === "claim_recovery_grant") return require_("probe:alice_low_balance");
@@ -739,8 +785,8 @@ export function planWp3(
           stmt === "INSERT"
             ? `insert into ${f.resource} (default values, or the minimum NOT NULL set)`
             : stmt === "UPDATE"
-              ? `update ${f.resource} set ${f.columns.find((c) => !c.notNull && !c.serverGenerated)?.name ?? f.columns[f.columns.length - 1]!.name} = ${literalFor(f.columns.find((c) => !c.notNull && !c.serverGenerated)?.name ?? f.columns[f.columns.length - 1]!.name, f.columns.find((c) => !c.notNull && !c.serverGenerated)?.type ?? f.columns[f.columns.length - 1]!.type)}`
-              : `delete from ${f.resource}`;
+              ? `update ${f.resource} set ${f.columns.find((c) => !c.notNull && !c.serverGenerated)?.name ?? f.columns[f.columns.length - 1]!.name} = ${probeLiteral(f.resource, f.columns.find((c) => !c.notNull && !c.serverGenerated)?.name ?? f.columns[f.columns.length - 1]!.name, f.columns.find((c) => !c.notNull && !c.serverGenerated)?.type ?? f.columns[f.columns.length - 1]!.type)}${WHERE_PAST_CLIENT_GUARD}`
+              : `delete from ${f.resource}${WHERE_PAST_CLIENT_GUARD}`;
         tests.push({
           testId: id("F2", f.resource), family: "F2 write isolation", resource: f.resource,
           control: `${f.resource}#grant:authenticated:${stmt}`, tier, polarity: "negative",
@@ -806,7 +852,14 @@ export function planWp3(
             control: `${f.resource}#policy:${p.name}`, tier, polarity: "positive", identity: ALICE,
             operation: (() => {
               const g = f.columns.find((c) => c.clientUpdate.length > 0);
-              return `UPDATE ${f.resource} set ${g!.name} = ${literalFor(g!.name, g!.type)} where ${pcol} = ${FIXTURES.alice.ref}`;
+              // Gate A, C3-sender-cannot-accept (D3.54): the caller is the request's
+              // SENDER here, and the one transition a sender may make is
+              // 'cancelled' — 'accepted' is the receiver's, and the transition
+              // trigger refuses it before WITH CHECK is evaluated.
+              const lit = f.resource === "public.friend_requests" && g!.name === "status" && pcol === "sender_id"
+                ? "'cancelled'"
+                : probeLiteral(f.resource, g!.name, g!.type);
+              return `UPDATE ${f.resource} set ${g!.name} = ${lit} where ${pcol} = ${FIXTURES.alice.ref}`;
             })(),
             expected: "1 row affected, and the row is still attributed to alice afterwards",
             fixture: FIXTURE_DEFAULT,
@@ -947,7 +1000,7 @@ export function planWp3(
       tests.push({
         testId: id("F6", f.resource), family: "F6 column-level leakage", resource: f.resource,
         control: `${f.resource}#colgrant:UPDATE`, tier, polarity: "positive", identity: ALICE,
-        operation: `UPDATE ${f.resource} set ${updGranted[0]!.name} = ${literalFor(updGranted[0]!.name, updGranted[0]!.type)} where ${oc ?? "id"} = ${FIXTURES.alice.ref}`,
+        operation: `UPDATE ${f.resource} set ${updGranted[0]!.name} = ${probeLiteral(f.resource, updGranted[0]!.name, updGranted[0]!.type)} where ${oc ?? "id"} = ${FIXTURES.alice.ref}`,
         expected: "1 row affected — a granted column on the caller's own row",
         fixture: FIXTURE_DEFAULT,
         covers: `the granted half of the WRITE column surface (${updGranted.map((c) => c.name).join(", ")})`,
@@ -1214,15 +1267,18 @@ export function planWp3(
   }
   // Genuinely caller-scoped: one shared invariant, one probe each.
   for (const fn of F5_CALLER_SCOPED) {
+    // Gate A, D-283 (D3.54): delete_own_account keeps its place, and so its
+    // Test ID, but carries its own function-specific invariant.
+    const own = fn === "delete_own_account()" ? DELETE_OWN_ACCOUNT_INVARIANT : null;
     tests.push({
       testId: id("F5", fn.split("(")[0] ?? fn), family: "F5 SECURITY DEFINER escalation",
       resource: `public.${fn}`,
       control: `public.${fn.split("(")[0]}#security_definer`, tier: "High", polarity: "negative",
       identity: ALICE,
       operation: `call ${fn} as alice while bob's and carol's rows are present in every table it reads`,
-      expected: "only alice's own rows are returned or altered; no bob or carol row appears in the result or changes",
+      expected: own?.expected ?? "only alice's own rows are returned or altered; no bob or carol row appears in the result or changes",
       fixture: FIXTURE_DEFAULT,
-      covers:
+      covers: own?.covers ??
         "[no_target, caller-scoped] this function takes no argument naming another account or resource AND has no shared or global effect — it reads and writes only rows keyed to auth.uid(). Verified against its body, so the caller-scoped invariant is asserted rather than assumed. The escalation question is whether the definer privilege leaks past the caller's own data",
       plumbing: "new", verdictWhenPredicted: "effective", authorIntent: null,
     });
@@ -1388,7 +1444,13 @@ export function planWp3(
      "TRUNCATE is not reachable through a row policy at all, so a trigger is the only thing that can refuse it. Exercised as an ordinary client",
      ALICE, "extend WP1"],
     ["negative",
-     "truncate public.wallet_ledger",
+     // Gate A, C2-fk-before-truncate-trigger (D3.54): approved as a plain
+     // TRUNCATE, which the foreign keys referencing the ledger refuse (0A000)
+     // before any BEFORE TRUNCATE trigger fires. With CASCADE the keys no longer
+     // refuse and the ledger's own trigger answers first. Destructive only if the
+     // trigger is absent, and then only in the disposable database, which the
+     // executor rebuilds after any change (R7).
+     "truncate public.wallet_ledger cascade",
      "error — refused by wallet_ledger_deny_truncate",
      "the same TRUNCATE from the SERVER side, as its own Test ID for the same reason as the UPDATE pair above",
      "server-side (direct Postgres connection)", "extend WP1"],
@@ -1424,7 +1486,9 @@ export function planWp3(
         testId: id("B", f.resource), family: "B boundary cases", resource: f.resource,
         control: `${f.resource}#boundary:deleted-user`, tier, polarity: "negative",
         identity: "authenticated with claims for a deleted account (fixtures.dave.id, seeded then removed)",
-        operation: `select from ${f.resource} where the owner column names ${FIXTURES.dave.ref}, the deleted account`,
+        operation: DELETED_USER_SURVIVING_SESSION.has(f.resource)
+          ? `select from ${f.resource} for the game session ${FIXTURES.session.ref} that the deleted account had joined, after its deletion`
+          : `select from ${f.resource} where the owner column names ${FIXTURES.dave.ref}, the deleted account`,
         expected:
           "no data — and no error. A token outliving its account must not become a key to whatever the cascade left behind",
         fixture: FIXTURE_DEFAULT,

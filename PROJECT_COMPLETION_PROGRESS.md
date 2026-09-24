@@ -44,8 +44,8 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 | WP2 rubric and tiers | COMPLETE, frozen | CP3 approved (reaffirmed 2026-09-22) |
 | WP3 planning | COMPLETE, approved, frozen (345 = 63/240/42) | |
 | WP3 implementation / hardening | COMPLETE | prove-gates 64/64 at a8d8cfc |
-| **Gate A — author decisions before WP3 execution** | **BLOCKED — AUTHOR DECISION** (package complete 2026-09-24) | `WP3_AUTHOR_DECISIONS_REQUIRED.md`, `WP3_AUTHOR_DECISIONS_COMPACT.md`, `rubric/wp3-gate-a-decisions.json`, `evidence/runs/20260924T175203Z-5695a4c3df2d/gate-a-intent-review.md` |
-| WP3 final preflight | NOT STARTED | |
+| **Gate A — author decisions before WP3 execution** | **COMPLETE** — answered by the author 2026-09-24 ~20:00 UTC; applied (D3.54) | 240/240 intents `user_reviewed_ai_draft`/approved; 51 frozen corrections; 13 Test IDs kept `not_measured` (C2-grant-before-trigger ×2, C5 ×11) |
+| WP3 final preflight | IN PROGRESS | |
 | WP3 execution | NOT STARTED | |
 | WP3 result validation | NOT STARTED | |
 | WP4 drift | NOT STARTED | |
@@ -60,9 +60,8 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 
 ## Current phase
 
-Phase 1 — Gate A preparation: independent audit of the 240 intent drafts against the final
-hardened implementation; complexity classification; contradiction analysis; deleted-user
-analysis; `.283`; smoke candidates.
+Phase 2 — final WP3 preflight after applying Gate A (the author's reply of 2026-09-24 authorises
+execution once every gate passes; the next human stop is CP4, after WP5).
 
 ## Commands and results
 
@@ -81,6 +80,13 @@ analysis; `.283`; smoke candidates.
 | 2026-09-24 ~17:48 | `prove-gates` | **66/66** injected defects caught (2 new), 3/3 controls held, real state restored, Arc21 unchanged |
 | 2026-09-24 ~17:52 | `gate-a-package` (new command) | review table `evidence/runs/20260924T175203Z-5695a4c3df2d/`; A 117 / B 107 / C 16; 76 changed since a8d8cfc; template `rubric/wp3-gate-a-decisions.json` (all pending) |
 | 2026-09-24 ~18:00 | `execute-wp3` (no `--confirm`) | **REFUSED, exit 1**: fails ONLY on "every required intent is authored or reviewed by the author" and "no AI draft is permitted in a real run"; every structural gate passes; nothing executed; Arc21 unchanged |
+| 2026-09-24 ~18:05 | commit `50e983b`, pushed | Gate A packet; STOP A |
+| 2026-09-24 ~20:00 | **author's Gate A reply received** | recorded in `rubric/wp3-gate-a-decisions.json` (`recordedFrom`) |
+| 2026-09-24 ~20:17 | `apply-gate-a` (new command) | 51 corrections listed (operation 43, expected 2, covers 2, identity 1, fixture 3; manifest 165 total); intents 235 approved as written + 5 adopted wording = 240/240 `user_reviewed_ai_draft`, 0 `user_authored`; 8 registrations retired (history kept), C5 narrowed to 11 |
+| 2026-09-24 ~20:19 | `plan-wp3`, `draft-intents` | semantic validation clean; draft quality clean; 240 adopted sentences preserved; plan run `20260924T201920Z-5695a4c3df2d`; 52 fixtures (new: `probe:dave_left_seat_then_deleted`) |
+| 2026-09-24 ~20:21 | `preflight-wp3` (planning) | PASSED: 241 premises; 2 registrations / 13 Test IDs holding |
+| 2026-09-24 ~20:30 | `prove-gates` | first 64/66 — two injections relied on the store BEING all AI drafts (D3.37 class); fixed to inject; then **67/67** caught, 3/3 controls, state restored |
+| 2026-09-24 ~20:23–20:29 | `smoke-wp3` × 17 changed rows (NOT evidence, `.smoke/`) | 14 as_predicted, 2 blocked_contradiction (F9.321, B.344 — kept), 1 not_as_predicted (F5.269 — the candidate reproduces); `.283` classifier: 1 documented reassignment (ATSTAB → bob), 3 rows involving alice removed, 25 caller-owned rows; `.331` pre-check: live dave read 3 seats, stale token 0 |
 
 ## Evidence generated in this mission
 

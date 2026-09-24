@@ -56,7 +56,11 @@ export async function buildIntentPackage(
 
   log(`  ${needed.length} sentences required, ${drafts.size} drafted`);
   log(`  canonical store: ${merged.store.intents.length} entries — ${aiDraft} ai_draft, ${adopted} adopted by the author`);
-  if (merged.humanPreserved.length) log(`  ${merged.humanPreserved.length} author-written sentence(s) preserved through regeneration`);
+  if (merged.humanPreserved.length) {
+    const reviewed = merged.store.intents.filter((e) => e.provenance === "user_reviewed_ai_draft").length;
+    const written = merged.store.intents.filter((e) => e.provenance === "user_authored").length;
+    log(`  ${merged.humanPreserved.length} sentence(s) the author adopted preserved through regeneration (${reviewed} user_reviewed_ai_draft, ${written} user_authored)`);
+  }
   if (merged.orphaned.length) log(`  !! ${merged.orphaned.length} store entr(ies) no longer required by the matrix: ${merged.orphaned.slice(0, 5).join(", ")}`);
   if (qualityIssues.length) {
     const byCheck = new Map<string, number>();

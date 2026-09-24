@@ -2,11 +2,10 @@
 
 **Status: work in progress. WP0, WP1 and WP2 of eight are complete; WP3's test matrix is
 planned, approved and fully implemented but has not been executed.** Checkpoints CP1, CP2 and CP3
-are approved — see `CHECKPOINTS.md`. WP3 execution waits on one thing: the author's decisions at
-Gate A (`WP3_AUTHOR_DECISIONS_REQUIRED.md`) — above all the intent statement for each of the 240
-negative tests, which brief §1.1 reserves to the author. Every structural gate passes. Numbers
-below are from a real run and are reproducible; the project is not finished and nothing here
-should be read as a completed audit.
+are approved — see `CHECKPOINTS.md`. The author answered Gate A on 2026-09-24: every one of the
+240 intent statements is adopted (`user_reviewed_ai_draft`), and the approved-row contradictions
+are decided (`DECISIONS.md` D3.54). Numbers below are from a real run and are reproducible; the
+project is not finished and nothing here should be read as a completed audit.
 
 **Arc21 is a read-only assessment target.** Attest reads it and rebuilds a disposable database
 from its migrations; it never modifies Arc21's code, migrations, policies, grants, tests, seed,
@@ -64,6 +63,8 @@ deterministic seed, and writes a control inventory to `evidence/runs/<run-id>/`.
 | `npm run attest prove-gates` | break every gate on purpose — deep copies, rolled-back transactions, genuine database errors, a throwaway git repo — and require each to fire |
 | `npm run attest smoke-wp3 <Test ID>…` | plumbing smoke of named probes, at most 60; written under `.smoke/`, stamped NOT WP3 EVIDENCE |
 | `npm run attest gate-a-package` | regenerate the Gate A review table (every intent draft beside the draft it replaced) and, if absent, the author's decision template — approves nothing |
+| `npm run attest apply-gate-a` | apply the author's recorded Gate A decisions — refuses unless every frozen-field change is authorised and every approval matches the exact text the author read |
+| `npm run attest validate-wp3 <run-id>` | independently re-derive every verdict and total of a WP3 results file from its raw records |
 | `npm run attest execute-wp3 -- --confirm` | run the approved WP3 suite — **refused until `preflight-wp3 --for-execution` passes**, which requires all 240 intent sentences to be the author's |
 
 **This is destructive — to the disposable database, and only to it.** `bringup` drops and

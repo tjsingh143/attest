@@ -307,13 +307,18 @@ export function specFor(t: PlannedTest): ExecSpec {
         bindingNotes: ["the approved operation offers 'default values, or the minimum NOT NULL set'; DEFAULT VALUES is issued, because the privilege check precedes any column"],
       };
     }
+    // Since Gate A (C2-client-guard-before-grant, D3.54) the approved UPDATE and
+    // DELETE end in `where true`, which carries them past pg_safeupdate to the
+    // privilege check. The WHERE is required: a statement without it would be
+    // refused by the client guard before the control this row examines.
     if (cmd === "DELETE") {
-      if (!/^delete from \S+$/.test(t.operation)) throw new Error(`${t.testId}: unexpected DELETE form "${t.operation}"`);
-      return { ...base, kind: "sql", relation: res, statement: t.operation, writesWhenControlHolds: false };
+      const dm = /^delete from (\S+) where true$/.exec(t.operation);
+      if (!dm || dm[1] !== res) throw new Error(`${t.testId}: unexpected DELETE form "${t.operation}"`);
+      return { ...base, kind: "sql", relation: res, statement: `delete from ${res} where true`, writesWhenControlHolds: false };
     }
-    const um = /^update (\S+) set ([a-z_]+) = (.+)$/.exec(t.operation);
+    const um = /^update (\S+) set ([a-z_]+) = (.+?) where true$/.exec(t.operation);
     if (!um || um[1] !== res) throw new Error(`${t.testId}: unexpected UPDATE form "${t.operation}"`);
-    return { ...base, kind: "sql", relation: res, statement: `update ${res} set ${quoteIdent(um[2]!)} = ${um[3]!}`, writesWhenControlHolds: false };
+    return { ...base, kind: "sql", relation: res, statement: `update ${res} set ${quoteIdent(um[2]!)} = ${um[3]!} where true`, writesWhenControlHolds: false };
   }
 
   // --- F6 column grants ----------------------------------------------------
@@ -429,6 +434,18 @@ export function specFor(t: PlannedTest): ExecSpec {
     return { ...base, kind: "sql", relation: res, statement: `select * from ${res}`, writesWhenControlHolds: false };
   }
   if (/^boundary:deleted-user$/.test(suffix)) {
+    // Gate A, C5 (D3.54): three rows read the surviving state of the session the
+    // deleted account had joined, rather than rows its own id no longer names.
+    const sm = /^select from \S+ for the game session (fixtures\.\w+\.\w+) that the deleted account had joined, after its deletion$/.exec(t.operation);
+    if (sm) {
+      const fk = MEMBERSHIP_FK[res];
+      if (!fk) throw new Error(`${t.testId}: no session column known for ${res}`);
+      return {
+        ...base, kind: "sql", relation: res, statement: `select * from ${res} where ${quoteIdent(fk)} = $1`,
+        params: [resolveRefs(sm[1]!).value], writesWhenControlHolds: false,
+        bindingNotes: [`the session is ${sm[1]}, at which the probe-scoped setup seated dave (status 'left') before Arc21's delete_own_account() removed him`],
+      };
+    }
     const col = OWNER_COL[res];
     if (!col) throw new Error(`${t.testId}: no owner column known for ${res}`);
     return {

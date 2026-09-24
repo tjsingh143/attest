@@ -163,14 +163,22 @@ export function checkIsolationDesign(prepared: ReadonlyMap<string, PreparedProbe
 async function applySetupInTxn(admin: Session, key: string): Promise<void> {
   const impl = implFor(key);
   if (!impl) throw new Error(`no implementation for ${key}`);
+  // Admin statements first, then the client step (D3.54: a setup may have both).
+  for (const sql of impl.statements) await admin.query(sql);
   if (impl.asClient) {
     // As the function would run for that caller: its claims set locally, the
     // SECURITY DEFINER body reading auth.uid() from them.
     await admin.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claimsFor(impl.asClient.subject))]);
+    if (impl.asClient.before) {
+      // The pre-check is a read AS the client, under its row policies, so the
+      // role is switched for it (inside this never-committed transaction).
+      await admin.query("set local role authenticated");
+      const r = (await admin.query(impl.asClient.before.sql)).rows[0] as { ok?: boolean; detail?: string } | undefined;
+      await admin.query("reset role");
+      if (r?.ok !== true) throw new Error(`${impl.asClient.before.describe}: ${String(r?.detail ?? "no row")}`);
+    }
     await admin.query(impl.asClient.statement);
     await admin.query(`select set_config('request.jwt.claims', '', true)`);
-  } else {
-    for (const sql of impl.statements) await admin.query(sql);
   }
 }
 
@@ -270,7 +278,7 @@ export async function checkContradictionsLive(admin: Session): Promise<Readiness
   const rows = checks.filter((c) => !c.holds).map((c) => ({ testId: c.testIds[0]!, why: `${c.id} no longer holds (stale registration): ${c.detail}` }));
   return {
     ...make("C", "every registered approved-row contradiction still holds (a stale one fails)", rows,
-      `${checks.length} registered, all holding live; ${new Set(checks.flatMap((c) => c.testIds)).size} distinct Test IDs will record not_measured until the author decides`),
+      `${checks.length} registered, all holding live; ${new Set(checks.flatMap((c) => c.testIds)).size} distinct Test IDs will record not_measured (each kept by the author at Gate A, D3.54)`),
     checks,
   };
 }

@@ -271,6 +271,59 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       }
       break;
     }
+    case "apply-gate-a": {
+      // Deliberate, never part of `run`: applies the author's Gate A decisions as
+      // recorded in rubric/wp3-gate-a-decisions.json (D3.54). Refuses — and
+      // writes nothing — unless every frozen-field difference is authorised by
+      // a decision and every intent approval matches the exact Gate A text.
+      console.log("apply the author's Gate A decisions (frozen-manifest corrections and intent approvals)");
+      const ga = await import("./gate-a-apply.ts");
+      const { writeCorrectedManifest } = await import("./wp3-manifest-corrections.ts");
+      const { writeIntentStore } = await import("./author-intents.ts");
+      const d = await ga.loadDecisions();
+      if (!d.recordedFrom) { console.error("attest: REFUSED — the decisions file records no source (recordedFrom)."); process.exitCode = 1; break; }
+      const { plan } = await buildPlanInProcess();
+      const manifest = await loadApprovedManifest();
+      const store = await loadIntentStore();
+      if (!manifest || !store) { console.error("attest: the approved manifest or the intent store is missing."); process.exitCode = 1; break; }
+      const reviewArg = process.argv.find((a) => a.startsWith("--review="));
+      const reviewPath = reviewArg ? reviewArg.split("=")[1]! : "evidence/runs/20260924T175203Z-5695a4c3df2d/gate-a-intent-review.json";
+      const cp = await ga.planGateACorrections(plan, manifest, d);
+      const ip = await ga.applyGateAIntents(plan, store, d, reviewPath);
+      for (const r of [...cp.refusals, ...ip.refusals]) console.error(`  REFUSED ${r}`);
+      if (cp.refusals.length || ip.refusals.length) { console.error("\nattest: nothing written."); process.exitCode = 1; break; }
+      const rebuilt = await writeCorrectedManifest(manifest, cp.corrections);
+      await writeIntentStore(ip.store);
+      const byField: Record<string, number> = {};
+      for (const c of cp.added) byField[c.field] = (byField[c.field] ?? 0) + 1;
+      const approved = ip.store.intents.filter((e) => e.provenance !== "ai_draft" && e.reviewStatus === "approved").length;
+      await ga.recordApplied({
+        at: new Date().toISOString(),
+        manifestCorrectionsAdded: cp.added.length, byField, manifestCorrectionsTotal: rebuilt.corrections.length,
+        intentsApprovedAsWritten: ip.approvedAsWritten, intentsAdoptedFromGivenWording: ip.adoptedGiven,
+        intentsApprovedTotal: approved, intentsRequired: ip.store.intents.length,
+        userAuthored: ip.store.intents.filter((e) => e.provenance === "user_authored").length,
+      });
+      console.log(`  ${cp.added.length} frozen-manifest correction(s) listed (${JSON.stringify(byField)}); the manifest now lists ${rebuilt.corrections.length}`);
+      console.log(`  intents: ${ip.approvedAsWritten} approved as written, ${ip.adoptedGiven} adopted from the author's given wording; ${approved} of ${ip.store.intents.length} approved; 0 user_authored`);
+      break;
+    }
+    case "validate-wp3": {
+      // Phase 4: independent validation of a WP3 results file. Reads only raw
+      // inputs and recomputes every mapping and total (src/wp3-validate-results.ts).
+      const runArg = process.argv.slice(3).find((a) => !a.startsWith("--"));
+      if (!runArg) { console.error("usage: attest validate-wp3 <runId> [--plan-run=<runId>]"); process.exitCode = 2; break; }
+      const planArg = process.argv.find((a) => a.startsWith("--plan-run="));
+      const { validateWp3Results, writeValidation } = await import("./wp3-validate-results.ts");
+      const sv = await readSchemaVersion();
+      const v = await validateWp3Results(runArg, { planRunId: planArg?.split("=")[1], expectedSchema: sv.migrationSetSha256, expectedArc21Commit: sv.git.commit ?? undefined, expectedFingerprint: arc21Pre.fingerprint });
+      await writeValidation(v);
+      for (const c of v.checks) console.log(`  ${c.passed ? "ok  " : "FAIL"} ${c.name}\n       ${c.detail.slice(0, 300)}`);
+      console.log(`\n  by verdict: ${JSON.stringify((v.totals as Record<string, unknown>).byVerdict)}`);
+      console.log(`  VALIDATION ${v.passed ? "PASSED" : "FAILED"} — written to evidence/runs/${runArg}/wp3-validation.{json,md}`);
+      if (!v.passed) process.exitCode = 1;
+      break;
+    }
     case "gate-a-package": {
       // The Gate A review table and decision template (D3.53). Reads and writes
       // only Attest files; never approves anything.
@@ -491,7 +544,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|run]`);
       process.exitCode = 2;
   }
 }

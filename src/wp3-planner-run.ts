@@ -141,7 +141,11 @@ export async function runWp3Planner(
   log(`  ${rec.totalPlanned} tests planned — High ${rec.highPlanned}, Medium ${rec.mediumPlanned}, suite ${rec.suitePlanned}`);
   log(`  estimate was ${rec.estimate}; difference ${rec.difference >= 0 ? "+" : ""}${rec.difference}`);
   log(`  ${plan.notApplicable.length} (family, resource) pairs marked not applicable with a stated reason`);
-  log(`  ${rec.negativesAwaitingIntent} negative tests awaiting AUTHOR INTENT`);
+  {
+    const st = await loadIntentStore();
+    const adopted = (st?.intents ?? []).filter((e) => e.provenance !== "ai_draft" && e.reviewStatus === "approved").length;
+    log(`  ${rec.negativesAwaitingIntent} negative tests require an AUTHOR INTENT; the store holds ${adopted} adopted by the author`);
+  }
   // The AUTHOR INTENT worksheet is generated from the same plan, so it can
   // never drift from the matrix it is meant to describe.
   const worksheet = buildWorksheet(plan, await loadIntentStore());
