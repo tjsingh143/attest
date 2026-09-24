@@ -48,7 +48,7 @@ import { promisify } from "node:util";
 import { createHash } from "node:crypto";
 import { lstat, readFile, readlink } from "node:fs/promises";
 import { join } from "node:path";
-import { SUT_REPO } from "./config.ts";
+import { ARC21_CHECKOUT } from "./config.ts";
 
 const run = promisify(execFile);
 
@@ -100,7 +100,7 @@ async function git(repo: string, ...args: string[]): Promise<Buffer> {
  * Throws if the checkout cannot be read as a git repository. The callers treat
  * that as a failure: a guard that cannot see is not a guard.
  */
-export async function captureArc21State(repo: string = SUT_REPO): Promise<Arc21SourceState> {
+export async function captureArc21State(repo: string = ARC21_CHECKOUT): Promise<Arc21SourceState> {
   let branch: string;
   try {
     branch = (await git(repo, "symbolic-ref", "--short", "-q", "HEAD")).toString().trim();

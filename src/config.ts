@@ -13,11 +13,24 @@ export const ATTEST_ROOT = resolve(import.meta.dirname, "..");
 /**
  * The system under test: a local copy of the Arc21 repository. Attest reads
  * two things from it and writes nothing: the migration files (to compute a
- * schema version) and its git metadata.
+ * schema version) and its git metadata. It is the checkout the read-only guard
+ * protects (D3.31, D3.32) — always this tree, whatever a run rebuilds from: the
+ * guard fingerprints it before and after every command.
+ */
+export const ARC21_CHECKOUT = process.env.ATTEST_ARC21_CHECKOUT
+  ? resolve(process.env.ATTEST_ARC21_CHECKOUT)
+  : resolve(ATTEST_ROOT, "arc21 copy");
+
+/**
+ * Where a run's migrations come from. Normally the protected checkout itself.
+ * WP4 points it at an Attest-owned scratch directory holding a historical
+ * schema state reconstructed from Arc21's git history (D3.56) — so a
+ * historical rebuild never checks anything out in, or writes anything to, the
+ * protected checkout.
  */
 export const SUT_REPO = process.env.ATTEST_SUT_REPO
   ? resolve(process.env.ATTEST_SUT_REPO)
-  : resolve(ATTEST_ROOT, "arc21 copy");
+  : ARC21_CHECKOUT;
 
 export const SUT_MIGRATIONS_DIR = resolve(SUT_REPO, "supabase/migrations");
 
