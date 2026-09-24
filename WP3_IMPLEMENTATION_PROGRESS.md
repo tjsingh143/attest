@@ -1,5 +1,8 @@
 # WP3 implementation preparation — durable progress log
 
+> **Complete (2026-09-23).** The project-completion pass that followed is logged in
+> `PROJECT_COMPLETION_PROGRESS.md`.
+
 **This is an engineering work log, not evidence.** Nothing in it is a WP3 result, a finding or an
 approval. It exists so that a long pass that crosses context boundaries can be resumed from the
 repository rather than from a conversation. If this file and the repository disagree, the

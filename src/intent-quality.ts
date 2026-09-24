@@ -162,6 +162,44 @@ export function validateDraftQuality(
       add("actor matches the identity", t.testId, "runs on the privileged server path, but the sentence does not say so");
     }
 
+    // ---- defect classes the 2026-09-24 audit found by reading ------------
+    // Each is a correspondence between the sentence and the row, and each was
+    // present in the store the previous pass handed over.
+    //
+    // (1) A deleted-user probe reads the deleted account's OWN former rows
+    //     (`where <owner column> = dave`); the old drafts said "another
+    //     player's", or named the resource with no owner at all. Stated as a
+    //     requirement, because the negative form caught six of the fourteen.
+    if (id.includes("deleted account") && (!/\bthat account\b|\bthe deleted account's\b/.test(low) || /\banother (player|account|user)('s)?\b|\bbetween two other\b/.test(low))) {
+      add("the deleted-user target is the deleted account's own rows", t.testId,
+        "the probe filters on the deleted account's own owner column, but the sentence does not place what is read under that account");
+    }
+    // (2) "that table" / "that room" / "that tournament" before one has been
+    //     introduced.
+    {
+      const m = /\bthat (table|room|tournament)\b/i.exec(d);
+      if (m && !new RegExp(`\\b(a|an|the|its|their) (private )?${m[1]}\\b`, "i").test(d.slice(0, m.index))) {
+        add("no dangling reference", t.testId, `says "${m[0]}" before any ${m[1]} has been introduced`);
+      }
+    }
+    // (3) The direction of a block. Where the caller is the BLOCKER (alice
+    //     blocked dave), a sentence about "someone who has blocked them" states
+    //     the opposite relationship from the one the probe exercises.
+    if (/alice has blocked/i.test(`${t.operation} ${t.covers}`) && /\b(who|that) ha(s|ve) blocked (them|the caller)\b|\bhas blocked them\b/.test(low)) {
+      add("the block's direction matches the probe", t.testId,
+        "in this probe the caller is the one who placed the block, but the sentence says the other account blocked the caller");
+    }
+    // (4) An anonymous caller has no position of its own to compare against.
+    if (id.startsWith("anon") && /\b(before or after their own|who else|their own (entry|attempt|score|queue))\b/.test(low)) {
+      add("an anonymous actor has no account of its own", t.testId, "describes the anonymous caller as holding an entry, attempt or queue position of their own");
+    }
+    // (5) "Housekeeping over other accounts' rows" is true of three functions,
+    //     and the approved row says so; claiming it anywhere else is false.
+    if (/housekeeping/.test(low) && !/other accounts'|expire_stale/i.test(t.covers)) {
+      add("no shared effect the function does not have", t.testId,
+        "claims housekeeping over other accounts' rows, but the approved row records no such legitimate shared effect for this function");
+    }
+
     // ---- membership semantics (the D3.11 correction) ----------------------
     const mk = membershipKind(t);
     if (mk && id.includes("carol")) {

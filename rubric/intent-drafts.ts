@@ -50,9 +50,10 @@ import { effectiveActor } from "../src/plan-contradictions.ts";
 interface Lex {
   readonly read: string;
   /**
-   * Shorter object for a membership-gated read, where the composer's actor
-   * clause already says which table/room/tournament is meant. Without it the
-   * sentence names the container twice.
+   * The noun a membership-gated read takes after "that table's" / "that room's"
+   * / "that tournament's". The actor clause introduces the container ("…who
+   * holds no seat at a table") and the object refers back to it, so the
+   * sentence names it once and never says "that table" before there is one.
    */
   readonly readShared?: string;
   readonly insert: string;
@@ -116,13 +117,13 @@ const LEX: Readonly<Record<string, Lex>> = {
     delete: "destroy the published commitment that makes a day's shoe verifiable after the fact",
   },
   "public.daily_challenges_public": {
-    read: "the public projection of the daily challenge, which exists precisely so the secret beside it is not exposed",
+    read: "the daily-challenge projection — each day's schedule, seed commitment and rewards — which Arc21 grants to signed-in players only",
     insert: "write through a view whose whole purpose is to be a read-only public projection",
     update: "alter the public projection of a daily challenge",
     delete: "remove a daily challenge from its public projection",
   },
   "public.daily_entries": {
-    read: "another player's daily-challenge attempt and score before or after their own",
+    read: "another player's daily-challenge entry — the score, final chips and decision accuracy they posted on the challenge every account plays",
     insert: "fabricate a daily-challenge entry that was never played",
     update: "inflate a score that feeds the shared daily leaderboard",
     delete: "erase a daily entry to take a second attempt at a one-attempt-per-day challenge",
@@ -130,7 +131,7 @@ const LEX: Readonly<Record<string, Lex>> = {
   "public.friend_requests": {
     read: "a friend request between two other people",
     insert: "send a friend request in someone else's name",
-    update: "force a friend request to 'accepted' on someone else's behalf, which creates a friendship and therefore changes who may read a profile",
+    update: "cancel a friend request between two other accounts, overriding a decision that belongs only to its sender",
     delete: "withdraw a friend request they are not party to",
   },
   "public.friendships": {
@@ -141,47 +142,47 @@ const LEX: Readonly<Record<string, Lex>> = {
   },
   "public.game_events": {
     read: "the live event stream of a table",
-    readShared: "the live event stream",
+    readShared: "live event stream",
     insert: "inject a fabricated event into a live table's stream and mislead the players at it",
     update: "rewrite an event already delivered to the players at a table",
     delete: "delete events from a live table's stream so clients reconstruct a hand that did not happen",
   },
   "public.game_session_seats": {
     read: "who is seated at a table, and each player's stack and buy-in",
-    readShared: "the seat list, and the stack and buy-in each player holds",
+    readShared: "seat list, including each seated player's stack and buy-in",
     insert: "seat themselves at a table they were never invited to — and because six policies key on seat membership, thereby grant themselves read access to that session, its events, its hands and its Realtime topic",
     update: "alter a seat row, changing either another player's stack or the membership that five other policies read as authorization",
     delete: "unseat another player, removing the seat that authorizes their access to the table",
   },
   "public.game_sessions": {
     read: "a live table's metadata",
-    readShared: "the session metadata",
+    readShared: "session metadata",
     insert: "conjure a game session that the server never created",
     update: "alter a live session's status, version or escrowed chips",
     delete: "destroy a live session other players are seated at",
   },
   "public.hand_players": {
     read: "another player's settled hand",
-    readShared: "another player's settled hand",
+    readShared: "settled hands — each player's cards, wager and payout",
     insert: "fabricate a settled hand that was never played",
     update: "rewrite the record of how a hand was settled",
     delete: "erase the record of a settled hand",
   },
   "public.hand_records": {
     read: "the completed-hand archive of a table",
-    readShared: "the completed-hand archive",
+    readShared: "completed-hand archive",
     insert: "write a hand into the archive that was never dealt",
     update: "falsify the archived history of a completed hand",
     delete: "delete a hand from the archive, destroying the record of what was played",
   },
   "public.loadouts": {
     read: "another player's equipped cosmetics",
-    insert: "create a loadout attributed to another account",
+    insert: "choose what that player appears to have equipped, taking the single loadout the account is allowed",
     update: "change what another player has equipped",
     delete: "delete another player's loadout",
   },
   "public.matchmaking_queue": {
-    read: "who else is waiting for a seat, and for how long",
+    read: "which other players are waiting for a seat, at what tier, and since when",
     insert: "insert a queue entry directly instead of going through the matchmaking function, jumping or flooding the queue",
     update: "alter a queue entry to take a seat ahead of the players already waiting",
     delete: "drop other players out of the matchmaking queue",
@@ -223,7 +224,7 @@ const LEX: Readonly<Record<string, Lex>> = {
     delete: "erase an account's statistical history",
   },
   "public.profiles": {
-    read: "a profile the viewer is not entitled to see",
+    read: "player profiles, which Arc21 shows only to an identified signed-in viewer and only as each player's privacy and block settings allow",
     insert: "create a profile row not backed by a real account",
     update: "edit another player's public identity — their username, display name and bio",
     delete: "delete another player's profile",
@@ -254,28 +255,28 @@ const LEX: Readonly<Record<string, Lex>> = {
   },
   "public.room_members": {
     read: "the membership of a private room",
-    readShared: "the membership roster",
+    readShared: "membership roster",
     insert: "add themselves to a private room they were never invited to — and because caller_is_room_member reads this table, thereby grant themselves the room access it decides",
     update: "alter a membership row that other policies read as an authorization decision",
     delete: "eject another player from a private room",
   },
   "public.rooms": {
     read: "a private room's metadata, including the join code that gets someone in",
-    readShared: "the private metadata, including the join code an outsider would need",
+    readShared: "private metadata, including the join code an outsider would need to get in",
     insert: "create a room record directly rather than through the function that enforces the seat bounds",
     update: "change a private room's visibility or join code, altering who is able to get in",
     delete: "destroy a private room other players are sitting in",
   },
   "public.tournament_entries": {
     read: "the entries and standings of a tournament",
-    readShared: "the entries and standings",
+    readShared: "entries and standings",
     insert: "register themselves — or someone else — into a tournament without going through entry",
     update: "change a placement or prize marker, which is the authoritative outcome of a shared competition",
     delete: "remove a rival's entry from a tournament in progress",
   },
   "public.tournament_matches": {
     read: "a tournament bracket",
-    readShared: "the bracket",
+    readShared: "bracket",
     insert: "insert a match into a bracket the server never scheduled",
     update: "declare a different winner in a tournament bracket",
     delete: "delete a match from a tournament bracket",
@@ -337,6 +338,107 @@ const CALLER_SCOPED_OBJECT: Readonly<Record<string, string>> = {
   my_notifications: "read a different account's notifications",
 };
 
+/**
+ * Per-function F5 drafts, keyed by the planner's resource string (function and
+ * argument list, with the D3.14 variant tag where one exists) — never by Test ID
+ * number.
+ *
+ * Added by the 2026-09-24 audit. The composed form — "<actor> calls f() naming
+ * <arg> that is not theirs, getting its owner privilege to do what the caller's
+ * own policies forbid: <the planner's escalationWouldBe>" — was wrong or wider
+ * than the probe for most target, projection and shared-effect functions:
+ * `escalationWouldBe` often names two attacks where the probe exercises one
+ * (send_friend_request, search_players, leaderboard_weekly_xp), names the wrong
+ * direction of a block (send_friend_request), calls a legitimate argument "not
+ * theirs to name" (block_player), claims housekeeping over other accounts' rows
+ * for functions that have none (ensure_todays_daily_challenge,
+ * latest_verifiable_daily_challenge), or copies a consequence the function body
+ * contradicts (register_push_token: taking over another device's token sends the
+ * CALLER's notifications to THAT device; it does not bring the victim's to the
+ * caller). Each sentence below is written against the row's operation, expected
+ * result and guards, and claims no more than they can show. Still AI drafts.
+ */
+const F5_DRAFTS: Readonly<Record<string, string>> = {
+  "public.remove_room_member(p_room_id uuid, p_user_id uuid)":
+    "A signed-in player calls remove_room_member() on a room someone else hosts to eject one of its members, a removal only that room's host may make",
+  "public.get_room_state(p_room_id uuid)":
+    "A signed-in player who has not joined a room calls get_room_state() on it to read its roster, join code and seat layout, which only its members may see",
+  "public.set_room_ready(p_room_id uuid, p_ready boolean)":
+    "A signed-in player who is not in a room calls set_room_ready() on it, acting as a member of a room they never joined — setting a ready state there or gaining a membership row",
+  "public.invite_friend_to_room(p_room_id uuid, p_friend uuid)":
+    "A signed-in player who is not in a room calls invite_friend_to_room() to pull one of their friends into it, issuing an invitation only the room's own members may extend",
+  "public.leave_room(p_room_id uuid)":
+    "A signed-in player who is not in a room calls leave_room() on it and, through the function's owner privilege, alters that room or its members' rows although they were never part of it",
+  "public.equip_cosmetic(p_cosmetic_id uuid)":
+    "A signed-in player calls equip_cosmetic() with a cosmetic they do not own, wearing an item they never unlocked",
+  "public.mark_notifications_read(p_ids uuid[])":
+    "A signed-in player calls mark_notifications_read() with another account's notification ids, marking that account's notifications read or learning from the reply that those ids exist",
+  "public.caller_is_room_member(p_room_id uuid)":
+    "A signed-in player who is not in a room gets caller_is_room_member() to report them as a member of it, which would open every room policy that trusts that helper",
+  "public.is_session_participant(p_game_session_id uuid)":
+    "A signed-in player who holds no seat at a table gets is_session_participant() to report them as seated there, which would open every session policy that trusts that helper",
+  "public.sprint_standings(p_tournament_id uuid)":
+    "A signed-in player who has not entered a tournament calls sprint_standings() on it to read the entrants' display names, chip stacks, placements and prizes, which only entrants may see",
+  "public.viewer_is_in_tournament(p_tournament_id uuid)":
+    "A signed-in player who has not entered a tournament gets viewer_is_in_tournament() to report them as an entrant, which would open the tournament rows its policies guard",
+  "public.accept_friend_request(p_from uuid)":
+    "A signed-in player calls accept_friend_request() naming an account that never sent them a request, manufacturing a friendship — and the profile visibility it confers — that the other account never asked for",
+  "public.decline_friend_request(p_from uuid)":
+    "A signed-in player calls decline_friend_request() naming a sender whose request went to someone else, rejecting that request on its real recipient's behalf",
+  "public.send_friend_request(p_to uuid)":
+    "A signed-in player calls send_friend_request() toward an account they have blocked, getting a request across a block that Arc21 says stops either party acting on the other",
+  "public.block_player(p_other uuid)":
+    "A signed-in player calls block_player() and gets the resulting block recorded under another account's name, altering what that account can see",
+  "public.unblock_player(p_other uuid)":
+    "A signed-in player calls unblock_player() to lift a block someone else placed, making the blocker's profile visible again to the very account they blocked",
+  "public.remove_friend(p_other uuid)":
+    "A signed-in player calls remove_friend() to dissolve a friendship between two other accounts, revoking the profile visibility it gave them",
+  "public.player_public_profile(p_user_id uuid)":
+    "A signed-in player calls player_public_profile() for an account they have blocked and still gets its profile back, or an answer that reveals the block exists",
+  "public.player_public_profile(p_user_id uuid [non-friend projection])":
+    "A signed-in player calls player_public_profile() for a public account they are not friends with and receives the friend-only fields reserved for that account's friends",
+  "public.viewer_is_friend_of(p_other uuid)":
+    "A signed-in player gets viewer_is_friend_of() to report a friendship with an account they are not friends with, which would widen what profiles_select_visible shows them",
+  "public.viewer_has_blocked(p_other uuid)":
+    "A signed-in player uses viewer_has_blocked() to learn whether some other account has blocked a third party, reading another account's private block list through a helper meant to answer only about the caller's own blocks",
+  "public.viewer_is_blocked_by(p_other uuid)":
+    "A signed-in player uses viewer_is_blocked_by() to learn about blocks that do not involve them, mapping who has blocked whom beyond their own position",
+  "public.retire_push_token(p_token text)":
+    "A signed-in player calls retire_push_token() with another account's token string, switching off that account's push notifications on its device",
+  "public.register_push_token(p_token text, p_platform push_platform, p_device_id text, p_kinds notification_kind[])":
+    "A signed-in player calls register_push_token() with a token string that belongs to another account's device, taking over that registration so the device's owner stops receiving their own notifications and starts receiving the caller's",
+  "public.join_private_room(p_code text)":
+    "A signed-in player calls join_private_room() with a guessed code, either getting into a room without its real code or learning from the refusal whether that code belongs to a room",
+  "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)":
+    "A signed-in player calls leaderboard_weekly_xp() and gets back the identity of an account whose privacy is set to private, or columns beyond what a leaderboard needs",
+  "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)":
+    "A signed-in player calls leaderboard_daily_challenge() and gets back a private account's identity, or the day's seed_secret leaked through the join behind it",
+  "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)":
+    "A signed-in player calls leaderboard_strategy_accuracy() and gets back the graded accuracy of an account whose privacy is set to private, together with its identity",
+  "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)":
+    "A signed-in player calls leaderboard_tournament_wins() and gets back the tournament record of an account whose privacy is set to private, together with its identity",
+  "public.search_players(p_query text)":
+    "A signed-in player calls search_players() with the handle of an account they have blocked and finds it, although search is meant to hide accounts on either side of a block",
+  "public.ensure_todays_daily_challenge()":
+    "A signed-in player calls ensure_todays_daily_challenge() and gets back the day's seed_secret, or causes the seed of a challenge still open to be revealed — either of which tells them the shoe before they play it",
+  "public.latest_verifiable_daily_challenge()":
+    "A signed-out visitor calls latest_verifiable_daily_challenge() and receives the seed of a challenge that has not yet been revealed, learning the shoe of a challenge still being played",
+  "public.join_matchmaking(p_tier table_tier)":
+    "A signed-in player calls join_matchmaking(), whose housekeeping legitimately expires other accounts' stale queue entries, and gets it to enqueue or seat an account other than themselves or to disturb another player's fresh entry",
+  "public.poll_matchmaking()":
+    "A signed-in player calls poll_matchmaking(), whose housekeeping legitimately expires other accounts' stale queue entries, and gets back another waiting player's queue entry or room assignment instead of only their own",
+  "public.create_private_room(p_max_seats integer)":
+    "A signed-in player calls create_private_room() asking for nine seats, creating a room outside the 2-to-5 seat bound the function exists to enforce",
+  // Caller-scoped by the planner's classification, which the 2026-09-24 audit
+  // found to be wrong for this one function: its body hands a hosted lobby to
+  // another member, cancels other players' queue entries pointing at a room it
+  // hosts, deletes other players' notifications about the account and anonymises
+  // shared seats. The sentence states the literal approved claim; the reading of
+  // that claim is the author's (WP3_AUTHOR_DECISIONS_REQUIRED.md, D-283).
+  "public.delete_own_account()":
+    "A signed-in player calls delete_own_account() and, through its owner privilege, deletes or alters rows belonging to other accounts rather than only their own",
+};
+
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -373,13 +475,15 @@ function actor(t: PlannedTest): string {
   if (i.includes("deleted account")) return "A token still bearing the claims of a deleted account";
   if (i.includes("server-side")) return "The server's own privileged connection";
   if (i.includes("carol")) {
+    // The container is introduced here ("a table") and referred back to by the
+    // object ("that table's …"). The 2026-09-23 drafts said "that table" in the
+    // actor clause, before any table had been mentioned (2026-09-24 audit).
     const m = membership(t);
-    if (m === "session") return "A signed-in player holding no seat at that table";
-    if (m === "room") return "A signed-in player who is not a member of that room";
-    if (m === "tournament") return "A signed-in player who has not entered that tournament";
-    if (t.family.startsWith("F8")) return "A signed-in player holding no seat at that table";
-    if (t.family.startsWith("F5")) return "A signed-in player with no claim on it";
-    return "A signed-in player who is none of those things";
+    if (m === "session") return "A signed-in player who holds no seat at a table";
+    if (m === "room") return "A signed-in player who is not a member of a private room";
+    if (m === "tournament") return "A signed-in player who has not entered a tournament";
+    if (t.family.startsWith("F8")) return "A signed-in player who holds no seat at a table";
+    return "A signed-in player with no part in the target";
   }
   return "A signed-in player";
 }
@@ -428,15 +532,17 @@ function draftF1(t: PlannedTest): string {
     return `${a} reads a profile row that is not their own by leaning on the self-access policy, rather than on the visibility rules that are supposed to decide who may see whom`;
   }
   if (t.control.endsWith("profiles_select_visible")) {
-    return `${a} reads the profile of someone who has blocked them, defeating the block that is supposed to make that profile invisible to exactly this viewer`;
+    // The probe's viewer is the BLOCKER: alice reads dave, whom she blocked, and
+    // the conjunct it falsifies is NOT viewer_has_blocked(id). The 2026-09-23
+    // draft had the direction reversed ("someone who has blocked them").
+    return `${a} reads the profile of an account they have blocked, although Arc21 treats a block as hiding each party's profile from the other`;
   }
   const mk = membership(t);
-  // The actor phrase already carries the membership clause for a participation
-  // policy, so the object must not repeat it. "A player holding no seat reads
-  // another player's hand at a table where they hold no seat" says it twice.
+  // The actor phrase introduces the container and carries the membership
+  // clause, so the object refers back to it rather than repeating it.
   if (mk && t.identity.includes("carol")) {
-    const where = mk === "session" ? "at that table" : mk === "room" ? "in that room" : "for that tournament";
-    return `${a} reads ${L.readShared ?? L.read} ${where}`;
+    const that = mk === "session" ? "that table's" : mk === "room" ? "that room's" : "that tournament's";
+    return `${a} reads ${that} ${L.readShared ?? L.read}`;
   }
   return `${a} reads ${L.read}`;
 }
@@ -480,6 +586,8 @@ function withArticle(noun: string): string {
 }
 
 function draftF5(t: PlannedTest): string {
+  const own = F5_DRAFTS[t.resource];
+  if (own) return own;
   const fn = fnName(t.resource);
   const a = actor(t);
   const callerScoped = /\[no_target, caller-scoped\]/.test(t.covers);
@@ -521,6 +629,11 @@ function draftF6(t: PlannedTest): string {
   if (isRead) {
     return `${a} reads ${col} out of a ${t.resource} row they are otherwise entitled to see, taking a column that is withheld from every client grant even where the row itself is permitted`;
   }
+  // A friend request is shared between its two parties; the probe's row is one
+  // addressed TO the caller, which they may answer but do not own.
+  if (t.resource === "public.friend_requests") {
+    return `${a} writes ${col} on a friend request addressed to them, reaching a column the client update grant deliberately excludes — they may answer the request, not rewrite it`;
+  }
   return `${a} writes ${col} on a ${t.resource} row they do own, reaching a column the client update grant deliberately excludes — the row is theirs, the column is not`;
 }
 
@@ -528,18 +641,21 @@ function draftF8(t: PlannedTest): string {
   const socket = /#realtime-socket/.test(t.control);
   const a = actor(t);
   const writes = /insert|publish/i.test(t.operation);
+  // A write onto a game topic is refused to EVERY client — the only topic a
+  // client may write is presence — so the seat is not what the control turns on
+  // and the sentence does not say it is (2026-09-24 audit).
   if (socket) {
     return writes
-      ? `${a} publishes a fabricated game-state broadcast onto another table's Realtime channel through a real websocket client, so the players at that table act on a message the server never sent`
-      : `${a} subscribes to another table's private Realtime channel through a real websocket client and receives that game's live payloads`;
+      ? `A signed-in player publishes a fabricated game-state broadcast onto a table's private Realtime channel through a real websocket client — a channel only the server may broadcast on — so the players there act on a message the server never sent`
+      : `${a} subscribes to that table's private Realtime channel through a real websocket client and receives the game's live payloads`;
   }
   if (writes) {
-    return `${a} writes a message onto a game topic at the SQL layer, injecting fabricated state into a channel only the server should broadcast on`;
+    return `A signed-in player writes a message onto a game topic at the SQL layer, injecting fabricated state into a channel that no client, seated or not, is admitted to write`;
   }
   if (t.identity.startsWith("anon")) {
-    return `Someone with no account at all reads the presence roster over Realtime, using a grant that reaches the table even though no policy names them`;
+    return `Someone with no account reads the presence roster straight from realtime.messages at the SQL layer, relying on the anonymous grant that reaches the table although no policy names anon`;
   }
-  return `${a} reads the Realtime traffic of a game topic at the SQL layer, obtaining the broadcasts belonging to a table they hold no seat at`;
+  return `${a} reads that table's Realtime game topic directly at the SQL layer, obtaining broadcasts meant only for its seated players`;
 }
 
 function draftF9(t: PlannedTest): string {
@@ -579,10 +695,34 @@ function draftF10(t: PlannedTest): string {
   return `A signed-in player edits ${subject} so it reports something other than what actually happened`;
 }
 
+/**
+ * What a deleted-user probe reads: the rows its filter selects, which are the
+ * DELETED account's own (`where <owner column> = dave`). The 2026-09-23 drafts
+ * reused the F1 read phrase and so said a stale token reached "another
+ * player's" data, which is not what any of these fourteen probes asks.
+ */
+const DELETED_OBJECT: Readonly<Record<string, string>> = {
+  "private.game_commands": "the accepted-command records written under that account",
+  "public.blocks": "the blocks that account had placed",
+  "public.friend_requests": "the friend requests that account had sent",
+  "public.friendships": "the friendships recorded under that account",
+  "public.game_events": "the game events addressed to that account",
+  "public.game_session_seats": "the table seats, with their stacks and buy-ins, held under that account",
+  "public.game_sessions": "the game sessions that account hosted",
+  "public.profiles": "that account's own profile",
+  "public.rate_limit_events": "that account's rate-limit history",
+  "public.room_members": "the room memberships held under that account",
+  "public.rooms": "the rooms that account hosted, with their join codes",
+  "public.tournament_entries": "the tournament entries held under that account",
+  "public.wallet_ledger": "that account's chip ledger",
+  "public.wallets": "that account's chip balance",
+};
+
 function draftBoundary(t: PlannedTest): string {
   const L = lex(t.resource);
   if (/deleted-user/.test(t.control)) {
-    return `A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach ${L.read}`;
+    const obj = DELETED_OBJECT[t.resource] ?? `whatever ${t.resource} still holds keyed to that account`;
+    return `A token issued to an account that has since been deleted is replayed to read ${obj}, anything the deletion left keyed to it`;
   }
   return `A request carrying no identity claims at all slips past a policy that compares against a null caller, and reaches ${L.read}`;
 }
@@ -611,5 +751,7 @@ export function draftFor(t: PlannedTest): string {
 
 /** The expired-session boundary is the one suite-level row and is its own case. */
 export const EXPIRED_SESSION_DRAFT =
-  "A session token whose expiry has already passed is replayed against the API, so an account that has been " +
-  "signed out for hours keeps acting as though it were still signed in.";
+  // Expiry is not sign-out, and the fixture's token expired one hour earlier
+  // (2026-09-24 audit: the previous draft said "signed out for hours").
+  "A session token whose expiry has already passed is replayed against the API, so whoever holds the stale token " +
+  "keeps acting as that account after the session was meant to end.";

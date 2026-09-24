@@ -7,7 +7,7 @@ import { RUNS_ROOT, APPLICATION_SCHEMAS } from "./config.ts";
 import { adminSession, withSession } from "./db.ts";
 import { buildRiskInputs } from "./risk-inputs.ts";
 import { runProbes } from "./inventory.ts";
-import { readSchemaVersion, shortVersion } from "./schema-version.ts";
+import { readAppliedState, readSchemaVersion, shortVersion, unbuiltInstanceReason } from "./schema-version.ts";
 import { readHarnessVersion } from "./harness-version.ts";
 import { RATINGS } from "../rubric/ratings.ts";
 import { deriveImpact, scoredExposure, type Level } from "./scorer.ts";
@@ -42,6 +42,10 @@ export async function buildPlanInProcess(): Promise<{
   const sv = await readSchemaVersion();
   const runId = `${startedAt.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z")}-${shortVersion(sv)}`;
   const { inputs, definers } = await withSession(adminSession("wp3-plan"), async (a) => {
+    // The plan is read from the live catalogs: refuse an instance that is not
+    // a build of the migration files (D3.50).
+    const unbuilt = unbuiltInstanceReason(await readAppliedState(a, sv));
+    if (unbuilt) throw new Error(`cannot plan WP3: ${unbuilt}`);
     const { inputs } = await buildRiskInputs(a);
     const raw = await runProbes(a);
     const highSet = new Set(
@@ -88,6 +92,8 @@ export async function runWp3Planner(
   const harness = await readHarnessVersion();
 
   const { inputs, definers } = await withSession(adminSession("wp3-plan"), async (a) => {
+    const unbuilt = unbuiltInstanceReason(await readAppliedState(a, sv));
+    if (unbuilt) throw new Error(`cannot plan WP3: ${unbuilt}`);
     const { inputs } = await buildRiskInputs(a);
     const raw = await runProbes(a);
     // Client-callable SECURITY DEFINER functions that name a High-tier resource.

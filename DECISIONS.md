@@ -2156,3 +2156,173 @@ measured result into `not_measured`; leaving it is a `deficient` verdict for des
 Which it is — an over-strict expectation to restate ("…other than the documented handover of a
 lobby the caller hosted") or a behaviour to weigh in WP5 — is the author's decision, and until it
 is made the executor records the literal result.
+
+---
+
+## Project completion — Gate A preparation (2026-09-24)
+
+Entries below were written in the project-completion pass that began on 2026-09-24 from `a8d8cfc`.
+The durable log for that pass is `PROJECT_COMPLETION_PROGRESS.md`.
+
+### D3.50 — The shared local stack had drifted to the author's own development state; the planner now refuses an instance that is not a build of the migration files
+
+**Found, not assumed.** The first in-process plan of this pass had **343** rows, not 345. The
+disposable database was no longer an Attest build: `supabase_migrations.schema_migrations` held
+60 versions, one of them `20260915120000_pseudonymous_players` — a migration that exists in the
+author's main Arc21 checkout (`~/arc21`) and not in `arc21 copy/`. Both checkouts declare Supabase
+project id `arc21`, so they drive **one** local database. After Attest's last rebuild on
+2026-09-23 the author's own work had applied that migration (47 policies instead of 50;
+`friend_requests_insert_as_sender` gone) and added two development accounts. It is the same
+condition D0.1 found on the first day, reached the same way.
+
+**What preflight did with it.** It built the plan from the live catalogs *before* its own
+rebuild, so the plan described the drifted schema; it failed (345 expected, 343 found, then a
+cascade of renumbered Test IDs) and then rebuilt the database correctly. No wrong result was
+possible — the frozen manifest refuses a changed plan — but only because this particular drift
+happened to remove a policy a planned row reads. A drift that changed nothing the plan reads
+would have passed planning and been harmless only because execution rebuilds again; the gate
+should not depend on which drift occurs.
+
+**Decided.**
+
+1. *Back up before rebuilding, as D0.1 did.* The drifted state was dumped
+   (`.local-backups/arc21-shared-stack-before-wp3-20260924-172900.dump`, `pg_dump -Fc`, 1,499
+   archive entries, verified with `pg_restore --list`) before anything rebuilt it. It is the
+   author's data, not Attest's, and the rebuild would otherwise have destroyed it without a copy.
+2. *The planner refuses an unbuilt instance.* `buildPlanInProcess` and `runWp3Planner` now call
+   `unbuiltInstanceReason(readAppliedState(…))` (`src/schema-version.ts`) and throw — "Run
+   `npm run attest bringup` first" — when a migration is applied with no file or a file is not
+   applied. Every WP3 command plans first, so none can plan from a schema stored nowhere.
+   `inventory` already refused this; the WP3 commands did not.
+3. *Proven by breaking it.* `prove-gates` stages both mismatches inside rolled-back transactions
+   — the exact migration found today, and a file not applied — and requires the refusal; the live
+   instance must be accepted.
+
+**What it does not cover.** A drift that does not touch `schema_migrations` (a policy altered by
+hand) still reaches the plan. The frozen manifest refuses any such drift that changes a planned
+row, and the execution-time baseline verification (D3.45) compares every rebuild's control
+surface with the run's first rebuild, so nothing executes against it; but the diagnosis would be
+the manifest failure, not this message.
+
+**Operational consequence, for the author.** While `execute-wp3` runs (≈ 40–50 minutes, about 60
+rebuilds) the author's own use of the local stack would be destroyed at every rebuild, and any
+write the author makes mid-run is caught by the baseline verification and aborts the run. The
+stack should not be used for development during the run.
+
+### D3.51 — Independent audit of the 240 intent drafts: 76 corrected in the generator, five new checks proven on the drafts they would have caught
+
+**Done against the final hardened implementation**, row by row: identity, operation, the
+statement the executor actually binds, the expected text, the claims and guards, the fixture and
+setup, and the registered contradiction if any. Every correction stays `ai_draft` /
+`unreviewed`; nothing was approved and nothing is presented as the author's.
+
+**Where the corrections live, and why there.** In `rubric/intent-drafts.ts`, not in
+`rubric/author-intents.json`. `mergeDrafts` refreshes every `ai_draft` entry from the generator
+on the next `draft-intents` or `run` (D3.24), so an edit to the store alone would have been
+silently reverted by the next regeneration. The store was then regenerated through the project's
+own command (`draft-intents`, worksheet run `20260924T174635Z-5695a4c3df2d`): 240 drafted, 76
+changed, 164 unchanged, draft quality clean.
+
+**What was objectively wrong** (the full old/new list is generated in the Gate A package):
+
+| Class | Rows | What was wrong |
+|---|---:|---|
+| Block direction reversed | 2 | `F1.public_profiles.148` said the viewer reads "someone who has blocked them"; the probe's viewer *placed* the block and the policy term it falsifies is `NOT viewer_has_blocked(id)`. `F5.send_friend_request.259` copied "sending to an account that has blocked the caller"; the probe sends to an account the caller blocked. |
+| Deleted-user target | 14 | Every draft said the stale token reached "another player's" data; every probe filters on the deleted account's *own* owner column. |
+| Dangling reference | 13 | "…holding no seat at that table reads … at that table": "that table" before any table was introduced, and said twice. |
+| Anonymous "own" | 2 | An anonymous caller described as having "their own" daily attempt, and as one of "who else" is queued. |
+| Shared effect that does not exist | 2 | `ensure_todays_daily_challenge()` and `latest_verifiable_daily_challenge()` described as having "housekeeping [that] legitimately touches other accounts' rows"; the first mints a global row owned by no one, the second only reads. |
+| Claim broader than the probe | ~20 | F5 drafts that appended the planner's full `escalationWouldBe`, which often names two attacks where the probe exercises one (`.271` also claimed the anon-reachability of `.272`; `.279`–`.281` named seating, room assignment and rate-limit bypasses no guard checks). |
+| Consequence reversed | 1 | `F5.register_push_token.269` copied the approved `covers` wording that taking over another account's token "would redirect their notifications to the caller's device". The function body reassigns the *token row*: the device keeps the token, so the victim's device stops receiving the victim's notifications and starts receiving the caller's. |
+| Operation not performed | 1 | `F2.public_friend_requests.056` described forcing a request to `accepted`; the executor binds `status = 'cancelled'` (D3.39) and the probe cancels. |
+| Ownership where it is shared | 1 | `F6.public_friend_requests.062` called a request addressed to the caller "a row they do own". |
+| Seat attributed where the refusal is universal | 2 | `F8.312`/`.315` said a player "holding no seat" writes to a game topic; the policy admits no client to write any game topic, seated or not. |
+| Expiry is not sign-out | 1 | The expired-session draft said the account "has been signed out for hours"; the fixture's token expired one hour earlier, and expiry is not sign-out. |
+| Vague or self-contradicting objects | several | e.g. `daily_challenges_public` called "the public projection" while the row asserts anon must not read it (it is granted to `authenticated` only). |
+
+**Five checks added to `src/intent-quality.ts`**, one per class that a regex can see: the
+deleted-user target is the deleted account's own rows (stated as a requirement — the negative form
+caught six of the fourteen, which is D3.19's lesson a third time); no dangling "that
+table/room/tournament"; a block's direction matches the probe; an anonymous actor has no account
+of its own; no housekeeping claim for a function whose approved row records none (first written
+too narrowly — it flagged `poll_matchmaking`, whose row says "expire_stale_queue_entries() again"
+— and corrected). Run against the pre-audit store they fire 33 times, on exactly the rows above;
+against the regenerated drafts, 0. `prove-gates` re-injects one pre-audit sentence per class on
+its own row and requires its own check to fire.
+
+**What was not changed.** No approved row, no expectation, no claim template, no guard. Drafts
+whose wording was merely plain were left as they were: the reservation in brief §1.1 is the
+author's, and a draft rewritten for style is a draft the author now has to re-read for nothing.
+
+### D3.52 — The registered contradictions, re-derived: every proposed alternative checked against the live mechanism, one registration corrected, two planning misreadings found
+
+Each registration was re-derived from the frozen row, the function or catalog, and a mechanism
+check run as the probe's own identity inside a transaction that was rolled back (NOT WP3
+evidence; recorded in the Gate A package). Findings:
+
+- **Every smallest-change proposal reaches the control it claims.** `where true` turns every
+  client-guard row into a 42501 privilege refusal (public and `private` tables); `'casual'` plus
+  `where true` does the same for `F2.094`; `truncate public.wallet_ledger cascade` is refused by the
+  ledger's own `deny_truncate()` with the ledger intact; `'cancelled'`, `'attest_probe_user'`, an
+  owned cosmetic and NULL each affect exactly one row; `latest_verifiable_daily_challenge()` as an
+  authenticated caller returns the revealed challenge and not the open one.
+- **`C3-username-literal-invalid` named the wrong first mechanism.** The literal is refused by
+  the BEFORE UPDATE trigger `guard_profile_username` (23514 "reserved or not permitted", via the
+  pure `username_is_permitted()`), which runs before `profiles_username_check`. The registration's
+  text and live check now say so; the conclusion (the positive cannot show admission) is unchanged.
+  The proposed literal also spends alice's single `profile_username_change` rate-limit event per 30
+  days; each positive runs on its own rebuilt baseline, so the two positives do not share it.
+- **C4 is an Attest planning misreading, not an Arc21 inconsistency.** The F5 specification
+  called `latest_verifiable_daily_challenge()` "deliberately callable without an account" because
+  its body does not read `auth.uid()`. Arc21's migration `20260903130000_daily_seed_reveal.sql`
+  explicitly revokes EXECUTE from `public, anon` and grants it to `authenticated`. The approved
+  row's identity is what is wrong; the property the row names (only a revealed seed is ever
+  returned) is identity-independent and measurable as any signed-in caller.
+- **C5 has a same-property alternative for three of its fourteen rows, and none for the rest.**
+  Every owner column the fourteen probes filter on is `ON DELETE CASCADE` except
+  `game_session_seats.user_id`, `game_sessions.host_user_id` (and `hand_players.user_id`,
+  `player_actions.user_id`), which are `SET NULL`. `is_session_participant` checks only
+  `seat.user_id = auth.uid()`, whatever the seat's status. Seating dave with status `left` (which
+  `delete_own_account()` permits), deleting him through Arc21's own function, and then reading the
+  session with his stale token measures exactly the approved rationale — "a token outliving its
+  account must not become a key to whatever the cascade left behind": verified, live dave reads 3
+  seats and the session; the stale token reads 0; his seat survives with `user_id` NULL and the
+  name "Deleted player". For the CASCADE rows nothing is left behind by design ("Everything
+  personal cascades from here", Arc21's own comment), so no honest same-property probe exists.
+- **`delete_own_account()` was misclassified as caller-scoped.** Its approved `covers` says it
+  "has no shared or global effect … Verified against its body". The body documents four
+  cross-account effects: it stands the caller up from every lobby through `leave_room`, which
+  hands a hosted lobby to its longest-joined remaining member; it cancels other players' queue
+  entries that point at a room it hosts; it deletes other players' notifications about the
+  account; and it anonymises shared seat names. The literal expectation of `.283` therefore
+  prohibits documented behaviour (D3.49's reading).
+- **A bookkeeping correction.** `WP3_AUTHOR_REVIEW.md` said 54 of the 240 negatives carry a
+  pending contradiction. It is 53: 57 contradicted Test IDs, four of them positives (`F3.059`,
+  `F3.151`, `F6.153`, `F6.117`).
+
+None of these changes an approved row. Every change that would is listed for the author in D3.53.
+
+### D3.53 — Gate A: one consolidated request, and what it deliberately does not decide
+
+The mission's Gate A collects every decision reserved to the author before WP3 may run:
+`WP3_AUTHOR_DECISIONS_REQUIRED.md` (the full packet), `WP3_AUTHOR_DECISIONS_COMPACT.md` (the
+one-page form), and `rubric/wp3-gate-a-decisions.json` (the machine-readable template the author
+fills in; `pending` everywhere, never pre-filled).
+
+**Intents** are grouped A/B/C for review effort only: A — the draft directly states the probe's
+attack on a simple ownership or grant boundary; B — technically sound but turning on membership,
+a privileged function, Realtime, concurrency, audit semantics, an identity boundary or
+interacting policies; C — the wording depends on a contradiction or reading still open (the
+fourteen deleted-user rows, `F5.278`, `F5.283`). Category A is not approval; nothing is approved
+by being in it.
+
+**Contradictions** are presented with the alternative that measures the same property, the
+mechanism check that shows it does, and the frozen field it would change. Several are purely
+mechanical — a WHERE clause, a literal the column accepts — and require no security judgement;
+they are still the author's, because each changes a frozen `operation` or `expected` and the
+approval model (D3.35) lists every such change with its decision. No correction is applied before
+the author says so. A row left undecided keeps running as approved and records `not_measured`.
+
+**Not decided here, deliberately.** Whether `.283`'s observed handover is a finding (WP5, the
+author's narrative); the severity of any smoke candidate (none has one); and anything about
+fixing Arc21 (never, A1).

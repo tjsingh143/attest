@@ -271,6 +271,23 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       }
       break;
     }
+    case "gate-a-package": {
+      // The Gate A review table and decision template (D3.53). Reads and writes
+      // only Attest files; never approves anything.
+      console.log("Gate A package: the AUTHOR INTENT review table and the decision template (nothing is approved)");
+      const baseArg = process.argv.find((a) => a.startsWith("--baseline-commit="));
+      const baselineCommit = baseArg ? baseArg.split("=")[1]! : "a8d8cfc";
+      const { plan, runId, schemaVersion } = await buildPlanInProcess();
+      const store = await loadIntentStore();
+      if (!store) { console.error("attest: no canonical intent store; run draft-intents first."); process.exitCode = 1; break; }
+      const { writeGateAPackage } = await import("./gate-a-package.ts");
+      const r = await writeGateAPackage(plan, store, { runId, schemaVersion, baselineCommit });
+      const n = (c: string) => r.rows.filter((x) => x.category === c).length;
+      console.log(`  ${r.rows.length} rows: A ${n("A")}, B ${n("B")}, C ${n("C")}; ${r.rows.filter((x) => x.changedSinceBaseline).length} changed since ${baselineCommit}${r.baselineFound ? "" : " (baseline store NOT found — no change log)"}`);
+      console.log(`  written to ${r.dir.replace(/^.*evidence/, "evidence")}/gate-a-intent-review.{md,tsv,json}`);
+      console.log(`  decision template: ${r.templateWritten ? "written (every decision pending)" : "already present — left untouched"}`);
+      break;
+    }
     case "prove-gates": {
       console.log("prove the WP3 gates by breaking them (deep copies, rolled-back transactions and a throwaway repo; nothing real is changed)");
       const { plan, resources } = await buildPlanInProcess();
@@ -474,7 +491,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|run]`);
       process.exitCode = 2;
   }
 }

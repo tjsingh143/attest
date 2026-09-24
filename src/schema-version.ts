@@ -145,6 +145,29 @@ export async function readAppliedState(
   };
 }
 
+/**
+ * Why an instance may not be planned or measured against, or null if it may.
+ *
+ * The WP3 plan is read from the live catalogs, so a plan read from an instance
+ * that is not a build of these files describes a schema stored nowhere. Found
+ * on 2026-09-24: the local Supabase stack is shared, by project id, with the
+ * author's own Arc21 checkout, which had applied a migration this checkout does
+ * not have. Preflight built a plan from it, and refused only because that
+ * migration happened to drop a policy a planned row reads (D3.50). Pure, so
+ * prove-gates can hand it a mismatch without touching a database.
+ */
+export function unbuiltInstanceReason(applied: AppliedState): string | null {
+  if (applied.matches) return null;
+  const parts = [
+    applied.appliedWithoutFile.length ? `applied in the database with no migration file: ${applied.appliedWithoutFile.join(", ")}` : null,
+    applied.fileNotApplied.length ? `present as a file but not applied: ${applied.fileNotApplied.join(", ")}` : null,
+  ].filter(Boolean);
+  return (
+    `the instance is not a build of these migration files (${parts.join("; ")}). ` +
+    "Anything read from it would describe a schema stored nowhere. Run `npm run attest bringup` to rebuild it first."
+  );
+}
+
 /** Short form for filenames and report headers. */
 export function shortVersion(v: SchemaVersion): string {
   return v.migrationSetSha256.slice(0, 12);

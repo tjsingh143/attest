@@ -1,11 +1,12 @@
 # Attest — access control assurance harness
 
 **Status: work in progress. WP0, WP1 and WP2 of eight are complete; WP3's test matrix is
-planned and approved but has not been executed.** Checkpoints CP1, CP2 and CP3 are approved —
-see `CHECKPOINTS.md`, which also records what WP3 execution is gated on: the author writing the
-intent statement for each of the 240 negative tests, and a set of structural blockers in the
-executor that preflight now detects and refuses on. Numbers below are from a real run and are
-reproducible; the project is not finished and nothing here should be read as a completed audit.
+planned, approved and fully implemented but has not been executed.** Checkpoints CP1, CP2 and CP3
+are approved — see `CHECKPOINTS.md`. WP3 execution waits on one thing: the author's decisions at
+Gate A (`WP3_AUTHOR_DECISIONS_REQUIRED.md`) — above all the intent statement for each of the 240
+negative tests, which brief §1.1 reserves to the author. Every structural gate passes. Numbers
+below are from a real run and are reproducible; the project is not finished and nothing here
+should be read as a completed audit.
 
 **Arc21 is a read-only assessment target.** Attest reads it and rebuilds a disposable database
 from its migrations; it never modifies Arc21's code, migrations, policies, grants, tests, seed,
@@ -62,6 +63,7 @@ deterministic seed, and writes a control inventory to `evidence/runs/<run-id>/`.
 | `npm run attest preflight-wp3` | check everything that must hold before WP3 may execute (rebuilds the disposable database once) |
 | `npm run attest prove-gates` | break every gate on purpose — deep copies, rolled-back transactions, genuine database errors, a throwaway git repo — and require each to fire |
 | `npm run attest smoke-wp3 <Test ID>…` | plumbing smoke of named probes, at most 60; written under `.smoke/`, stamped NOT WP3 EVIDENCE |
+| `npm run attest gate-a-package` | regenerate the Gate A review table (every intent draft beside the draft it replaced) and, if absent, the author's decision template — approves nothing |
 | `npm run attest execute-wp3 -- --confirm` | run the approved WP3 suite — **refused until `preflight-wp3 --for-execution` passes**, which requires all 240 intent sentences to be the author's |
 
 **This is destructive — to the disposable database, and only to it.** `bringup` drops and
@@ -131,7 +133,10 @@ The WP3 executor is held to the same standard, one level up (`DECISIONS.md` D3.3
   control surface, services, and Arc21's own fingerprint — before the next probe runs.
 - **Approved rows the system makes unmeasurable are registered, not worked around**, each with a
   live check, and recorded `not_measured` until the author decides.
-- **Every gate is proven by breaking it** (`attest prove-gates`).
+- **Every gate is proven by breaking it** (`attest prove-gates`, 66 injected defects and 3 controls).
+- **Nothing is planned from a database that is not a build of the migration files.** The local
+  Supabase stack is shared with the author's own Arc21 checkout; the planner reads the applied
+  migrations first and refuses a mismatch (D3.50).
 
 ## Layout
 
@@ -205,13 +210,17 @@ borrowed from those tools is cited where it is used.
 **WP3 execution.** The matrix is planned, approved and frozen — 345 tests across the ten
 control families plus the boundary cases — and every row derives an executable probe with a
 claim-by-claim evaluator, premises, state guards and rebuild isolation. Every structural gate in
-`attest preflight-wp3` passes. It has not been run, and `attest execute-wp3` refuses to run it for
-exactly one reason: the intent statement for each of the 240 negative tests is one of the four
-artifacts the author writes rather than the harness (brief §1.1), and all 240 currently hold
-AI-generated drafts marked `ai_draft` / `unreviewed` for the author to review, correct or replace.
+`attest preflight-wp3` passes, and `attest prove-gates` catches 66 of 66 injected defects. It has
+not been run, and `attest execute-wp3` refuses to run it for exactly one reason: the intent
+statement for each of the 240 negative tests is one of the four artifacts the author writes rather
+than the harness (brief §1.1), and all 240 currently hold AI-generated drafts marked `ai_draft` /
+`unreviewed` for the author to review, correct or replace. An independent audit on 2026-09-24
+rewrote 76 of them that were wrong about their own probe (`DECISIONS.md` D3.51); they are still
+drafts.
 
 Ten approved-row contradictions (57 Test IDs) are registered for the author's decision; until
-decided, those probes run as approved and record `not_measured` (`DECISIONS.md` D3.46).
+decided, those probes run as approved and record `not_measured` (`DECISIONS.md` D3.46, D3.52).
+Every decision is collected in one packet: `WP3_AUTHOR_DECISIONS_REQUIRED.md`.
 
 Then WP4 drift detection, WP5 findings, risk prioritization and remediation guidance, WP6
 framework mapping, WP7 reporting.

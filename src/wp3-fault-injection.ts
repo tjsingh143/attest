@@ -64,6 +64,7 @@ import { TEMPLATES, validateClaimCoverage, spansFor, type ClaimTemplate } from "
 import { stateDigest, diffDigests, verifyBaselineState, BaselineVerificationError, type Canonical } from "./wp3-isolation.ts";
 import { validateRecord, WP3_EVIDENCE_SCHEMA_VERSION, type Wp3EvidenceRecord } from "./wp3-evidence.ts";
 import { captureArc21State, compareArc21State, READ_ONLY_GIT_ENV } from "./arc21-guard.ts";
+import { readAppliedState, readSchemaVersion, unbuiltInstanceReason } from "./schema-version.ts";
 import { FIXTURES } from "../rubric/fixtures.ts";
 
 const run = promisify(execFile);
@@ -687,6 +688,32 @@ export async function runInjections(
     });
   }
   {
+    // D3.50: the plan is read from the live catalogs, so an instance that is
+    // not a build of the migration files must be refused before anything is
+    // planned from it. Staged exactly as found on 2026-09-24 — a migration
+    // applied from the author's other checkout — and as its mirror image, a
+    // file never applied; each inside a rolled-back transaction, read back
+    // through the same two functions the planner uses.
+    const sv = await readSchemaVersion();
+    const live = unbuiltInstanceReason(await readAppliedState(ctx.admin, sv));
+    const extra = await inRollback(ctx.admin, async () => {
+      await ctx.admin.query(`insert into supabase_migrations.schema_migrations (version, name) values ('20260915120000', 'pseudonymous_players')`);
+      return unbuiltInstanceReason(await readAppliedState(ctx.admin, sv));
+    });
+    const lastFile = sv.migrations[sv.migrations.length - 1]!.version;
+    const missing = await inRollback(ctx.admin, async () => {
+      await ctx.admin.query(`delete from supabase_migrations.schema_migrations where version = $1`, [lastFile]);
+      return unbuiltInstanceReason(await readAppliedState(ctx.admin, sv));
+    });
+    push({
+      defect: "the shared local instance is not a build of the migration files (a migration applied from another checkout; a file not applied)",
+      gate: "planner: refuse to read a plan from an instance that is not a build of these files (every WP3 command plans first)",
+      caught: live === null && extra !== null && missing !== null,
+      firedCheck: `live instance: ${live === null ? "accepted" : `REFUSED: ${live}`}; migration with no file: ${extra ? "refused" : "ACCEPTED (not caught)"}; file not applied (${lastFile}): ${missing ? "refused" : "ACCEPTED (not caught)"}`,
+      consequence: "the command throws before planning → exit 1; nothing executes",
+    });
+  }
+  {
     const down = await realtimeHealthy("http://127.0.0.1:9/realtime/v1/api/tenants/realtime-dev/health");
     const live = await realtimeHealthy(ctx.realtimeUrl);
     push({
@@ -792,6 +819,32 @@ export async function runInjections(
       gate: "draft quality: article agreement",
       caught: fired.some((f) => /article|grammar/i.test(f.check)), firedCheck: fired.map((f) => `${f.check}: ${f.problem}`).join("; ") || "nothing fired",
       consequence: fired.length ? "draft-intents refuses the package (exit 1)" : "NOT CAUGHT",
+    });
+  }
+  {
+    // The five defect classes the 2026-09-24 audit found by reading, each
+    // re-injected as the exact sentence the store carried before the audit,
+    // on its own row. Each must fire its own check, not merely some check.
+    const cases: [string, string, RegExp][] = [
+      ["F1.public_profiles.148", "A signed-in player reads the profile of someone who has blocked them, defeating the block that is supposed to make that profile invisible to exactly this viewer.", /block's direction/],
+      ["B.public_wallets.344", "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach another player's chip balance.", /deleted-user target/],
+      ["F1.public_game_events.073", "A signed-in player holding no seat at that table reads the live event stream at that table.", /dangling reference/],
+      ["F4.public_daily_entries.052", "Without ever signing in or holding an account, someone reads another player's daily-challenge attempt and score before or after their own.", /anonymous actor/],
+      ["F5.latest_verifiable_daily_challenge.278", "A signed-out visitor calls latest_verifiable_daily_challenge(), whose housekeeping legitimately touches other accounts' rows, and gets it to go further than that: returning a seed for a challenge that has NOT been revealed — the body's `where revealed_seed is not null` is the entire control.", /shared effect/],
+    ];
+    const results = cases.map(([id, sentence, want]) => {
+      const drafts = new Map(store.intents.map((e) => [e.testId, e.intent]));
+      if (!drafts.has(id)) return { id, ok: false, fired: "no such required Test ID" };
+      drafts.set(id, sentence);
+      const fired = validateDraftQuality(plan, drafts).filter((f) => f.testId === id);
+      return { id, ok: fired.some((f) => want.test(f.check)), fired: fired.map((f) => f.check).join("; ") || "nothing fired" };
+    });
+    push({
+      defect: "five sentences the pre-audit store carried: a reversed block direction, a deleted-user row aimed at another account, a dangling 'that table', an anonymous actor with 'their own' score, and housekeeping claimed for a function that has none",
+      gate: "draft quality: the five checks added by the 2026-09-24 audit, each on its own row",
+      caught: results.every((r) => r.ok),
+      firedCheck: results.map((r) => `${r.id}: ${r.ok ? "" : "NOT CAUGHT — "}${r.fired}`).join(" | "),
+      consequence: results.every((r) => r.ok) ? "draft-intents refuses the package (exit 1)" : "NOT CAUGHT",
     });
   }
   {

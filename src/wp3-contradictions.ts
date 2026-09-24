@@ -107,13 +107,16 @@ export const REGISTERED_CONTRADICTIONS: readonly RegisteredContradiction[] = [
   {
     id: "C3-username-literal-invalid",
     testIds: ["F3.public_profiles.151", "F6.public_profiles.153"],
-    summary: "the approved positive sets username = 'attest-probe-username', which violates profiles_username_check (^[a-z0-9_]{3,20}$: a hyphen and 21 characters), so the positive fails on an unrelated CHECK before it can show the write is admitted",
+    summary: "the approved positive sets username = 'attest-probe-username', which Arc21 refuses (23514) before the write can be admitted: the BEFORE UPDATE trigger guard_profile_username rejects it through username_is_permitted() (a hyphen, 21 characters), and profiles_username_check (^[a-z0-9_]{3,20}$) would refuse it independently. The positive fails on an unrelated username rule before it can show the write is admitted",
     approvedSays: "`UPDATE public.profiles set username = 'attest-probe-username' where id = fixtures.alice.id` → '1 row affected …'",
-    systemSays: "profiles_username_check requires ^[a-z0-9_]{3,20}$; the literal was generated mechanically by literalFor(), which does not read CHECK constraints",
-    liveCheck: `select (not ('attest-probe-username' ~ '^[a-z0-9_]{3,20}$') and exists (select 1 from pg_constraint where conname = 'profiles_username_check' and conrelid = 'public.profiles'::regclass)) as holds,
-                       'the literal matches profiles_username_check: ' || ('attest-probe-username' ~ '^[a-z0-9_]{3,20}$')::text as detail`,
+    systemSays: "observed as alice (2026-09-24 mechanism check, rolled back): 23514 'username \"attest-probe-username\" is reserved or not permitted', raised in guard_profile_username(); the registration first recorded only the CHECK constraint, which a BEFORE trigger precedes. The literal was generated mechanically by literalFor(), which reads neither triggers nor CHECK constraints",
+    liveCheck: `select (not public.username_is_permitted('attest-probe-username')
+                        and not ('attest-probe-username' ~ '^[a-z0-9_]{3,20}$')
+                        and exists (select 1 from pg_trigger where tgrelid = 'public.profiles'::regclass and tgname = 'profiles_guard_username' and tgenabled <> 'D')) as holds,
+                       'username_is_permitted: ' || public.username_is_permitted('attest-probe-username')::text ||
+                       '; matches profiles_username_check: ' || ('attest-probe-username' ~ '^[a-z0-9_]{3,20}$')::text as detail`,
     exemptPremises: [],
-    proposedResolution: "replace the literal with one the column accepts and no reserved-word filter refuses, e.g. 'attest_probe_user'",
+    proposedResolution: "replace the literal with one the column accepts and no reserved-word filter refuses, e.g. 'attest_probe_user' (verified 2026-09-24: 1 row affected as alice, rolled back). Note the trigger also spends alice's one 'profile_username_change' rate-limit event per 30 days; each positive runs on its own rebuilt baseline, so the two positives do not share it",
   },
   {
     id: "C3-cosmetic-literal-invalid",

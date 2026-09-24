@@ -1,6 +1,6 @@
 {
   "WARNING": "EVERY SENTENCE MARKED ai_draft WAS WRITTEN BY THE HARNESS, NOT BY THE AUTHOR. Brief §1.1 reserves these sentences for the author. Drafts exist to be reviewed, corrected or replaced — not to be adopted by default. attest execute-wp3 refuses to run while any required intent is still an ai_draft.",
-  "matrixRunId": "20260923T094706Z-5695a4c3df2d",
+  "matrixRunId": "20260924T174635Z-5695a4c3df2d",
   "schemaVersion": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
   "provenanceMeanings": {
     "ai_draft": "The harness generated this sentence. NOT the author's. Does not satisfy the execution gate.",
@@ -25,7 +25,7 @@
   "intents": [
     {
       "testId": "B.private_game_commands.323",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach the replay-protection ledger recording which commands the server has already accepted.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the accepted-command records written under that account, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -37,7 +37,7 @@
     },
     {
       "testId": "B.public_blocks.325",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach who another player has blocked, which Arc21 keeps private because a blocked user is never told.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the blocks that account had placed, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -49,7 +49,7 @@
     },
     {
       "testId": "B.public_friend_requests.327",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach a friend request between two other people.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the friend requests that account had sent, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -61,7 +61,7 @@
     },
     {
       "testId": "B.public_friendships.329",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach a friendship between two other accounts, which is private social state.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the friendships recorded under that account, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -73,49 +73,49 @@
     },
     {
       "testId": "B.public_game_events.331",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach the live event stream of a table.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the game events addressed to that account, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.public_game_session_seats.332",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach who is seated at a table, and each player's stack and buy-in.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the table seats, with their stacks and buy-ins, held under that account, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.public_game_sessions.333",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach a live table's metadata.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the game sessions that account hosted, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.public_profiles.334",
-      "intent": "A request carrying no identity claims at all slips past a policy that compares against a null caller, and reaches a profile the viewer is not entitled to see.",
+      "intent": "A request carrying no identity claims at all slips past a policy that compares against a null caller, and reaches player profiles, which Arc21 shows only to an identified signed-in viewer and only as each player's privacy and block settings allow.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.public_profiles.335",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach a profile the viewer is not entitled to see.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read that account's own profile, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.public_rate_limit_events.336",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach another account's rate-limit history, learning what they have been doing and how often.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read that account's rate-limit history, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.public_room_members.337",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach the membership of a private room.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the room memberships held under that account, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.public_rooms.338",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach a private room's metadata, including the join code that gets someone in.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the rooms that account hosted, with their join codes, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -127,7 +127,7 @@
     },
     {
       "testId": "B.public_tournament_entries.340",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach the entries and standings of a tournament.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read the tournament entries held under that account, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -139,7 +139,7 @@
     },
     {
       "testId": "B.public_wallet_ledger.342",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach another player's chip history — every credit and debit their account has ever seen.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read that account's chip ledger, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -151,13 +151,13 @@
     },
     {
       "testId": "B.public_wallets.344",
-      "intent": "A token that outlived the account it was issued for is replayed, so a deleted user's credentials still reach another player's chip balance.",
+      "intent": "A token issued to an account that has since been deleted is replayed to read that account's chip balance, anything the deletion left keyed to it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "B.suite.expired-session",
-      "intent": "A session token whose expiry has already passed is replayed against the API, so an account that has been signed out for hours keeps acting as though it were still signed in.",
+      "intent": "A session token whose expiry has already passed is replayed against the API, so whoever holds the stale token keeps acting as that account after the session was meant to end.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -181,7 +181,7 @@
     },
     {
       "testId": "F1.public_daily_entries.051",
-      "intent": "A signed-in player reads another player's daily-challenge attempt and score before or after their own.",
+      "intent": "A signed-in player reads another player's daily-challenge entry — the score, final chips and decision accuracy they posted on the challenge every account plays.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -199,31 +199,31 @@
     },
     {
       "testId": "F1.public_game_events.073",
-      "intent": "A signed-in player holding no seat at that table reads the live event stream at that table.",
+      "intent": "A signed-in player who holds no seat at a table reads that table's live event stream.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F1.public_game_session_seats.084",
-      "intent": "A signed-in player holding no seat at that table reads the seat list, and the stack and buy-in each player holds at that table.",
+      "intent": "A signed-in player who holds no seat at a table reads that table's seat list, including each seated player's stack and buy-in.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F1.public_game_sessions.092",
-      "intent": "A signed-in player holding no seat at that table reads the session metadata at that table.",
+      "intent": "A signed-in player who holds no seat at a table reads that table's session metadata.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F1.public_hand_players.100",
-      "intent": "A signed-in player holding no seat at that table reads another player's settled hand at that table.",
+      "intent": "A signed-in player who holds no seat at a table reads that table's settled hands — each player's cards, wager and payout.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F1.public_hand_records.103",
-      "intent": "A signed-in player holding no seat at that table reads the completed-hand archive at that table.",
+      "intent": "A signed-in player who holds no seat at a table reads that table's completed-hand archive.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -235,7 +235,7 @@
     },
     {
       "testId": "F1.public_matchmaking_queue.120",
-      "intent": "A signed-in player reads who else is waiting for a seat, and for how long.",
+      "intent": "A signed-in player reads which other players are waiting for a seat, at what tier, and since when.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -283,7 +283,7 @@
     },
     {
       "testId": "F1.public_profiles.148",
-      "intent": "A signed-in player reads the profile of someone who has blocked them, defeating the block that is supposed to make that profile invisible to exactly this viewer.",
+      "intent": "A signed-in player reads the profile of an account they have blocked, although Arc21 treats a block as hiding each party's profile from the other.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -295,25 +295,25 @@
     },
     {
       "testId": "F1.public_room_members.182",
-      "intent": "A signed-in player who is not a member of that room reads the membership roster in that room.",
+      "intent": "A signed-in player who is not a member of a private room reads that room's membership roster.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F1.public_rooms.190",
-      "intent": "A signed-in player who is not a member of that room reads the private metadata, including the join code an outsider would need in that room.",
+      "intent": "A signed-in player who is not a member of a private room reads that room's private metadata, including the join code an outsider would need to get in.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F1.public_tournament_entries.205",
-      "intent": "A signed-in player who has not entered that tournament reads the entries and standings for that tournament.",
+      "intent": "A signed-in player who has not entered a tournament reads that tournament's entries and standings.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F1.public_tournament_matches.213",
-      "intent": "A signed-in player who has not entered that tournament reads the bracket for that tournament.",
+      "intent": "A signed-in player who has not entered a tournament reads that tournament's bracket.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -487,7 +487,7 @@
     },
     {
       "testId": "F2.public_friend_requests.056",
-      "intent": "A signed-in player uses a write they do hold to force a friend request to 'accepted' on someone else's behalf, which creates a friendship and therefore changes who may read a profile.",
+      "intent": "A signed-in player uses a write they do hold to cancel a friend request between two other accounts, overriding a decision that belongs only to its sender.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -769,7 +769,7 @@
     },
     {
       "testId": "F3.public_loadouts.115",
-      "intent": "A signed-in player creates a row in public.loadouts attributed to somebody else by setting user_id to another account, in order to create a loadout attributed to another account.",
+      "intent": "A signed-in player creates a row in public.loadouts attributed to somebody else by setting user_id to another account, in order to choose what that player appears to have equipped, taking the single loadout the account is allowed.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -829,7 +829,7 @@
     },
     {
       "testId": "F4.public_daily_challenges_public.049",
-      "intent": "Without ever signing in or holding an account, someone reads the public projection of the daily challenge, which exists precisely so the secret beside it is not exposed.",
+      "intent": "Without ever signing in or holding an account, someone reads the daily-challenge projection — each day's schedule, seed commitment and rewards — which Arc21 grants to signed-in players only.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -841,7 +841,7 @@
     },
     {
       "testId": "F4.public_daily_entries.052",
-      "intent": "Without ever signing in or holding an account, someone reads another player's daily-challenge attempt and score before or after their own.",
+      "intent": "Without ever signing in or holding an account, someone reads another player's daily-challenge entry — the score, final chips and decision accuracy they posted on the challenge every account plays.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -895,7 +895,7 @@
     },
     {
       "testId": "F4.public_matchmaking_queue.121",
-      "intent": "Without ever signing in or holding an account, someone reads who else is waiting for a seat, and for how long.",
+      "intent": "Without ever signing in or holding an account, someone reads which other players are waiting for a seat, at what tier, and since when.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -937,7 +937,7 @@
     },
     {
       "testId": "F4.public_profiles.152",
-      "intent": "Without ever signing in or holding an account, someone reads a profile the viewer is not entitled to see.",
+      "intent": "Without ever signing in or holding an account, someone reads player profiles, which Arc21 shows only to an identified signed-in viewer and only as each player's privacy and block settings allow.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1021,19 +1021,19 @@
     },
     {
       "testId": "F5.accept_friend_request.257",
-      "intent": "A signed-in player with no claim on it calls accept_friend_request() naming a sender that is not theirs, getting its owner privilege to do what the caller's own policies forbid: accepting a request that was never sent to the caller, thereby manufacturing a friendship and the profile visibility it confers.",
+      "intent": "A signed-in player calls accept_friend_request() naming an account that never sent them a request, manufacturing a friendship — and the profile visibility it confers — that the other account never asked for.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.block_player.260",
-      "intent": "A signed-in player calls block_player() naming a target that is not theirs, getting its owner privilege to do what the caller's own policies forbid: creating a block attributed to another account, which would alter that account's visibility decisions.",
+      "intent": "A signed-in player calls block_player() and gets the resulting block recorded under another account's name, altering what that account can see.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.caller_is_room_member.252",
-      "intent": "A signed-in player with no claim on it calls caller_is_room_member() naming a room that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning true for a room the caller is not in, which would widen every policy that calls it.",
+      "intent": "A signed-in player who is not in a room gets caller_is_room_member() to report them as a member of it, which would open every room policy that trusts that helper.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1045,19 +1045,19 @@
     },
     {
       "testId": "F5.create_private_room.281",
-      "intent": "A signed-in player calls create_private_room(), whose housekeeping legitimately touches other accounts' rows, and gets it to go further than that: creating a room hosted by another account, or bypassing the 2-to-5 seat bound, or bypassing the room_create rate limit.",
+      "intent": "A signed-in player calls create_private_room() asking for nine seats, creating a room outside the 2-to-5 seat bound the function exists to enforce.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.decline_friend_request.258",
-      "intent": "A signed-in player with no claim on it calls decline_friend_request() naming a sender that is not theirs, getting its owner privilege to do what the caller's own policies forbid: declining a request addressed to somebody else.",
+      "intent": "A signed-in player calls decline_friend_request() naming a sender whose request went to someone else, rejecting that request on its real recipient's behalf.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.delete_own_account.283",
-      "intent": "A signed-in player rides the definer privilege inside delete_own_account() past their own rows to trigger account deletion against somebody else's account.",
+      "intent": "A signed-in player calls delete_own_account() and, through its owner privilege, deletes or alters rows belonging to other accounts rather than only their own.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1069,19 +1069,19 @@
     },
     {
       "testId": "F5.ensure_todays_daily_challenge.277",
-      "intent": "A signed-in player calls ensure_todays_daily_challenge(), whose housekeeping legitimately touches other accounts' rows, and gets it to go further than that: returning seed_secret to the caller, or revealing the seed of a challenge that is still OPEN — either would let a caller know the shoe before playing it.",
+      "intent": "A signed-in player calls ensure_todays_daily_challenge() and gets back the day's seed_secret, or causes the seed of a challenge still open to be revealed — either of which tells them the shoe before they play it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.equip_cosmetic.250",
-      "intent": "A signed-in player calls equip_cosmetic() naming a cosmetic that is not theirs, getting its owner privilege to do what the caller's own policies forbid: equipping a cosmetic the caller does not own.",
+      "intent": "A signed-in player calls equip_cosmetic() with a cosmetic they do not own, wearing an item they never unlocked.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.get_room_state.246",
-      "intent": "A signed-in player with no claim on it calls get_room_state() naming a room that is not theirs, getting its owner privilege to do what the caller's own policies forbid: reading the roster, codes and seat layout of a room the caller has not joined.",
+      "intent": "A signed-in player who has not joined a room calls get_room_state() on it to read its roster, join code and seat layout, which only its members may see.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1093,55 +1093,55 @@
     },
     {
       "testId": "F5.invite_friend_to_room.248",
-      "intent": "A signed-in player with no claim on it calls invite_friend_to_room() with an argument that is not theirs to name, getting its owner privilege to do what the caller's own policies forbid: inviting into a room the caller is not in, or inviting a non-friend.",
+      "intent": "A signed-in player who is not in a room calls invite_friend_to_room() to pull one of their friends into it, issuing an invitation only the room's own members may extend.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.is_session_participant.253",
-      "intent": "A signed-in player with no claim on it calls is_session_participant() naming a session that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning true for a session the caller holds no seat at, which would widen five relations' policies at once.",
+      "intent": "A signed-in player who holds no seat at a table gets is_session_participant() to report them as seated there, which would open every session policy that trusts that helper.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.join_matchmaking.279",
-      "intent": "A signed-in player calls join_matchmaking(), whose housekeeping legitimately touches other accounts' rows, and gets it to go further than that: enqueuing or seating an account other than the caller, or being seated at a live table the caller is not entitled to join.",
+      "intent": "A signed-in player calls join_matchmaking(), whose housekeeping legitimately expires other accounts' stale queue entries, and gets it to enqueue or seat an account other than themselves or to disturb another player's fresh entry.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.join_private_room.270",
-      "intent": "A signed-in player with no claim on it calls join_private_room() naming a room code that is not theirs, getting its owner privilege to do what the caller's own policies forbid: joining without a valid code, or a code-guessing oracle that distinguishes 'wrong code' from 'room full'.",
+      "intent": "A signed-in player calls join_private_room() with a guessed code, either getting into a room without its real code or learning from the refusal whether that code belongs to a room.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.latest_verifiable_daily_challenge.278",
-      "intent": "A signed-out visitor calls latest_verifiable_daily_challenge(), whose housekeeping legitimately touches other accounts' rows, and gets it to go further than that: returning a seed for a challenge that has NOT been revealed — the body's `where revealed_seed is not null` is the entire control.",
+      "intent": "A signed-out visitor calls latest_verifiable_daily_challenge() and receives the seed of a challenge that has not yet been revealed, learning the shoe of a challenge still being played.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.leaderboard_daily_challenge.273",
-      "intent": "A signed-in player gets leaderboard_daily_challenge() to hand back more than its public projection is meant to carry, reaching what that projection exists to withhold: returning a private account's identity, or leaking seed_secret through the join.",
+      "intent": "A signed-in player calls leaderboard_daily_challenge() and gets back a private account's identity, or the day's seed_secret leaked through the join behind it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.leaderboard_strategy_accuracy.274",
-      "intent": "A signed-in player gets leaderboard_strategy_accuracy() to hand back more than its public projection is meant to carry, reaching what that projection exists to withhold: returning a private account's identity.",
+      "intent": "A signed-in player calls leaderboard_strategy_accuracy() and gets back the graded accuracy of an account whose privacy is set to private, together with its identity.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.leaderboard_tournament_wins.275",
-      "intent": "A signed-in player gets leaderboard_tournament_wins() to hand back more than its public projection is meant to carry, reaching what that projection exists to withhold: returning a private account's identity.",
+      "intent": "A signed-in player calls leaderboard_tournament_wins() and gets back the tournament record of an account whose privacy is set to private, together with its identity.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.leaderboard_weekly_xp.271",
-      "intent": "A signed-in player gets leaderboard_weekly_xp() to hand back more than its public projection is meant to carry, reaching what that projection exists to withhold: returning a private-privacy account's identity, or being callable without an account at all.",
+      "intent": "A signed-in player calls leaderboard_weekly_xp() and gets back the identity of an account whose privacy is set to private, or columns beyond what a leaderboard needs.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1159,7 +1159,7 @@
     },
     {
       "testId": "F5.leave_room.249",
-      "intent": "A signed-in player with no claim on it calls leave_room() naming a room that is not theirs, getting its owner privilege to do what the caller's own policies forbid: affecting a room the caller is not a member of.",
+      "intent": "A signed-in player who is not in a room calls leave_room() on it and, through the function's owner privilege, alters that room or its members' rows although they were never part of it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1183,7 +1183,7 @@
     },
     {
       "testId": "F5.mark_notifications_read.251",
-      "intent": "A signed-in player calls mark_notifications_read() naming notification ids that are not theirs, getting its owner privilege to do what the caller's own policies forbid: marking another account's notification read, or learning that an id exists.",
+      "intent": "A signed-in player calls mark_notifications_read() with another account's notification ids, marking that account's notifications read or learning from the reply that those ids exist.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1255,67 +1255,67 @@
     },
     {
       "testId": "F5.player_public_profile.263",
-      "intent": "A signed-in player calls player_public_profile() naming a subject that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning a profile the caller should not see (private, or blocked in either direction), or returning friend-only fields to a non-friend.",
+      "intent": "A signed-in player calls player_public_profile() for an account they have blocked and still gets its profile back, or an answer that reveals the block exists.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.player_public_profile.264",
-      "intent": "A signed-in player calls player_public_profile() naming a subject that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning friend-only fields to a caller who is not a friend.",
+      "intent": "A signed-in player calls player_public_profile() for a public account they are not friends with and receives the friend-only fields reserved for that account's friends.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.poll_matchmaking.280",
-      "intent": "A signed-in player calls poll_matchmaking(), whose housekeeping legitimately touches other accounts' rows, and gets it to go further than that: returning another account's queue entry or room assignment, or assigning the caller into a room they were not matched to.",
+      "intent": "A signed-in player calls poll_matchmaking(), whose housekeeping legitimately expires other accounts' stale queue entries, and gets back another waiting player's queue entry or room assignment instead of only their own.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.register_push_token.269",
-      "intent": "A signed-in player calls register_push_token() naming a token string that is not theirs, getting its owner privilege to do what the caller's own policies forbid: registering a token string already belonging to another account, which would redirect their notifications to the caller's device.",
+      "intent": "A signed-in player calls register_push_token() with a token string that belongs to another account's device, taking over that registration so the device's owner stops receiving their own notifications and starts receiving the caller's.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.remove_friend.262",
-      "intent": "A signed-in player with no claim on it calls remove_friend() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: dissolving a friendship the caller is not part of.",
+      "intent": "A signed-in player calls remove_friend() to dissolve a friendship between two other accounts, revoking the profile visibility it gave them.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.remove_room_member.245",
-      "intent": "A signed-in player calls remove_room_member() with an argument that is not theirs to name, getting its owner privilege to do what the caller's own policies forbid: removing a member from a room the caller does not host.",
+      "intent": "A signed-in player calls remove_room_member() on a room someone else hosts to eject one of its members, a removal only that room's host may make.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.retire_push_token.268",
-      "intent": "A signed-in player calls retire_push_token() naming a token string that is not theirs, getting its owner privilege to do what the caller's own policies forbid: retiring another account's token — a denial of their notifications.",
+      "intent": "A signed-in player calls retire_push_token() with another account's token string, switching off that account's push notifications on its device.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.search_players.276",
-      "intent": "A signed-in player gets search_players() to hand back more than its public projection is meant to carry, reaching what that projection exists to withhold: returning private-privacy accounts, or accounts blocked in either direction.",
+      "intent": "A signed-in player calls search_players() with the handle of an account they have blocked and finds it, although search is meant to hide accounts on either side of a block.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.send_friend_request.259",
-      "intent": "A signed-in player calls send_friend_request() naming a recipient that is not theirs, getting its owner privilege to do what the caller's own policies forbid: sending as somebody else, or sending to an account that has blocked the caller.",
+      "intent": "A signed-in player calls send_friend_request() toward an account they have blocked, getting a request across a block that Arc21 says stops either party acting on the other.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.set_room_ready.247",
-      "intent": "A signed-in player with no claim on it calls set_room_ready() naming a room that is not theirs, getting its owner privilege to do what the caller's own policies forbid: setting ready state in a room the caller is not a member of.",
+      "intent": "A signed-in player who is not in a room calls set_room_ready() on it, acting as a member of a room they never joined — setting a ready state there or gaining a membership row.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.sprint_standings.254",
-      "intent": "A signed-in player with no claim on it calls sprint_standings() naming a tournament that is not theirs, getting its owner privilege to do what the caller's own policies forbid: a NON-ENTRANT reading the standings — other entrants' display names, chip stacks, placements and prize amounts for a tournament the caller never joined.",
+      "intent": "A signed-in player who has not entered a tournament calls sprint_standings() on it to read the entrants' display names, chip stacks, placements and prizes, which only entrants may see.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1327,7 +1327,7 @@
     },
     {
       "testId": "F5.unblock_player.261",
-      "intent": "A signed-in player with no claim on it calls unblock_player() naming a target that is not theirs, getting its owner privilege to do what the caller's own policies forbid: removing somebody else's block, which would widen what they can see.",
+      "intent": "A signed-in player calls unblock_player() to lift a block someone else placed, making the blocker's profile visible again to the very account they blocked.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1339,25 +1339,25 @@
     },
     {
       "testId": "F5.viewer_has_blocked.266",
-      "intent": "A signed-in player with no claim on it calls viewer_has_blocked() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: reporting another account's block list.",
+      "intent": "A signed-in player uses viewer_has_blocked() to learn whether some other account has blocked a third party, reading another account's private block list through a helper meant to answer only about the caller's own blocks.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.viewer_is_blocked_by.267",
-      "intent": "A signed-in player with no claim on it calls viewer_is_blocked_by() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: letting a caller enumerate who has blocked whom beyond their own position.",
+      "intent": "A signed-in player uses viewer_is_blocked_by() to learn about blocks that do not involve them, mapping who has blocked whom beyond their own position.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.viewer_is_friend_of.265",
-      "intent": "A signed-in player with no claim on it calls viewer_is_friend_of() naming another party that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning true where no friendship exists, which would widen profiles_select_visible.",
+      "intent": "A signed-in player gets viewer_is_friend_of() to report a friendship with an account they are not friends with, which would widen what profiles_select_visible shows them.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F5.viewer_is_in_tournament.256",
-      "intent": "A signed-in player with no claim on it calls viewer_is_in_tournament() naming a tournament that is not theirs, getting its owner privilege to do what the caller's own policies forbid: returning true for a tournament the caller has not entered.",
+      "intent": "A signed-in player who has not entered a tournament gets viewer_is_in_tournament() to report them as an entrant, which would open the tournament rows its policies guard.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1369,7 +1369,7 @@
     },
     {
       "testId": "F6.public_friend_requests.062",
-      "intent": "A signed-in player writes id on a public.friend_requests row they do own, reaching a column the client update grant deliberately excludes — the row is theirs, the column is not.",
+      "intent": "A signed-in player writes id on a friend request addressed to them, reaching a column the client update grant deliberately excludes — they may answer the request, not rewrite it.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
@@ -1399,31 +1399,31 @@
     },
     {
       "testId": "F8.realtime_messages.308",
-      "intent": "A signed-in player holding no seat at that table reads the Realtime traffic of a game topic at the SQL layer, obtaining the broadcasts belonging to a table they hold no seat at.",
+      "intent": "A signed-in player who holds no seat at a table reads that table's Realtime game topic directly at the SQL layer, obtaining broadcasts meant only for its seated players.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F8.realtime_messages.310",
-      "intent": "Someone with no account at all reads the presence roster over Realtime, using a grant that reaches the table even though no policy names them.",
+      "intent": "Someone with no account reads the presence roster straight from realtime.messages at the SQL layer, relying on the anonymous grant that reaches the table although no policy names anon.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F8.realtime_messages.312",
-      "intent": "A signed-in player holding no seat at that table writes a message onto a game topic at the SQL layer, injecting fabricated state into a channel only the server should broadcast on.",
+      "intent": "A signed-in player writes a message onto a game topic at the SQL layer, injecting fabricated state into a channel that no client, seated or not, is admitted to write.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F8i.realtime_messages.314",
-      "intent": "A signed-in player holding no seat at that table subscribes to another table's private Realtime channel through a real websocket client and receives that game's live payloads.",
+      "intent": "A signed-in player who holds no seat at a table subscribes to that table's private Realtime channel through a real websocket client and receives the game's live payloads.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },
     {
       "testId": "F8i.realtime_messages.315",
-      "intent": "A signed-in player holding no seat at that table publishes a fabricated game-state broadcast onto another table's Realtime channel through a real websocket client, so the players at that table act on a message the server never sent.",
+      "intent": "A signed-in player publishes a fabricated game-state broadcast onto a table's private Realtime channel through a real websocket client — a channel only the server may broadcast on — so the players there act on a message the server never sent.",
       "provenance": "ai_draft",
       "reviewStatus": "unreviewed"
     },

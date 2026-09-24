@@ -1,5 +1,12 @@
 # WP3 — the author-review gate
 
+> **Superseded 2026-09-24 by `WP3_AUTHOR_DECISIONS_REQUIRED.md`** (Gate A), which asks every
+> decision in this file again against an independently re-audited set of drafts (76 rewritten,
+> D3.51) and re-verified contradiction alternatives (D3.52). This file is kept as the 2026-09-23
+> record. One number in it is wrong: "54 of the 240 rows also carry a pending contradiction" is
+> **53** (57 contradicted Test IDs, four of them positives). `prove-gates` now runs 66 injections,
+> not 64.
+
 **Status, 2026-09-23.** Attest's WP3 executor is structurally complete and every structural gate
 passes. **The WP3 assessment has NOT been run**; there are no WP3 counts, verdicts or findings. It is
 refused for exactly one reason: the 240 AUTHOR INTENT sentences are AI drafts, and brief §1.1 makes

@@ -36,7 +36,7 @@ detect.
 | **CP2** | after WP1 — deliberate-break validation | **approved** | reaffirmed 2026-09-22 |
 | **CP3** | after WP2 — rubric and tier assignments | **approved** | reaffirmed 2026-09-22 |
 | — | WP3 **planning**: the 345-row test matrix | **approved** | reaffirmed 2026-09-22 |
-| — | WP3 **execution**: running the 345 tests | **NOT APPROVED — blocked on the AUTHOR INTENT gate only** (every structural gate passes since 2026-09-23; see below) | — |
+| — | WP3 **execution**: running the 345 tests | **NOT APPROVED — blocked on Gate A** (the author's intent sentences, plus the contradiction and `.283` decisions that do not block but are asked together; see "2026-09-24 — Gate A" below) | — |
 | **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | not reached | — |
 | **CP5** | after WP6 — framework mapping and limitations | not reached | — |
 
@@ -162,6 +162,28 @@ corrections to it listed (D3.35).
    execution: until decided, those probes run as approved and record `not_measured`.
 3. **The reading of `F5.delete_own_account.283`** — its literal expectation is false by Arc21's
    documented host migration (D3.49); restate it, or keep it and weigh it in WP5.
+
+## 2026-09-24 — Gate A: every author decision before WP3, asked once
+
+**State recorded 2026-09-24, from runs made that day.** A project-completion pass began from
+`a8d8cfc` (`PROJECT_COMPLETION_PROGRESS.md`). Arc21's fingerprint was `13569cf0e2dd36c1…` before it
+and after every command in it.
+
+| | |
+|---|---|
+| Shared local database | had drifted to the author's own development state (a migration from `~/arc21`, same Supabase project); backed up to `.local-backups/` before Attest rebuilt it; the planner now refuses an instance that is not a build of the migration files (D3.50) |
+| `attest preflight-wp3` (planning) | **passes** on a freshly rebuilt baseline: 345 = 63/240/42, 51 fixtures (33 baseline / 14 probe / 4 runtime), 238 premises, 10 contradictions (57 Test IDs) holding live |
+| `attest prove-gates` | **66 of 66** injected defects caught, 3 of 3 controls held, real state restored (two injections added: the unbuilt-instance refusal, and the five new draft-quality checks) |
+| Intent drafts | independently audited against the final executor: **76 rewritten, 164 unchanged**, all 240 still `ai_draft` / `unreviewed`, 0 adopted (D3.51) |
+| Contradictions | re-derived; every proposed alternative checked against the live mechanism in a rolled-back transaction; one registration's text corrected; two planning misreadings found (C4, and `delete_own_account` wrongly classed caller-scoped) (D3.52) |
+| WP3 execution | **not run**; refused only by the intent gate |
+
+**The decision packet:** `WP3_AUTHOR_DECISIONS_REQUIRED.md` (full), `WP3_AUTHOR_DECISIONS_COMPACT.md`
+(one page), `rubric/wp3-gate-a-decisions.json` (template, every decision `pending`), and the
+generated review table `evidence/runs/20260924T175203Z-5695a4c3df2d/gate-a-intent-review.md`.
+
+**A correction to the 2026-09-23 record.** "54 of the 240 rows also carry a pending contradiction"
+(`WP3_AUTHOR_REVIEW.md`) should read **53**: 57 contradicted Test IDs, four of them positives.
 
 ## Candidate findings on the table (smoke, not WP3 results)
 
