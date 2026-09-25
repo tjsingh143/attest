@@ -1221,9 +1221,12 @@ export interface SeedExtensionResult {
 export async function applySeedExtensions(
   admin: Session,
   log: (s: string) => void = () => {},
+  /** WP4 (D3.56): apply only these keys — the fixtures that apply to a historical schema. Absent: all. */
+  only?: ReadonlySet<string>,
 ): Promise<void> {
   for (const impl of SEED_EXTENSION_IMPLS) {
     if (impl.scope !== "baseline" || impl.statements.length === 0) continue;
+    if (only && !only.has(impl.key)) continue;
     for (const sql of impl.statements) {
       try {
         await admin.query(sql);
@@ -1254,10 +1257,11 @@ export async function verifyOne(admin: Session, impl: SeedExtensionImpl): Promis
  * — verifying them against the baseline would demand the baseline contradict
  * itself.
  */
-export async function verifySeedExtensions(admin: Session): Promise<SeedExtensionResult[]> {
+export async function verifySeedExtensions(admin: Session, only?: ReadonlySet<string>): Promise<SeedExtensionResult[]> {
   const out: SeedExtensionResult[] = [];
   for (const impl of SEED_EXTENSION_IMPLS) {
     if (impl.scope === "probe") continue;
+    if (only && impl.scope === "baseline" && !only.has(impl.key)) continue;
     out.push(await verifyOne(admin, impl));
   }
   return out;

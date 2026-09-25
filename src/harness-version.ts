@@ -37,8 +37,15 @@ export async function readHarnessVersion(): Promise<HarnessVersion> {
   const pkg = JSON.parse(await readFile(join(ATTEST_ROOT, "package.json"), "utf8")) as {
     version?: string;
   };
+  // `rubric/*.ts` is code the planner and executor import — the fixture ids, the
+  // F5 specifications, the intent drafts, the frozen ratings — so it is part of
+  // the tool. It was left out until 2026-09-25 (D3.55); a run recorded before
+  // then was hashed over src/, sql/ and the seed only. The rubric's JSON files
+  // are inputs, not code, and each is checked on its own (the approved
+  // manifest's equality gate; the intent store, per record).
   const files = [
     ...(await filesUnder(join(ATTEST_ROOT, "src"), ".ts")),
+    ...(await filesUnder(join(ATTEST_ROOT, "rubric"), ".ts")),
     ...(await filesUnder(join(ATTEST_ROOT, "sql"), ".sql")),
     join(ATTEST_ROOT, "seed", "seed.sql"),
   ].sort();

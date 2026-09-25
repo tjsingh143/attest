@@ -16,3 +16,8 @@ PROJECT_BRIEF.md
 # Plumbing smoke runs of the WP3 executor. NOT evidence (see src/wp3-execute-run.ts);
 # kept out of version control so a smoke record can never be mistaken for a WP3 result.
 .smoke/
+
+# WP4 schema states reconstructed from Arc21's history (git archive) or copied
+# from the working tree, rebuilt from in disposable runs. Scratch, not evidence;
+# the evidence is what each run writes under evidence/runs/.
+.wp4-states/

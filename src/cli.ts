@@ -324,6 +324,30 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       if (!v.passed) process.exitCode = 1;
       break;
     }
+    case "wp4-state": {
+      // One WP4 schema state, run in its own process by `attest wp4` with
+      // ATTEST_SUT_REPO pointing at the state's scratch directory (D3.56).
+      const [runId, state] = process.argv.slice(3).filter((a) => !a.startsWith("--"));
+      const planRun = process.argv.find((a) => a.startsWith("--plan-run="))?.split("=")[1];
+      if (!runId || !state || !planRun) { console.error("usage: attest wp4-state <runId> <state> --plan-run=<runId> [--probes]"); process.exitCode = 2; break; }
+      const { runState } = await import("./wp4-run.ts");
+      const metaPath = join(RUNS_ROOT, runId, "wp4", state, "state-meta.json");
+      const stateMeta = JSON.parse(await (await import("node:fs/promises")).readFile(metaPath, "utf8")) as Record<string, unknown>;
+      await runState({ runId, state, stateMeta, planRunId: planRun, runProbes: process.argv.includes("--probes"), arc21Pre, log: (m) => console.log(m) });
+      break;
+    }
+    case "wp4": {
+      // WP4: every schema state, then the drift between them (D3.56).
+      const wp3 = process.argv.find((a) => a.startsWith("--wp3-run="))?.split("=")[1];
+      const planRun = process.argv.find((a) => a.startsWith("--plan-run="))?.split("=")[1];
+      if (!wp3 || !planRun) { console.error("usage: attest wp4 --wp3-run=<runId> --plan-run=<runId> [--inventories-only]"); process.exitCode = 2; break; }
+      const { runWp4 } = await import("./wp4-orchestrate.ts");
+      const r = await runWp4({ wp3RunId: wp3, planRunId: planRun, log: (m) => console.log(m), inventoriesOnly: process.argv.includes("--inventories-only") });
+      console.log(`\n  WP4 ${r.ok ? "completed" : "INCOMPLETE"} — evidence/runs/${r.runId}/wp4/drift-report.md`);
+      if (r.safetyViolation) process.exitCode = ARC21_GUARD_EXIT_CODE;
+      else if (!r.ok) process.exitCode = 1;
+      break;
+    }
     case "gate-a-package": {
       // The Gate A review table and decision template (D3.53). Reads and writes
       // only Attest files; never approves anything.
@@ -544,7 +568,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|wp4 --wp3-run= --plan-run=|run]`);
       process.exitCode = 2;
   }
 }

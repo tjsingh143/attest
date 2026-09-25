@@ -65,6 +65,11 @@ import { stateDigest, diffDigests, verifyBaselineState, BaselineVerificationErro
 import { validateRecord, WP3_EVIDENCE_SCHEMA_VERSION, type Wp3EvidenceRecord } from "./wp3-evidence.ts";
 import { captureArc21State, compareArc21State, READ_ONLY_GIT_ENV } from "./arc21-guard.ts";
 import { readAppliedState, readSchemaVersion, unbuiltInstanceReason } from "./schema-version.ts";
+import { diffInventories, diffResults, type ResultPoint } from "./wp4-drift.ts";
+import { loadValidationInputs, validateLoaded } from "./wp3-validate-results.ts";
+import type { Inventory } from "./inventory.ts";
+import { readdir, readFile } from "node:fs/promises";
+import { RUNS_ROOT } from "./config.ts";
 import { FIXTURES } from "../rubric/fixtures.ts";
 
 const run = promisify(execFile);
@@ -926,6 +931,156 @@ export async function runInjections(
       caught: fired.length > 0, firedCheck: fired.map((f) => f.problem).join("; ").slice(0, 240) || "nothing fired",
       consequence: fired.length ? "draft-intents refuses the package (exit 1)" : "NOT CAUGHT",
     });
+  }
+
+  // ------------------------------------------------------------------
+  // 7a. the F10 absence probe (D3.55): a guard that refuses a delete is not a
+  //     trail; a trigger that writes a record is. Staged on a resource whose
+  //     real result is an absence, inside rolled-back transactions.
+  // ------------------------------------------------------------------
+  {
+    const absence = findP((p) => p.spec.kind === "audit_absence" && p.t.resource === "public.friendships", "the F10 absence probe on public.friendships");
+    const sql = absence.spec.assertSql!;
+    const read = async () => (await ctx.admin.query(sql)).rows[0] as { no_trail: boolean; detail: string };
+    const real = await read();
+    const guard = await inRollback(ctx.admin, async () => {
+      await ctx.admin.query(`create function public.attest_pg_refuse_delete() returns trigger language plpgsql as $f$ begin raise exception 'attest: refused'; end $f$`);
+      await ctx.admin.query(`create trigger attest_pg_refuse_delete before delete on public.friendships for each row execute function public.attest_pg_refuse_delete()`);
+      return read();
+    });
+    const archive = await inRollback(ctx.admin, async () => {
+      await ctx.admin.query(`create table public.attest_pg_friendships_archive (row_text text, archived_at timestamptz default now())`);
+      await ctx.admin.query(`create function public.attest_pg_archive_delete() returns trigger language plpgsql as $f$ begin insert into public.attest_pg_friendships_archive (row_text) values (old::text); return old; end $f$`);
+      await ctx.admin.query(`create trigger attest_pg_archive_delete before delete on public.friendships for each row execute function public.attest_pg_archive_delete()`);
+      return read();
+    });
+    push({
+      defect: "the F10 absence probe meets (1) a DELETE trigger that only refuses, and (2) a DELETE trigger that writes an archive row",
+      gate: "F10 absence (D3.55): only a trigger that writes a record counts as a trail; a refusing guard is reported separately",
+      caught: real.no_trail === true && guard.no_trail === true && archive.no_trail === false,
+      firedCheck: `real: no_trail ${real.no_trail}; with a refusing guard: no_trail ${guard.no_trail} (${guard.detail}); with an archiving trigger: no_trail ${archive.no_trail}`,
+      consequence: "a write guard never turns an audit gap into a 'trail found'; an archive does",
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // 7b. the WP4 drift detector (D3.56), on a real committed inventory
+  // ------------------------------------------------------------------
+  {
+    const base = JSON.parse(await readFile(join(RUNS_ROOT, "20260922T234324Z-5695a4c3df2d", "inventory.json"), "utf8")) as Inventory;
+    const same = diffInventories(base, clone(base));
+    const quiet = same.added.length + same.removed.length + same.changed.length + same.newResources.length + same.newlyExposed.length === 0;
+    push({
+      defect: "(control) the WP4 detector compares an inventory with an unchanged copy of itself",
+      gate: "wp4 drift: no drift is reported where nothing changed",
+      caught: quiet, firedCheck: quiet ? "no drift of any class" : `REPORTED DRIFT: ${JSON.stringify(same.counts)}`,
+      consequence: "drift report: nothing", control: true,
+    });
+    type Mut = (inv: { resources: Record<string, unknown>[]; controls: Record<string, unknown>[]; observations: Record<string, unknown>[] }) => void;
+    const mutations: [string, Mut, (d: ReturnType<typeof diffInventories>) => boolean][] = [
+      ["a table added with row-level security off and reachable by anon", (inv) => {
+        inv.resources.push({ resource: "public.attest_injected", schema: "public", name: "attest_injected", kind: "table", owner: "postgres", rlsEnabled: false, rlsForced: false, policyCount: 0, reachableBy: { anon: ["SELECT"] }, columnReachableBy: {}, writeGuards: [] });
+        inv.controls.push({ resource: "public.attest_injected", resourceKind: "table", controlKind: "rls_enabled", controlId: "public.attest_injected#rls_enabled", present: false, detail: { rls_enabled: false }, declaredIntent: null });
+        inv.observations.push({ resource: "public.attest_injected", kind: "rls_disabled_and_reachable", detail: "injected" });
+      }, (d) => d.counts.newUnprotectedResources === 1 && d.newResources[0]?.resource === "public.attest_injected"],
+      ["a policy's USING expression replaced with true", (inv) => {
+        const c = inv.controls.find((x) => x.controlKind === "policy")!;
+        c.detail = { ...(c.detail as Record<string, unknown>), using_expr: "true" };
+      }, (d) => d.counts.definitionChanged === 1 && d.counts.changed === 1],
+      ["a policy removed", (inv) => {
+        const i = inv.controls.findIndex((x) => x.controlKind === "policy");
+        inv.controls.splice(i, 1);
+      }, (d) => d.counts.removed === 1 && d.counts["removed.policy"] === 1],
+      ["a table grant widened (DELETE granted)", (inv) => {
+        const c = inv.controls.find((x) => x.controlKind === "table_grant")!;
+        const det = c.detail as { privileges: string[] };
+        c.detail = { ...det, privileges: [...det.privileges.filter((x) => x !== "DELETE"), "DELETE", "TRUNCATE"] };
+      }, (d) => d.counts.attributesChanged === 1 && d.counts.definitionChanged === 0],
+    ];
+    const got = mutations.map(([what, mutate, ok]) => {
+      const b = clone(base) as unknown as Parameters<Mut>[0];
+      mutate(b);
+      const d = diffInventories(base, b as unknown as Inventory);
+      return { what, ok: ok(d), counts: d.counts };
+    });
+    const pts = (xs: [string, string][]) => new Map<string, ResultPoint>(xs.map(([id, v]) => [id, { verdict: v, observation: v === "not_measured" ? "precondition_failed" : v === "effective" ? "as_predicted" : "not_as_predicted" }]));
+    const tr = diffResults(pts([["T.1", "effective"], ["T.2", "deficient"], ["T.3", "effective"], ["T.4", "effective"]]), pts([["T.1", "deficient"], ["T.2", "effective"], ["T.3", "effective"], ["T.5", "effective"]]));
+    const trOk = tr.counts["pass → fail"] === 1 && tr.counts["fail → pass"] === 1 && tr.counts["unchanged"] === 1 && tr.counts["only in the earlier run"] === 1 && tr.counts["only in the later run"] === 1;
+    push({
+      defect: "WP4: a table added with no control, a policy's USING replaced with true, a policy removed, a grant widened — and one pass→fail, one fail→pass, and a probe incompatible with one state",
+      gate: "wp4 drift: each change lands in exactly its class; a probe a state could not run is never a pass or a failure",
+      caught: got.every((g) => g.ok) && trOk,
+      firedCheck: `${got.map((g) => `${g.what}: ${g.ok ? "classified" : `MISCLASSIFIED ${JSON.stringify(g.counts)}`}`).join("; ")}; transitions ${JSON.stringify(tr.counts)}`,
+      consequence: "the drift report names the change in its class",
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // 7c. the independent WP3 validator (D3.55), on the newest real results file
+  //
+  // Each case breaks one thing in an in-memory copy of a real, committed
+  // results file and requires the check that owns it to fail and to name the
+  // record. Nothing is written anywhere.
+  // ------------------------------------------------------------------
+  {
+    let resultsRun: string | null = null;
+    for (const d of (await readdir(RUNS_ROOT)).sort().reverse()) {
+      try { await readFile(join(RUNS_ROOT, d, "wp3-results.json")); resultsRun = d; break; } catch { /* next */ }
+    }
+    if (!resultsRun) {
+      push({ defect: "the independent WP3 validator", gate: "validate-wp3", caught: false, firedCheck: "NO WP3 RESULTS FILE EXISTS TO BREAK", consequence: "unproven" });
+    } else {
+      type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const inputs = await loadValidationInputs(resultsRun);
+      const base = validateLoaded(resultsRun, inputs);
+      const again = validateLoaded(resultsRun, inputs);
+      const deterministic = JSON.stringify(base) === JSON.stringify(again);
+      push({
+        defect: `(control) the real results file of run ${resultsRun}, validated twice`,
+        gate: "validate-wp3 is deterministic: the same file gives the same checks",
+        caught: deterministic,
+        firedCheck: deterministic ? `identical; that run itself ${base.passed ? "PASSES" : `FAILS ${base.checks.filter((c) => !c.passed).map((c) => c.name).join("; ")}`}` : "THE SAME FILE VALIDATED DIFFERENTLY",
+        consequence: "a stable verdict on the real evidence", control: true,
+      });
+      const recs = inputs.file.records as Rec[];
+      const pick = (f: (r: Rec, i: number) => boolean) => recs.findIndex(f);
+      const iServer = pick((r) => /server-side/.test(String(r.identityPlanned)) && r.identity !== null);
+      const iAlice = pick((r) => r.identityPlanned === "authenticated:alice" && r.identity !== null);
+      const iDeficient = pick((r) => r.verdict === "deficient");
+      const iNegative = pick((r) => r.polarity === "negative");
+      const iAfterDirty = pick((r, i) => i > 0 && (recs[i - 1]!.isolation as Rec).rebuildAfterBecause !== null);
+      const cases: { what: string; check: string; index: number; mutate: (f: Rec, r: Rec) => void; namesRecord: boolean }[] = [
+        { what: "a record dropped from the file", check: "exactly one record per approved Test ID", index: 10, mutate: (f) => { (f.records as Rec[]).splice(10, 1); }, namesRecord: true },
+        { what: "a server-side record's read-back identity removed", check: "every session identity read back", index: iServer, mutate: (_f, r) => { r.identity = null; }, namesRecord: true },
+        { what: "a role-scoped session read back as bypassing RLS", check: "every session identity read back", index: iAlice, mutate: (_f, r) => { r.identity = { ...r.identity, bypassesRls: true }; }, namesRecord: true },
+        { what: "a deficient verdict rewritten as effective", check: "each verdict is what its observation maps to", index: iDeficient, mutate: (_f, r) => { r.verdict = "effective"; }, namesRecord: true },
+        { what: "an unmet claim's observation rewritten as as_predicted", check: "each observation is what the raw claim statuses", index: iDeficient, mutate: (_f, r) => { r.observation = "as_predicted"; }, namesRecord: true },
+        { what: "an unadopted AI draft in a negative record", check: "every negative carries the store's adopted intent", index: iNegative, mutate: (_f, r) => { r.intentProvenance = "ai_draft"; }, namesRecord: true },
+        { what: "a planned expectation edited inside the evidence", check: "every record's planned fields are the planning run's row", index: iNegative, mutate: (_f, r) => { r.expectedPlanned = `${String(r.expectedPlanned)} (edited)`; }, namesRecord: true },
+        { what: "one record's harness hash altered", check: "every record carries the same harness hash", index: 0, mutate: (_f, r) => { r.harness = { ...r.harness, sourcesSha256: "0".repeat(64) }; }, namesRecord: false },
+        { what: "a probe after a dirty one recorded as running without a rebuild", check: "isolation:", index: iAfterDirty, mutate: (_f, r) => { r.isolation = { ...r.isolation, rebuiltBefore: false }; }, namesRecord: true },
+        { what: "the file's own totals altered", check: "the file's own byVerdict and byObservation", index: 0, mutate: (f) => { f.byVerdict = { ...f.byVerdict, effective: Number(f.byVerdict?.effective ?? 0) + 1 }; }, namesRecord: false },
+      ];
+      const got = cases.map((c) => {
+        if (c.index < 0) return { what: c.what, ok: false, why: "no record of the needed kind in this file" };
+        const f = clone(inputs.file) as Rec;
+        const target = (f.records as Rec[])[c.index]!;
+        const id = String((recs[c.index] as Rec).testId);
+        c.mutate(f, target);
+        const v = validateLoaded(resultsRun!, { ...inputs, file: f });
+        const now = v.checks.find((x) => x.name.startsWith(c.check));
+        const was = base.checks.find((x) => x.name.startsWith(c.check));
+        const fired = !!now && !now.passed && (c.namesRecord ? now.detail.includes(id) && !(was?.detail ?? "").includes(id) : !!was?.passed);
+        return { what: c.what, ok: fired, why: now ? `${now.passed ? "passed" : "FAILED"}: ${now.detail.slice(0, 120)}` : `no check "${c.check}"` };
+      });
+      push({
+        defect: `the WP3 evidence broken ten ways in memory: ${cases.map((c) => c.what).join("; ")}`,
+        gate: "validate-wp3: each break fails the check that owns it, naming the record",
+        caught: got.every((g) => g.ok),
+        firedCheck: got.map((g) => `${g.what}: ${g.ok ? "refused" : `NOT REFUSED (${g.why})`}`).join("; "),
+        consequence: "VALIDATION FAILED → exit 1; the run is not accepted as evidence",
+      });
+    }
   }
 
   // ------------------------------------------------------------------

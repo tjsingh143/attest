@@ -1,0 +1,272 @@
+{
+  "runId": "20260924T203033Z-5695a4c3df2d",
+  "checks": [
+    {
+      "name": "exactly one record per approved Test ID",
+      "passed": true,
+      "detail": "345 records, 345 unique, equal to the 345 approved Test IDs"
+    },
+    {
+      "name": "records are in the approved order",
+      "passed": true,
+      "detail": "same order as the frozen manifest"
+    },
+    {
+      "name": "the run is complete (not aborted)",
+      "passed": true,
+      "detail": "no ABORTED marker"
+    },
+    {
+      "name": "no smoke record is in the assessment",
+      "passed": true,
+      "detail": "no record is stamped NOT_WP3_EVIDENCE"
+    },
+    {
+      "name": "every record carries the same schema version, as expected",
+      "passed": true,
+      "detail": "schema 5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec"
+    },
+    {
+      "name": "every record carries the same Arc21 commit and pre-run fingerprint",
+      "passed": true,
+      "detail": "commit 58dcf39fc66a, fingerprint 13569cf0e2dd36c1…"
+    },
+    {
+      "name": "every record carries the same harness hash and run id",
+      "passed": true,
+      "detail": "harness 1eda5eef2353734a…, run 20260924T203033Z-5695a4c3df2d"
+    },
+    {
+      "name": "every record's schema is wp3-evidence/2 and its recordId is testId@runId",
+      "passed": true,
+      "detail": "all"
+    },
+    {
+      "name": "Arc21 was unchanged by the run (the file's own guard)",
+      "passed": true,
+      "detail": "fingerprint 13569cf0e2dd36c1… before and after"
+    },
+    {
+      "name": "every record's planned fields are the planning run's row",
+      "passed": true,
+      "detail": "all 345 match planning run 20260924T201920Z-5695a4c3df2d and the manifest's identities"
+    },
+    {
+      "name": "every negative carries the store's adopted intent and provenance; nothing else carries one",
+      "passed": true,
+      "detail": "240 negatives: {\"user_reviewed_ai_draft/approved\":240}"
+    },
+    {
+      "name": "every session identity read back is the one the row names (never a superuser; a role-scoped session never bypasses RLS)",
+      "passed": false,
+      "detail": "3: F9.public_wallets.316: no identity read back for \"server-side (apply_wallet_delta under two concurrent sessions)\" | F9.public_wallets.317: no identity read back for \"server-side (apply_wallet_delta, same key twice)\" | F9.public_wallets.318: no identity read back for \"server-side (apply_wallet_delta over-debit)\""
+    },
+    {
+      "name": "each observation is what the raw claim statuses, premises and contradiction imply (the judge's precedence, recomputed)",
+      "passed": true,
+      "detail": "all"
+    },
+    {
+      "name": "each verdict is what its observation maps to",
+      "passed": true,
+      "detail": "all"
+    },
+    {
+      "name": "effective means every claim met and every guard held; not_measured always carries its reason; contradictions only on registered rows",
+      "passed": true,
+      "detail": "all"
+    },
+    {
+      "name": "isolation: after every dirty probe the next ran on a rebuilt, re-verified baseline; timestamps are ordered",
+      "passed": true,
+      "detail": "61 baseline epochs; rebuilds recorded by the run: 61"
+    },
+    {
+      "name": "the run's own rebuild count equals the epochs the records carry",
+      "passed": true,
+      "detail": "61"
+    },
+    {
+      "name": "the file's own byVerdict and byObservation equal the totals recomputed from its records",
+      "passed": true,
+      "detail": "equal"
+    },
+    {
+      "name": "harness errors: none",
+      "passed": true,
+      "detail": "0 harness errors"
+    }
+  ],
+  "totals": {
+    "records": 345,
+    "byVerdict": {
+      "characterized": 36,
+      "deficient": 5,
+      "effective": 283,
+      "gap": 8,
+      "not_measured": 13
+    },
+    "byObservation": {
+      "as_predicted": 316,
+      "blocked_contradiction": 13,
+      "not_as_predicted": 16
+    },
+    "byPolarity": {
+      "characterization": {
+        "characterized": 36,
+        "gap": 6
+      },
+      "negative": {
+        "effective": 222,
+        "deficient": 5,
+        "not_measured": 13
+      },
+      "positive": {
+        "effective": 61,
+        "gap": 2
+      }
+    },
+    "byFamily": {
+      "B": {
+        "not_measured": 11,
+        "effective": 12
+      },
+      "F1": {
+        "effective": 58
+      },
+      "F10": {
+        "gap": 8,
+        "effective": 14,
+        "characterized": 11
+      },
+      "F2": {
+        "effective": 65
+      },
+      "F3": {
+        "effective": 11
+      },
+      "F4": {
+        "effective": 44
+      },
+      "F5": {
+        "effective": 52,
+        "characterized": 1,
+        "deficient": 5
+      },
+      "F6": {
+        "effective": 12
+      },
+      "F7": {
+        "characterized": 24,
+        "effective": 1
+      },
+      "F8": {
+        "effective": 9
+      },
+      "F9": {
+        "effective": 5,
+        "not_measured": 2
+      }
+    },
+    "byTier": {
+      "High": {
+        "effective": 205,
+        "characterized": 33,
+        "gap": 8,
+        "deficient": 5,
+        "not_measured": 13
+      },
+      "Medium": {
+        "effective": 76
+      },
+      "suite": {
+        "characterized": 3,
+        "effective": 2
+      }
+    },
+    "notMeasuredReasons": {
+      "blocked_contradiction": 13
+    },
+    "deficient": [
+      {
+        "testId": "F5.register_push_token.269",
+        "reason": "the control was exercised and did not hold: \"refusal, or a row attributed to alice that does NOT displace bob's\": not refused, and the caller's registration exists; bob's row: bob's token row still exists with user_id = bob: rows for that token still owned by bob: 0 | \"Bob's row must still exist with user_id = bob\": bob's token row still exists with user_id = bob: rows for that token still owned by bob: 0"
+      },
+      {
+        "testId": "F5.leaderboard_weekly_xp.271",
+        "reason": "the control was exercised and did not hold: \"no private-privacy account identity\": a private-privacy account's identity appears (erin): \"Erin\""
+      },
+      {
+        "testId": "F5.leaderboard_daily_challenge.273",
+        "reason": "the control was exercised and did not hold: \"no private-privacy identity\": a private-privacy account's identity appears (erin): \"Erin\""
+      },
+      {
+        "testId": "F5.leaderboard_strategy_accuracy.274",
+        "reason": "the control was exercised and did not hold: \"a public-safe projection only\": a private-privacy account's identity appears (erin): \"Erin\""
+      },
+      {
+        "testId": "F5.leaderboard_tournament_wins.275",
+        "reason": "the control was exercised and did not hold: \"a public-safe projection only\": a private-privacy account's identity appears (erin): \"Erin\""
+      }
+    ],
+    "registeredNotMeasured": [
+      {
+        "testId": "F9.public_wallets.319",
+        "contradiction": "C2-grant-before-trigger"
+      },
+      {
+        "testId": "F9.public_wallets.321",
+        "contradiction": "C2-grant-before-trigger"
+      },
+      {
+        "testId": "B.private_game_commands.323",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_blocks.325",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_friend_requests.327",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_friendships.329",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_profiles.335",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_rate_limit_events.336",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_room_members.337",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_rooms.338",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_tournament_entries.340",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_wallet_ledger.342",
+        "contradiction": "C5-deleted-user-subject-empty"
+      },
+      {
+        "testId": "B.public_wallets.344",
+        "contradiction": "C5-deleted-user-subject-empty"
+      }
+    ],
+    "elapsedSeconds": 2049.821,
+    "rebuilds": 61,
+    "rebuildSeconds": 2009.992,
+    "planningRun": "20260924T201920Z-5695a4c3df2d"
+  },
+  "passed": false
+}

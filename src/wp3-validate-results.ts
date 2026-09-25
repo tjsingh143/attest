@@ -122,16 +122,36 @@ const cross = (rs: readonly Rec[], row: (r: Rec) => string) => {
   return Object.fromEntries(Object.entries(out).sort());
 };
 
-export async function validateWp3Results(runId: string, opts: { planRunId?: string; expectedSchema?: string; expectedArc21Commit?: string; expectedFingerprint?: string } = {}): Promise<ValidationOutcome> {
+export interface ValidationOptions { planRunId?: string; expectedSchema?: string; expectedArc21Commit?: string; expectedFingerprint?: string }
+
+/** Everything the validator reads, loaded once — so `prove-gates` can hand it a deliberately broken copy (D3.55). */
+export interface ValidationInputs {
+  readonly file: Rec;
+  readonly manifest: ApprovedManifest;
+  readonly store: IntentStore;
+  readonly planRun: string | null;
+  readonly planRows: readonly Rec[];
+}
+
+export async function loadValidationInputs(runId: string, planRunId?: string): Promise<ValidationInputs> {
+  const file = JSON.parse(await readFile(join(RUNS_ROOT, runId, "wp3-results.json"), "utf8")) as Rec;
+  const manifest = JSON.parse(await readFile(APPROVED_PATH, "utf8")) as ApprovedManifest;
+  const store = JSON.parse(await readFile(INTENTS_PATH, "utf8")) as IntentStore;
+  const planRun = planRunId ?? (await latestPlanningRun());
+  const planRows = planRun ? ((JSON.parse(await readFile(join(RUNS_ROOT, planRun, "wp3-matrix.json"), "utf8")) as Rec).plan.tests as Rec[]) : [];
+  return { file, manifest, store, planRun, planRows };
+}
+
+export async function validateWp3Results(runId: string, opts: ValidationOptions = {}): Promise<ValidationOutcome> {
+  return validateLoaded(runId, await loadValidationInputs(runId, opts.planRunId), opts);
+}
+
+export function validateLoaded(runId: string, inputs: ValidationInputs, opts: ValidationOptions = {}): ValidationOutcome {
   const checks: { name: string; passed: boolean; detail: string }[] = [];
   const add = (name: string, bad: readonly string[], ok: string) => checks.push({ name, passed: bad.length === 0, detail: bad.length ? `${bad.length}: ${bad.slice(0, 6).join(" | ")}` : ok });
 
-  const file = JSON.parse(await readFile(join(RUNS_ROOT, runId, "wp3-results.json"), "utf8")) as Rec;
+  const { file, manifest, store, planRun, planRows } = inputs;
   const recs = (file.records ?? []) as Rec[];
-  const manifest = JSON.parse(await readFile(APPROVED_PATH, "utf8")) as ApprovedManifest;
-  const store = JSON.parse(await readFile(INTENTS_PATH, "utf8")) as IntentStore;
-  const planRun = opts.planRunId ?? (await latestPlanningRun());
-  const planRows = planRun ? ((JSON.parse(await readFile(join(RUNS_ROOT, planRun, "wp3-matrix.json"), "utf8")) as Rec).plan.tests as Rec[]) : [];
   const planById = new Map(planRows.map((t) => [t.testId as string, t]));
 
   // --- completeness ----------------------------------------------------------

@@ -160,7 +160,7 @@ export function checkIsolationDesign(prepared: ReadonlyMap<string, PreparedProbe
 // ---------------------------------------------------------------------------
 
 /** Apply a probe's setup inside the current transaction on `admin` (never committed). */
-async function applySetupInTxn(admin: Session, key: string): Promise<void> {
+export async function applySetupInTxn(admin: Session, key: string): Promise<void> {
   const impl = implFor(key);
   if (!impl) throw new Error(`no implementation for ${key}`);
   // Admin statements first, then the client step (D3.54: a setup may have both).

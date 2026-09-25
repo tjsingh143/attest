@@ -682,13 +682,25 @@ function literalArg(arg: string, params: unknown[]): string {
   throw new Error(`cannot bind the argument "${a}"`);
 }
 
-/** Search the catalogs for any trail covering a resource. */
+/**
+ * Search the catalogs for any trail covering a resource.
+ *
+ * A DELETE trigger counts as "retaining a record" only if its function writes
+ * one — an INSERT into some relation. The first version counted every trigger
+ * that fires on DELETE, so a write guard that merely REFUSES a delete
+ * (`*_deny_client_write`, `game_sessions_guard_escrow`) was read as a possible
+ * trail: eleven of the seventeen absence rows came back "not as predicted" in
+ * the first official WP3 run, 20260924T203033Z (D3.55). A guard that refuses a
+ * delete records nothing about who tried; it is reported separately, never
+ * counted as a trail.
+ */
 function auditAbsenceSql(res: string): string {
   const [, name] = res.split(".");
   return `select (hist = 0 and softdel = 0 and deltrig = 0) as no_trail,
                  'history/versioning/audit relations naming ' || '${name}' || ': ' || hist::text ||
                  ', soft-delete columns: ' || softdel::text ||
-                 ', delete triggers retaining a record: ' || deltrig::text as detail
+                 ', delete triggers that write a record: ' || deltrig::text ||
+                 ' (delete triggers that only guard or refuse, not a trail: ' || delguard::text || ')' as detail
           from (select
                   (select count(*) from pg_class c
                     where c.relkind in ('r','p')
@@ -700,9 +712,12 @@ function auditAbsenceSql(res: string): string {
                   (select count(*) from pg_attribute a
                     where a.attrelid = '${res}'::regclass and a.attnum > 0 and not a.attisdropped
                       and a.attname in ('deleted_at','removed_at','archived_at','is_deleted')) softdel,
-                  (select count(*) from pg_trigger tg
+                  (select count(*) from pg_trigger tg join pg_proc fp on fp.oid = tg.tgfoid
                     where tg.tgrelid = '${res}'::regclass and not tg.tgisinternal
-                      and (tg.tgtype & 8) <> 0) deltrig
+                      and (tg.tgtype & 8) <> 0 and fp.prosrc ~* 'insert\\s+into') deltrig,
+                  (select count(*) from pg_trigger tg join pg_proc fp on fp.oid = tg.tgfoid
+                    where tg.tgrelid = '${res}'::regclass and not tg.tgisinternal
+                      and (tg.tgtype & 8) <> 0 and fp.prosrc !~* 'insert\\s+into') delguard
                ) x`;
 }
 

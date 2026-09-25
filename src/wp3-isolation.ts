@@ -203,8 +203,8 @@ export class BaselineVerificationError extends Error {}
  * surface digests to the canonical value. The first call of a run (canonical
  * empty) establishes the canonical values. Throws BaselineVerificationError.
  */
-export async function verifyBaselineState(a: Session, canonical: Canonical): Promise<{ counts: Record<string, number>; catalog: string; digest: Record<string, string> }> {
-  const bad = (await verifySeedExtensions(a)).filter((r) => !r.ok);
+export async function verifyBaselineState(a: Session, canonical: Canonical, only?: ReadonlySet<string>): Promise<{ counts: Record<string, number>; catalog: string; digest: Record<string, string> }> {
+  const bad = (await verifySeedExtensions(a, only)).filter((r) => !r.ok);
   if (bad.length) throw new BaselineVerificationError(`baseline fixtures do not hold: ${bad.map((r) => `${r.key} (${r.detail})`).join("; ")}`);
   const counts = await rowCounts(a);
   const catalog = await catalogDigest(a);
@@ -235,6 +235,8 @@ export async function rebuildBaseline(opts: {
   canonical: Canonical;
   arc21Pre: Arc21SourceState;
   log?: (s: string) => void;
+  /** WP4 (D3.56): the baseline fixtures that apply to this schema state. Absent: all. */
+  only?: ReadonlySet<string>;
 }): Promise<BaselineEpoch> {
   const log = opts.log ?? (() => {});
   const t0 = Date.now();
@@ -244,8 +246,8 @@ export async function rebuildBaseline(opts: {
     throw new BaselineVerificationError(`the rebuilt schema is ${sv.migrationSetSha256.slice(0, 12)}…, not the planned ${opts.expectedSchema.slice(0, 12)}…`);
   }
   const verified = await withSession(adminSession("baseline"), async (a) => {
-    await applySeedExtensions(a);
-    return verifyBaselineState(a, opts.canonical);
+    await applySeedExtensions(a, () => {}, opts.only);
+    return verifyBaselineState(a, opts.canonical, opts.only);
   });
   // The services the socket and HTTP probes talk to restart with the database.
   const anonKey = await signJwt({ role: "anon" });

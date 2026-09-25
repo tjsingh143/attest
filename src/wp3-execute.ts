@@ -31,10 +31,8 @@
  * evaluator judges against the approved text.
  */
 import { randomUUID } from "node:crypto";
-import pg from "pg";
 import type { Session, SessionIdentity } from "./db.ts";
 import { adminSession, roleSession } from "./db.ts";
-import { DB, LOGINS } from "./config.ts";
 import type { Outcome } from "./evidence.ts";
 import { execute, summarize } from "./evidence.ts";
 import type { PlannedTest, Wp3Plan } from "./wp3-plan.ts";
@@ -71,6 +69,8 @@ export interface RunContext {
   readonly arc21Pre: Arc21SourceState;
   readonly expectedSchema: string;
   readonly log: (s: string) => void;
+  /** WP4 drift runs (D3.56): the baseline fixtures that apply to a historical schema. Absent: all. */
+  readonly extensionFilter?: ReadonlySet<string>;
 }
 
 /** What the executor needs per Test ID, computed once. */
@@ -639,7 +639,11 @@ async function runF9(
     }
   }
 
-  const admin = await adminSession("f9");
+  // The server-side variants run on connections opened here, and each one's
+  // identity is read back like every other probe's. The first official run
+  // (20260924T203033Z) recorded none for these three rows, and the independent
+  // validator refused it (D3.55).
+  const admin = await adminSession(caller.label);
   const call = `select * from public.apply_wallet_delta($1, $2, 'correction', $3, null, null, '{}'::jsonb)`;
   try {
     if (variant === "idempotent") {
@@ -660,7 +664,7 @@ async function runF9(
       return {
         outcome: synth(ok, Object.values(claims).map((c) => c.detail).join("; ")),
         statement: `${call}  -- issued twice with the same idempotency key ${key}`,
-        notes: [`balance before ${String(before?.balance)}, after ${String(after?.balance)}`], claims,
+        notes: [`balance before ${String(before?.balance)}, after ${String(after?.balance)}`], claims, identity: admin.identity,
       };
     }
 
@@ -668,14 +672,13 @@ async function runF9(
       const bal = await one(admin, `select balance from public.wallets where user_id = $1`, [ALICE]);
       const debit = -(Number(bal?.balance ?? 0) + 1_000_000);
       const o = await execute(admin, call, [ALICE, debit, `attest-over-${randomUUID()}`]);
-      return { outcome: o, statement: call, notes: [`balance ${String(bal?.balance)}, debit attempted ${debit}`], claims: null };
+      return { outcome: o, statement: call, notes: [`balance ${String(bal?.balance)}, debit attempted ${debit}`], claims: null, identity: admin.identity };
     }
 
     // concurrent
-    const a = new pg.Client({ ...DB, ...LOGINS.admin });
-    const b2 = new pg.Client({ ...DB, ...LOGINS.admin });
-    await a.connect();
-    await b2.connect();
+    const a = await adminSession(`${caller.label}: connection A`);
+    const b2 = await adminSession(`${caller.label}: connection B`);
+    const who = (x: Session) => `${x.identity.label} — current_user ${x.identity.currentUser}, session_user ${x.identity.sessionUser}, superuser ${String(x.identity.isSuperuser)}, bypassrls ${String(x.identity.bypassesRls)}`;
     const timeline: string[] = [];
     const mark = (s: string) => timeline.push(`${new Date().toISOString()} ${s}`);
     try {
@@ -715,13 +718,16 @@ async function runF9(
       return {
         outcome: synth(moved === 625 && reconciles, Object.values(claims).map((c) => c.detail).join("; ")),
         statement: `${call}  -- issued on two overlapping connections, deltas 250 and 375`,
-        notes: [...timeline, `balance ${String(before?.balance)} -> ${String(after?.balance)}; ledger sum ${String(sum?.s)}`], claims,
+        notes: [who(a), who(b2), ...timeline, `balance ${String(before?.balance)} -> ${String(after?.balance)}; ledger sum ${String(sum?.s)}`], claims,
+        // Both connections are the same login; the record carries A's read-back
+        // under the row's planned label, and the notes carry each one's.
+        identity: { ...a.identity, label: caller.label },
       };
     } finally {
       await a.query("rollback").catch(() => {});
       await b2.query("rollback").catch(() => {});
-      await a.end().catch(() => {});
-      await b2.end().catch(() => {});
+      await a.close().catch(() => {});
+      await b2.close().catch(() => {});
     }
   } finally {
     await admin.close().catch(() => {});
@@ -966,7 +972,7 @@ export async function runTests(
     let rebuiltBefore = false;
     if (dirty !== null || !baseline) {
       try {
-        baseline = await rebuildBaseline({ epoch: rebuilds + 1, expectedSchema: ctx.expectedSchema, canonical, arc21Pre: ctx.arc21Pre, log: ctx.log });
+        baseline = await rebuildBaseline({ epoch: rebuilds + 1, expectedSchema: ctx.expectedSchema, canonical, arc21Pre: ctx.arc21Pre, log: ctx.log, only: ctx.extensionFilter });
       } catch (err) {
         aborted = { reason: (err as Error).message, beforeTestId: id, arc21Changed: err instanceof Arc21ChangedError };
         ctx.log(`  RUN ABORTED before ${id}: ${(err as Error).message}`);
