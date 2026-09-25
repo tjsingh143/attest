@@ -22,6 +22,14 @@
  *              be `effective`. Any mismatch stops the command.
  *   narrative  rubric/wp5-author-narratives.json — the author's words and status
  *              decisions, merged in verbatim; blank until the author writes them
+ *   CP4        rubric/cp4-author-response.json — the author's CP4 reply, verbatim:
+ *              statuses, narratives, judgments J1–J14 and the approval. Under
+ *              Amendment A2 its wording is AI-assisted text the author reviewed
+ *              and adopted; the narrative store must carry exactly its strings,
+ *              with that provenance, or nothing is written (checkCp4Record)
+ *   scope      rubric/wp5-audit-scope.json — the AI-drafted application of the
+ *              author's J3/J4 rule to each audit-absence resource; it must cover
+ *              exactly the F10 absence records (checkAuditScope)
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -36,15 +44,25 @@ export const NARRATIVES_PATH = join(ATTEST_ROOT, "rubric", "wp5-author-narrative
 export const FINDINGS_PATH = join(ATTEST_ROOT, "FINDINGS.md");
 export const CP4_PACKET_PATH = join(ATTEST_ROOT, "CP4_PACKET.md");
 
+export const CP4_RESPONSE_PATH = join(ATTEST_ROOT, "rubric", "cp4-author-response.json");
+export const AUDIT_SCOPE_PATH = join(ATTEST_ROOT, "rubric", "wp5-audit-scope.json");
+
 export type AuthorStatus = "open" | "accepted_design_intent" | "informational";
+
+/**
+ * Who wrote the WORDS of a narrative. `user_authored`: the author composed them.
+ * `user_reviewed_ai_draft`: AI-assisted wording the author reviewed and adopted
+ * (Amendment A2) — never to be presented as the author's own composition.
+ */
+export type NarrativeProvenance = "awaiting_author" | "user_authored" | "user_reviewed_ai_draft";
 
 export interface AuthorEntry {
   readonly key: string;
-  /** The author's own words, verbatim; null until written. */
+  /** The narrative the author adopted, verbatim; null until given. */
   readonly narrative: string | null;
   /** The author's status decision; null until made. */
   readonly status: AuthorStatus | null;
-  readonly provenance: "awaiting_author" | "user_authored";
+  readonly provenance: NarrativeProvenance;
   /** Where the words came from (a dated reply), never invented. */
   readonly recordedFrom: string | null;
 }
@@ -52,6 +70,39 @@ export interface AuthorEntry {
 export interface NarrativeStore {
   readonly WARNING: string;
   readonly entries: readonly AuthorEntry[];
+}
+
+/** The author's CP4 reply, verbatim (rubric/cp4-author-response.json). */
+export interface Cp4Response {
+  readonly recordedFrom: string;
+  readonly provenance: { readonly decisions: string; readonly wording: string; readonly amendment: string };
+  readonly presentedIn: Readonly<Record<string, string>>;
+  readonly items: readonly { readonly id: string; readonly key: string; readonly status: AuthorStatus; readonly narrative: string; readonly judgments: readonly string[] }[];
+  readonly judgments: Readonly<Record<string, string>>;
+  readonly judgmentScope: Readonly<Record<string, string>>;
+  readonly approval: { readonly CP4: string; readonly statement: string; readonly doesNotMean: readonly string[] };
+}
+
+export type ScopeDisposition = "trail_required" | "excluded_transient" | "ledger_conditional";
+
+/** The AI-drafted application of the author's J3/J4 rule (rubric/wp5-audit-scope.json). */
+export interface AuditScope {
+  readonly WARNING: string;
+  readonly rule: string;
+  readonly provenance: string;
+  readonly dispositions: Readonly<Record<ScopeDisposition, string>>;
+  readonly resources: readonly {
+    readonly resource: string; readonly testId: string; readonly disposition: ScopeDisposition;
+    readonly clause: string; readonly reason: string; readonly residualRisk?: string;
+    readonly conditions?: readonly { readonly condition: string; readonly status: string; readonly evidence: string }[];
+  }[];
+}
+
+/** One question put to the author at CP4, and the answer, verbatim. */
+export interface Cp4Judgment {
+  readonly j: string;
+  readonly asked: string;
+  readonly answer: string;
 }
 
 const TIER_ORDER: Readonly<Record<string, number>> = { High: 0, Medium: 1, Low: 2 };
@@ -76,6 +127,8 @@ export interface Wp5Item {
   readonly drift: readonly string[];
   readonly spec: ItemSpec;
   readonly author: AuthorEntry;
+  /** The questions put at CP4 about this item and the author's answers; empty before CP4. */
+  readonly cp4Judgments: readonly Cp4Judgment[];
 }
 
 export interface Wp5Result {
@@ -84,7 +137,22 @@ export interface Wp5Result {
   readonly items: readonly Wp5Item[];
   readonly totals: Readonly<Record<string, unknown>>;
   readonly problems: readonly string[];
+  /** The author's CP4 reply, when recorded. */
+  readonly cp4: Cp4Response | null;
+  /** J13 (ranking rule) and J14 (run record): questions and answers, when recorded. */
+  readonly cp4General: readonly Cp4Judgment[];
+  /** The AI-drafted application of the author's J3/J4 rule, when recorded. */
+  readonly auditScope: AuditScope | null;
 }
+
+/** The two questions CP4 asked about the list as a whole (cp4-packet.ts renders the same words). */
+export const CP4_GENERAL_QUESTIONS: readonly { readonly scope: string; readonly asked: (wp3: string, wp4: string | null) => string }[] = [
+  { scope: "the ranking rule (D3.57)", asked: () => "The ranking rule (D3.57): accept it, or state the rule you want. A different rule is recorded as your decision; it never changes a frozen tier." },
+  {
+    scope: "the run record: which runs are the official WP3 and WP4 results",
+    asked: (wp3, wp4) => `The run record: the earlier WP3 and WP4 runs above are kept as superseded, aborted or stopped records; \`${wp3}\` is the WP3 result${wp4 ? ` and \`${wp4}\` the WP4 result` : ""}. Accept?`,
+  },
+];
 
 const view = (r: Rec): RecordView => ({
   testId: String(r.testId), family: String(r.family), resource: String(r.resource), controlId: String(r.controlId),
@@ -114,6 +182,118 @@ export async function loadNarratives(): Promise<NarrativeStore> {
   } catch {
     return { WARNING: "", entries: [] };
   }
+}
+
+export async function loadCp4Response(): Promise<Cp4Response | null> {
+  try {
+    return JSON.parse(await readFile(CP4_RESPONSE_PATH, "utf8")) as Cp4Response;
+  } catch {
+    return null;
+  }
+}
+
+export async function loadAuditScope(): Promise<AuditScope | null> {
+  try {
+    return JSON.parse(await readFile(AUDIT_SCOPE_PATH, "utf8")) as AuditScope;
+  } catch {
+    return null;
+  }
+}
+
+/** Is the reply's wording recorded as AI-assisted (Amendment A2)? */
+const wordingIsAiAssisted = (resp: Cp4Response): boolean => /^user_reviewed_ai_draft\b/.test(resp.provenance?.wording ?? "");
+
+/**
+ * The J numbers the CP4 packet gave each question: every item that is not a
+ * limitation, in rank order, one number per question; then the ranking rule and
+ * the run record. Recomputed here so an answer can never attach to a question it
+ * was not given for.
+ */
+export function cp4QuestionNumbers(ranked: readonly { readonly id: string; readonly key: string; readonly part: string; readonly spec: ItemSpec }[]): { perItem: Map<string, string[]>; general: string[] } {
+  let n = 0;
+  const perItem = new Map<string, string[]>();
+  for (const i of ranked.filter((x) => x.part !== "limitation")) perItem.set(i.key, i.spec.judgment.map(() => `J${++n}`));
+  return { perItem, general: CP4_GENERAL_QUESTIONS.map(() => `J${++n}`) };
+}
+
+/**
+ * Ties the narrative store to the author's recorded CP4 reply. Pure, so that
+ * prove-gates can hand it a broken copy. Refuses when a narrative differs from
+ * the reply by a byte, a status differs, AI-assisted wording is labelled
+ * `user_authored`, an item was answered under a different rank than the one it
+ * now has, or a J number would attach to a question it was not asked for.
+ */
+export function checkCp4Record(
+  ranked: readonly { readonly id: string; readonly key: string; readonly part: string; readonly spec: ItemSpec }[],
+  store: NarrativeStore,
+  resp: Cp4Response | null,
+): string[] {
+  const problems: string[] = [];
+  if (!resp) {
+    for (const e of store.entries) {
+      if (e.provenance !== "awaiting_author" || e.narrative !== null || e.status !== null) {
+        problems.push(`narrative store: ${e.key} carries a narrative or status but no CP4 reply is recorded (rubric/cp4-author-response.json)`);
+      }
+    }
+    return problems;
+  }
+  const aiWording = wordingIsAiAssisted(resp);
+  const numbers = cp4QuestionNumbers(ranked);
+  for (const item of ranked.filter((x) => x.part !== "limitation")) {
+    const answer = resp.items.find((a) => a.key === item.key);
+    if (!answer) { problems.push(`CP4: ${item.key} (${item.id}) has no recorded answer`); continue; }
+    if (answer.id !== item.id) problems.push(`CP4: the author answered ${answer.id} as ${item.key}, which now ranks ${item.id} — the ranking moved after the reply`);
+    const want = numbers.perItem.get(item.key) ?? [];
+    if (JSON.stringify(want) !== JSON.stringify(answer.judgments)) {
+      problems.push(`CP4: ${item.key}'s questions were numbered ${want.join(", ") || "(none)"}; the record attaches ${answer.judgments.join(", ") || "(none)"}`);
+    }
+    for (const j of answer.judgments) if (typeof resp.judgments[j] !== "string" || !resp.judgments[j]!.trim()) problems.push(`CP4: ${j} (${item.key}) has no recorded answer`);
+    const e = store.entries.find((x) => x.key === item.key);
+    if (!e) { problems.push(`narrative store: no entry for ${item.key}`); continue; }
+    if (e.narrative !== answer.narrative) problems.push(`narrative store: ${item.key}'s narrative is not the reply's text verbatim`);
+    if (e.status !== answer.status) problems.push(`narrative store: ${item.key}'s status is ${e.status}, the reply says ${answer.status}`);
+    if (!e.recordedFrom?.trim()) problems.push(`narrative store: ${item.key} does not say which reply it came from`);
+    if (aiWording && e.provenance !== "user_reviewed_ai_draft") {
+      problems.push(`narrative store: ${item.key} is labelled ${e.provenance}, but the reply's wording is AI-assisted text the author reviewed and adopted (user_reviewed_ai_draft; Amendment A2)`);
+    }
+    if (!aiWording && e.provenance !== "user_authored") problems.push(`narrative store: ${item.key} is labelled ${e.provenance}; the reply records the author's own words`);
+  }
+  for (const a of resp.items) if (!ranked.some((x) => x.key === a.key && x.part !== "limitation")) problems.push(`CP4: the reply answers ${a.key}, which is not an item that takes a narrative`);
+  for (const [n, j] of numbers.general.entries()) {
+    if (resp.judgmentScope[j] !== CP4_GENERAL_QUESTIONS[n]!.scope) problems.push(`CP4: ${j} was the question on ${CP4_GENERAL_QUESTIONS[n]!.scope}; the record says ${resp.judgmentScope[j] ?? "nothing"}`);
+    if (!resp.judgments[j]?.trim()) problems.push(`CP4: ${j} has no recorded answer`);
+  }
+  const accounted = new Set([...resp.items.flatMap((a) => a.judgments), ...numbers.general]);
+  for (const j of Object.keys(resp.judgments)) if (!accounted.has(j)) problems.push(`CP4: ${j} is recorded but was not a question in the packet`);
+  if (!/^approved\b/.test(resp.approval?.CP4 ?? "")) problems.push(`CP4: the recorded approval reads "${resp.approval?.CP4 ?? ""}", not "approved"`);
+  return problems;
+}
+
+/**
+ * The J3/J4 scope must cover exactly the audit-absence records: the same
+ * resources, the same Test IDs, each a `gap`, and each exclusion with a reason
+ * and its residual risk. Pure, for prove-gates.
+ */
+export function checkAuditScope(scope: AuditScope | null, records: readonly Rec[]): string[] {
+  if (!scope) return [];
+  const problems: string[] = [];
+  const absent = records.filter((r) => String(r.family).startsWith("F10") && String(r.controlId).endsWith("#audit:absent"));
+  const byRes = new Map(absent.map((r) => [String(r.resource), r]));
+  const seen = new Set<string>();
+  for (const s of scope.resources) {
+    if (seen.has(s.resource)) problems.push(`audit scope: ${s.resource} is listed twice`);
+    seen.add(s.resource);
+    const r = byRes.get(s.resource);
+    if (!r) { problems.push(`audit scope: ${s.resource} has no F10 absence record`); continue; }
+    if (r.testId !== s.testId) problems.push(`audit scope: ${s.resource} cites ${s.testId}; its absence record is ${r.testId}`);
+    if (r.verdict !== "gap") problems.push(`audit scope: ${s.testId} is ${r.verdict}, not gap`);
+    if (!["trail_required", "excluded_transient", "ledger_conditional"].includes(s.disposition)) problems.push(`audit scope: ${s.resource} has disposition ${s.disposition}`);
+    if (!s.reason?.trim()) problems.push(`audit scope: ${s.resource} gives no reason`);
+    if (s.disposition === "excluded_transient" && !s.residualRisk?.trim()) problems.push(`audit scope: the exclusion of ${s.resource} states no residual risk`);
+    if (s.disposition === "ledger_conditional" && !(s.conditions?.length)) problems.push(`audit scope: ${s.resource} is conditional but lists no conditions`);
+  }
+  for (const r of absent) if (!seen.has(String(r.resource))) problems.push(`audit scope: the absence record ${r.testId} (${r.resource}) is not scoped`);
+  return problems;
 }
 
 export function blankNarratives(): NarrativeStore {
@@ -181,9 +361,12 @@ export async function buildWp5(opts: { wp3RunId: string; wp4RunId?: string | nul
     }
   }
   const store = await loadNarratives();
+  const cp4 = await loadCp4Response();
+  const auditScope = await loadAuditScope();
 
   // --- grouping, checked against the evidence ---------------------------------
   problems.push(...checkGrouping(WP5_ITEMS, records, inventory.observations as Rec[]));
+  problems.push(...checkAuditScope(auditScope, records));
   const owner = new Map<string, string[]>();
   for (const spec of WP5_ITEMS) for (const r of records.filter((x) => spec.select(view(x)))) owner.set(r.testId, [...(owner.get(r.testId) ?? []), spec.key]);
 
@@ -259,20 +442,31 @@ export async function buildWp5(opts: { wp3RunId: string; wp4RunId?: string | nul
     ((EXPOSURE_ORDER[a.exposure] ?? 9) - (EXPOSURE_ORDER[b.exposure] ?? 9)) ||
     (b.sel.length - a.sel.length) || a.spec.key.localeCompare(b.spec.key));
   const counters: Record<string, number> = {};
-  const items: Wp5Item[] = ranked.map((x) => {
+  const idOf = new Map<string, string>();
+  for (const x of ranked) {
     const letter = PART_LETTER[x.spec.part]!;
     counters[letter] = (counters[letter] ?? 0) + 1;
-    return {
-      id: `${letter}${counters[letter]}`, key: x.spec.key, part: x.spec.part, title: x.spec.title,
-      tier: x.tier, tierBasis: x.tierBasis, exposure: x.exposure, evidenceClass: x.evidenceClass,
-      testIds: x.sel.map((r) => String(r.testId)), supportingTestIds: x.sup.map((r) => String(r.testId)),
-      bullets: x.bullets, approvedEscalations: x.approvedEscalations, drift: x.driftLines, spec: x.spec, author: x.author,
-    };
-  });
+    idOf.set(x.spec.key, `${letter}${counters[letter]}`);
+  }
+  const numbered = ranked.map((x) => ({ id: idOf.get(x.spec.key)!, key: x.spec.key, part: x.spec.part, spec: x.spec }));
+  problems.push(...checkCp4Record(numbered, store, cp4));
+  const numbers = cp4QuestionNumbers(numbered);
+  const answered = (key: string, questions: readonly string[]): Cp4Judgment[] =>
+    !cp4 ? [] : (numbers.perItem.get(key) ?? []).map((j, n) => ({ j, asked: questions[n] ?? "", answer: cp4.judgments[j] ?? "" })).filter((q) => q.answer);
+  const items: Wp5Item[] = ranked.map((x) => ({
+    id: idOf.get(x.spec.key)!, key: x.spec.key, part: x.spec.part, title: x.spec.title,
+    tier: x.tier, tierBasis: x.tierBasis, exposure: x.exposure, evidenceClass: x.evidenceClass,
+    testIds: x.sel.map((r) => String(r.testId)), supportingTestIds: x.sup.map((r) => String(r.testId)),
+    bullets: x.bullets, approvedEscalations: x.approvedEscalations, drift: x.driftLines, spec: x.spec, author: x.author,
+    cp4Judgments: answered(x.spec.key, x.spec.judgment),
+  }));
+  const cp4General: Cp4Judgment[] = !cp4 ? [] : numbers.general
+    .map((j, n) => ({ j, asked: CP4_GENERAL_QUESTIONS[n]!.asked(opts.wp3RunId, opts.wp4RunId ?? null), answer: cp4.judgments[j] ?? "" }))
+    .filter((q) => q.answer);
 
   const byVerdict = records.reduce<Record<string, number>>((m, r) => ({ ...m, [r.verdict]: (m[r.verdict] ?? 0) + 1 }), {});
   return {
-    wp3RunId: opts.wp3RunId, wp4RunId: opts.wp4RunId ?? null, items, problems,
+    wp3RunId: opts.wp3RunId, wp4RunId: opts.wp4RunId ?? null, items, problems, cp4, cp4General, auditScope,
     totals: { records: records.length, byVerdict, reported: [...owner.keys()].length, frozenCp3Run: FROZEN_CP3_RUN, planRunId: opts.planRunId },
   };
 }
@@ -325,21 +519,114 @@ export function verifyItem(spec: ItemSpec, official: readonly Rec[], candidate: 
 // rendering
 // ---------------------------------------------------------------------------
 
-const STATUS_TEXT: Readonly<Record<string, string>> = {
-  open: "OPEN — the author's decision",
-  accepted_design_intent: "ACCEPTED / DESIGN INTENT — the author's decision",
-  informational: "INFORMATIONAL — the author's decision",
+const STATUS_TEXT: Readonly<Record<AuthorStatus, string>> = {
+  open: "OPEN",
+  accepted_design_intent: "ACCEPTED / DESIGN INTENT",
+  informational: "INFORMATIONAL",
 };
 
-function statusLine(i: Wp5Item): string {
+/** "2026-09-25" out of a recordedFrom string, when it names a date. */
+export const replyDate = (s: string | null | undefined): string => /\b(\d{4}-\d{2}-\d{2})\b/.exec(s ?? "")?.[1] ?? "date not recorded";
+
+export function scopeCounts(scope: AuditScope): Record<ScopeDisposition | "total", number> {
+  const c = { trail_required: 0, excluded_transient: 0, ledger_conditional: 0, total: scope.resources.length };
+  for (const r of scope.resources) c[r.disposition]++;
+  return c;
+}
+
+/** The status in one or two words: the author's decision once made. */
+export function statusShort(i: Wp5Item): string {
+  if (i.part === "limitation") return "NOT MEASURED";
+  if (i.author.status) return STATUS_TEXT[i.author.status];
+  return i.part === "finding" ? "OPEN (pending CP4)" : "INFORMATIONAL (pending CP4)";
+}
+
+function statusLine(i: Wp5Item, scope: AuditScope | null): string {
   if (i.part === "limitation") return "NOT MEASURED — a limitation of the assessment, not a finding";
-  if (i.author.status) return `${STATUS_TEXT[i.author.status]} (${i.author.recordedFrom ?? "source not recorded"})`;
+  if (i.author.status) {
+    const base = `${STATUS_TEXT[i.author.status]} — the author's decision at CP4 (${replyDate(i.author.recordedFrom)})`;
+    if (i.author.status === "open") {
+      const c = i.key === "audit-trail-absent" && scope ? scopeCounts(scope) : null;
+      const where = c ? `, for the ${c.trail_required} of ${c.total} resources the author's rule requires a trail for (scope below)` : "";
+      return `${base}${where} — never remediated by Attest, never closed`;
+    }
+    return i.author.status === "accepted_design_intent"
+      ? `${base} — accepted as intended behaviour; the evidence verdicts are unchanged and nothing was remediated`
+      : `${base} — recorded for information; nothing was remediated`;
+  }
   return i.part === "finding"
     ? "OPEN, pending the author's judgment at CP4 — never remediated by Attest, never closed"
     : "INFORMATIONAL, pending the author's judgment at CP4 (open, or accepted / design intent)";
 }
 
-export function renderItem(i: Wp5Item, wp3RunId: string): string[] {
+function provenanceSentence(a: AuthorEntry): string {
+  switch (a.provenance) {
+    case "user_reviewed_ai_draft":
+      return `the decisions are the author's; the wording is AI-assisted text the author reviewed and adopted in the reply of ${replyDate(a.recordedFrom)} — recorded \`user_reviewed_ai_draft\` under Amendment A2, not the author's independent composition.`;
+    case "user_authored":
+      return `in the author's own words (reply of ${replyDate(a.recordedFrom)}).`;
+    default:
+      return "awaiting the author.";
+  }
+}
+
+function renderCp4Block(i: Wp5Item): string[] {
+  const L: string[] = [];
+  const p = (x = "") => L.push(x);
+  if (i.part === "limitation" || (!i.author.status && !i.author.narrative && !i.cp4Judgments.length)) return L;
+  p(`**The author's decision at CP4** — ${provenanceSentence(i.author)}`);
+  p();
+  if (i.author.status) p(`- *Status:* ${STATUS_TEXT[i.author.status]}`);
+  if (i.author.narrative) p(`- *Narrative:* ${i.author.narrative}`);
+  for (const q of i.cp4Judgments) {
+    p(`- *${q.j}, as asked:* ${q.asked}`);
+    p(`  - *Answer:* ${q.answer}`);
+  }
+  p();
+  if (i.spec.cp4Notes?.length) {
+    p("**What the decision means for the evidence** *(AI-drafted, Amendment A2 — the decision itself is the author's)*");
+    p();
+    for (const n of i.spec.cp4Notes) p(`- ${n}`);
+    p();
+  }
+  return L;
+}
+
+const SCOPE_LABEL: Readonly<Record<ScopeDisposition, string>> = {
+  trail_required: "**trail required — none exists** (open)",
+  ledger_conditional: "covered by `wallet_ledger` **only if J4's conditions hold** — not all established",
+  excluded_transient: "excluded: transient live state",
+};
+const SCOPE_ORDER: Readonly<Record<ScopeDisposition, number>> = { trail_required: 0, ledger_conditional: 1, excluded_transient: 2 };
+const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
+
+function renderScope(scope: AuditScope): string[] {
+  const L: string[] = [];
+  const p = (x = "") => L.push(x);
+  const c = scopeCounts(scope);
+  p("**Scope under the author's rule (J3, J4)** *(AI-drafted application of the author's rule under Amendment A2, conservative where a resource could be read either way; every exclusion is written up in DECISIONS.md D3.59)*");
+  p();
+  p(`Of the ${c.total} resources: **${c.trail_required} require a trail and have none** — the finding stays open for them; ` +
+    `${c.ledger_conditional} is covered by \`wallet_ledger\` only under J4's three conditions, which this assessment establishes in part; ` +
+    `${c.excluded_transient} are transient live state that the rule excludes.`);
+  p();
+  p("| Resource | Test ID | Under the author's rule | Why |");
+  p("|---|---|---|---|");
+  const rows = [...scope.resources].sort((a, b) => (SCOPE_ORDER[a.disposition] - SCOPE_ORDER[b.disposition]) || a.resource.localeCompare(b.resource));
+  for (const s of rows) {
+    p(`| \`${s.resource}\` | \`${s.testId}\` | ${SCOPE_LABEL[s.disposition]} | ${cell(s.reason)}${s.residualRisk ? ` *Residual risk:* ${cell(s.residualRisk)}` : ""} |`);
+  }
+  p();
+  for (const w of rows.filter((s) => s.disposition === "ledger_conditional")) {
+    p(`J4's conditions for \`${w.resource}\`, against the evidence:`);
+    p();
+    for (const k of w.conditions ?? []) p(`- **${k.condition}** — ${k.status}. ${k.evidence}`);
+    p();
+  }
+  return L;
+}
+
+export function renderItem(i: Wp5Item, r: Wp5Result): string[] {
   const s = i.spec;
   const L: string[] = [];
   const p = (x = "") => L.push(x);
@@ -347,12 +634,14 @@ export function renderItem(i: Wp5Item, wp3RunId: string): string[] {
   p();
   p(`| | |`);
   p(`|---|---|`);
-  p(`| Status | ${statusLine(i)} |`);
+  p(`| Status | ${statusLine(i, r.auditScope)} |`);
   p(`| Tier | **${i.tier}** — ${i.tierBasis} |`);
   p(`| Most exposed path (frozen rating) | ${i.exposure} |`);
   p(`| Evidence class | ${i.evidenceClass === "none" ? "WP0 structural observation (no WP3 record is non-effective)" : i.evidenceClass} |`);
   p(`| Test IDs | ${i.testIds.length ? i.testIds.map((t) => `\`${t}\``).join(", ") : "—"} |`);
   p();
+  L.push(...renderCp4Block(i));
+  if (i.key === "audit-trail-absent" && r.auditScope) L.push(...renderScope(r.auditScope));
   p("**Evidence** (generated from the records)");
   p();
   for (const b of i.bullets) p(`- ${b}`);
@@ -387,16 +676,21 @@ export function renderItem(i: Wp5Item, wp3RunId: string): string[] {
     for (const l of s.limitations) p(`- ${l}`);
     p();
   }
-  if (s.judgment.length) {
+  if (s.judgment.length && !i.cp4Judgments.length) {
     p("**Judgment needed from the author**");
     p();
     for (const j of s.judgment) p(`- ${j}`);
     p();
   }
   if (s.remediation.length) {
-    p("**Remediation options** *(AI-drafted recommendations — not implemented; Arc21 is a read-only target)*");
+    const st = i.author.status;
+    p(st === "accepted_design_intent"
+      ? "**Remediation options** *(AI-drafted and presented at CP4 — not implemented. The author accepted this item as design intent, so these are reference options, not open work)*"
+      : st === "informational"
+        ? "**Remediation options** *(AI-drafted — not implemented. The author classed this item informational: defence-in-depth options, not an open finding)*"
+        : "**Remediation options** *(AI-drafted recommendations — not implemented; Arc21 is a read-only target)*");
     p();
-    s.remediation.forEach((r, n) => { p(`${n + 1}. ${r.option}`); p(`   *Tradeoffs:* ${r.tradeoffs}`); });
+    s.remediation.forEach((x, n) => { p(`${n + 1}. ${x.option}`); p(`   *Tradeoffs:* ${x.tradeoffs}`); });
     p();
   }
   if (s.verification.steps.length) {
@@ -407,18 +701,29 @@ export function renderItem(i: Wp5Item, wp3RunId: string): string[] {
         : `**Verifying a future fix** — each listed Test ID must become \`${s.verification.mustBecome}\``)
       : "**Re-checking after a future change** — these frozen rows cannot confirm a fix (see the caveat)");
     p();
+    if (i.author.status && i.author.status !== "open") {
+      p(`*Nothing is pending verification: the author's status is ${STATUS_TEXT[i.author.status].toLowerCase()}. The procedure stands for a future change of that decision.*`);
+      p();
+    }
     const steps = [...s.verification.steps];
-    if (can) steps.splice(4, 0, `\`npm run attest verify-finding ${s.key} --official=${wp3RunId} --candidate=<new run>\` — every Test ID of this item must reach the state above, the candidate run must have passed validation, and no Test ID that was \`effective\` in the official run may be anything else.`);
+    if (can) steps.splice(4, 0, `\`npm run attest verify-finding ${s.key} --official=${r.wp3RunId} --candidate=<new run>\` — every Test ID of this item must reach the state above, the candidate run must have passed validation, and no Test ID that was \`effective\` in the official run may be anything else.`);
     steps.forEach((st, n) => p(`${n + 1}. ${st}`));
     if (s.verification.caveat) { p(); p(`*Caveat:* ${s.verification.caveat}`); }
     p();
   }
-  if (i.part !== "limitation") {
-    p(`**AUTHOR NARRATIVE:** ${i.author.narrative ? i.author.narrative : "______"}`);
-    if (i.author.narrative) p(`*(the author's words, ${i.author.recordedFrom ?? "source not recorded"})*`);
+  if (i.part !== "limitation" && !i.author.narrative) {
+    p("**AUTHOR NARRATIVE:** ______");
     p();
   }
   return L;
+}
+
+/** Items by the author's status, for the summary table (computed, never typed). */
+export function statusSummary(r: Wp5Result): { status: string; ids: string[] }[] {
+  const order = ["OPEN", "OPEN (pending CP4)", "ACCEPTED / DESIGN INTENT", "INFORMATIONAL", "INFORMATIONAL (pending CP4)", "NOT MEASURED"];
+  const m = new Map<string, string[]>();
+  for (const i of r.items) m.set(statusShort(i), [...(m.get(statusShort(i)) ?? []), i.id]);
+  return [...m.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0])).map(([status, ids]) => ({ status, ids }));
 }
 
 export function renderFindings(r: Wp5Result): string {
@@ -428,24 +733,54 @@ export function renderFindings(r: Wp5Result): string {
   const info = r.items.filter((i) => i.part === "informational");
   const lim = r.items.filter((i) => i.part === "limitation");
   const t = r.totals as Rec;
+  const answered = r.items.some((i) => i.author.narrative);
+  const aiWording = r.items.some((i) => i.author.provenance === "user_reviewed_ai_draft");
   p("# FINDINGS — Arc21 access-control assessment");
   p();
-  p("> Generated by `npm run attest wp5` from the evidence named below. Regenerated, never hand-edited: the author's narrative");
-  p("> and status decisions live in `rubric/wp5-author-narratives.json` and are merged in verbatim.");
+  p("> Generated by `npm run attest wp5` from the evidence named below. Regenerated, never hand-edited: the author's decisions");
+  p("> and the narratives the author adopted live in `rubric/wp5-author-narratives.json` and `rubric/cp4-author-response.json`");
+  p("> and are merged in verbatim.");
   p(">");
   p("> **Arc21 is a read-only assessment target (Amendment A1).** Nothing below was remediated by Attest, nothing is claimed");
   p("> closed or fixed, and no remediation was implemented or independently verified. Every remediation is a recommendation,");
   p("> and every verification procedure is a procedure for a future fix made by Arc21's author.");
   p(">");
-  p("> **Provenance.** Evidence bullets are generated from the records. Titles, \"what happened\", \"why it matters\", limitations,");
-  p("> remediation options and tradeoffs are AI-drafted (Claude) for the author's review at CP4 — they are not the author's words.");
-  p("> The **AUTHOR NARRATIVE** under each item is the author's alone and stays blank until the author writes it.");
+  if (r.cp4) {
+    p(`> **CP4 — ${r.cp4.approval.CP4.replace(/\.$/, "")} by the author on ${replyDate(r.cp4.recordedFrom)}.** The reply: "${r.cp4.approval.statement}"`);
+    p(`> This approval does NOT mean: ${r.cp4.approval.doesNotMean.map((x) => x.replace(/[;.]$/, "")).join("; ")}.`);
+    p(">");
+  }
+  if (answered && aiWording) {
+    p("> **Provenance.** Evidence bullets are generated from the records. Titles, \"what happened\", \"why it matters\", limitations,");
+    p("> remediation options, tradeoffs, the audit-trail scope table and the notes on each CP4 decision are AI-drafted (Claude) and");
+    p("> labelled so. Every status, judgment and the CP4 approval is the author's decision. The narrative under each item, and the");
+    p("> wording of every answer, is AI-assisted text the author reviewed and adopted in the CP4 reply (Amendment A2) — recorded");
+    p("> `user_reviewed_ai_draft`, and never to be presented as the author's independent composition.");
+  } else {
+    p("> **Provenance.** Evidence bullets are generated from the records. Titles, \"what happened\", \"why it matters\", limitations,");
+    p("> remediation options and tradeoffs are AI-drafted (Claude) for the author's review at CP4 — they are not the author's words.");
+    p("> The **AUTHOR NARRATIVE** under each item is the author's alone and stays blank until the author writes it.");
+  }
   p();
   p(`Evidence: official WP3 run \`${r.wp3RunId}\` (${t.records} records, validated) · frozen WP2 tiers and WP0 inventory: CP3 run \`${t.frozenCp3Run}\` · planning run \`${t.planRunId}\`${r.wp4RunId ? ` · WP4 drift run \`${r.wp4RunId}\`` : ""}`);
   p();
+  if (r.cp4) {
+    p("## Status after CP4");
+    p();
+    p("| Status | Items |");
+    p("|---|---|");
+    const c = r.auditScope ? scopeCounts(r.auditScope) : null;
+    for (const g of statusSummary(r)) {
+      p(`| ${g.status} | ${g.ids.map((id) => (c && r.items.find((i) => i.id === id)?.key === "audit-trail-absent" ? `${id} (${c.trail_required} of ${c.total} resources in scope)` : id)).join(", ")} |`);
+    }
+    p();
+    p("The status is the author's decision about what the evidence means for Arc21. It never changes a WP3 verdict: the records");
+    p("keep the verdicts they were given against their frozen expectations.");
+    p();
+  }
   p("## How the list is ranked");
   p();
-  p("Mechanically, from frozen inputs only (DECISIONS D3.57). No severity, score or tier is assigned here.");
+  p(`Mechanically, from frozen inputs only (DECISIONS D3.57)${r.cp4General.length ? "; the author accepted the rule at CP4 (J13)" : ""}. No severity, score or tier is assigned here.`);
   p();
   p("1. **Part**: findings (a WP3 failure or gap) before informational items (characterizations and WP0 structural observations), before limitations.");
   p("2. **Frozen WP2 tier** of the resource whose data or integrity is affected (High before Medium). For a SECURITY DEFINER function that is the table it exposes or changes — every F5 test row is High-depth by the planning rule, which is a depth rule, not a risk rating.");
@@ -453,21 +788,34 @@ export function renderFindings(r: Wp5Result): string {
   p("4. **Most exposed path** in the frozen rating: anonymous before authenticated before server-only.");
   p("5. More Test IDs before fewer; then the item's name.");
   p();
+  p("The part an item sits in comes from its evidence, not from the author's status: an item the author accepted as design intent keeps its place.");
+  p();
   p("| # | Item | Tier | Evidence | Test IDs | Status |");
   p("|---|---|---|---|---:|---|");
-  for (const i of r.items) p(`| ${i.id} | ${i.title} | ${i.tier} | ${i.evidenceClass === "none" ? "WP0" : i.evidenceClass} | ${i.testIds.length} | ${statusLine(i).split(" — ")[0]!.split(",")[0]} |`);
+  for (const i of r.items) p(`| ${i.id} | ${i.title} | ${i.tier} | ${i.evidenceClass === "none" ? "WP0" : i.evidenceClass} | ${i.testIds.length} | ${statusShort(i)} |`);
   p();
   p("## Part A — Findings");
   p();
-  for (const i of findings) L.push(...renderItem(i, r.wp3RunId));
+  for (const i of findings) L.push(...renderItem(i, r));
   p("## Part B — Informational: characterizations and WP0 structural observations");
   p();
-  p("WP0 found no resource without a control: every application table has row-level security enabled. Its structural observations are carried here, each with the WP3 Test IDs that exercised it. Whether any of them is open is the author's decision.");
+  p("WP0 found no resource without a control: every application table has row-level security enabled. Its structural observations are carried here, each with the WP3 Test IDs that exercised it.");
   p();
-  for (const i of info) L.push(...renderItem(i, r.wp3RunId));
+  for (const i of info) L.push(...renderItem(i, r));
   p("## Part C — What WP3 could not measure");
   p();
-  for (const i of lim) L.push(...renderItem(i, r.wp3RunId));
+  for (const i of lim) L.push(...renderItem(i, r));
+  if (r.cp4General.length) {
+    p("## The author's CP4 decisions on the list as a whole");
+    p();
+    p("Verbatim. The decisions are the author's; the wording is AI-assisted text the author reviewed and adopted (Amendment A2).");
+    p();
+    for (const q of r.cp4General) {
+      p(`- *${q.j}, as asked:* ${q.asked}`);
+      p(`  - *Answer:* ${q.answer}`);
+    }
+    p();
+  }
   p("## Everything else");
   p();
   const bv = t.byVerdict as Record<string, number>;

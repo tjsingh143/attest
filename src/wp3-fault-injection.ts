@@ -68,7 +68,8 @@ import { readAppliedState, readSchemaVersion, unbuiltInstanceReason } from "./sc
 import { diffInventories, diffResults, type ResultPoint } from "./wp4-drift.ts";
 import { loadValidationInputs, validateLoaded } from "./wp3-validate-results.ts";
 import { resetFailurePhase } from "./bringup.ts";
-import { checkGrouping, verifyItem } from "./wp5-findings.ts";
+import { buildWp5, checkAuditScope, checkCp4Record, checkGrouping, loadAuditScope, loadCp4Response, loadNarratives, verifyItem } from "./wp5-findings.ts";
+import { loadOfficialRuns } from "./wp5-run.ts";
 import { WP5_ITEMS } from "./wp5-guidance.ts";
 import type { Inventory } from "./inventory.ts";
 import { readdir, readFile } from "node:fs/promises";
@@ -1165,6 +1166,76 @@ export async function runInjections(
         firedCheck: `unchanged → ${same.verified ? "CONFIRMED" : "not confirmed"}; fixed → ${good.verified ? "confirmed" : "NOT CONFIRMED"}; fixed + regression → ${bad.verified ? "CONFIRMED" : "refused"}; unvalidated → ${unvalidated.verified ? "CONFIRMED" : "refused"}; partial-trail item → ${partial.verified ? "CONFIRMED" : "refused (frozen rows cannot confirm)"}`,
         consequence: "a future fix is confirmed only by evidence",
       });
+
+      // 7e-bis. After CP4 (D3.59): the narrative store must carry the author's
+      // recorded reply byte for byte, with truthful provenance (Amendment A2),
+      // and the J3/J4 scope must cover exactly the audit-absence records.
+      const off = await loadOfficialRuns();
+      const built = await buildWp5({ wp3RunId: off.wp3, planRunId: off.plan, wp4RunId: off.wp4 });
+      const ranked = built.items.map((i) => ({ id: i.id, key: i.key, part: i.part, spec: i.spec }));
+      const store = await loadNarratives();
+      const resp = await loadCp4Response();
+      const scope = await loadAuditScope();
+      if (!resp || !scope) {
+        push({ defect: "CP4 record and audit scope", gate: "wp5 (CP4)", caught: false, firedCheck: "NO RECORDED CP4 REPLY OR SCOPE TO TEST AGAINST", consequence: "unproven" });
+      } else {
+        const real = checkCp4Record(ranked, store, resp);
+        push({
+          defect: "(control) the real narrative store against the recorded CP4 reply",
+          gate: "wp5 (CP4): the store carries the reply verbatim, with its provenance",
+          caught: real.length === 0,
+          firedCheck: real.length === 0 ? "no problem" : `FALSE ALARM: ${real[0]}`,
+          consequence: real.length === 0 ? "FINDINGS.md is written" : "a false alarm would block WP5",
+          control: true,
+        });
+        type Store = typeof store;
+        type Resp = typeof resp;
+        const w = (f: (s2: { entries: Record<string, unknown>[] }, r2: Record<string, any>) => void): string[] => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          const s2 = clone(store) as unknown as { entries: Record<string, unknown>[] };
+          const r2 = clone(resp) as unknown as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+          f(s2, r2);
+          return checkCp4Record(ranked, s2 as unknown as Store, r2 as unknown as Resp);
+        };
+        const cases: [string, string[]][] = [
+          ["one word of A1's narrative changed in the store", w((s2) => { const e = s2.entries.find((x) => x.key === "leaderboards-private-identity")!; e.narrative = String(e.narrative).replace("intended", "intentional"); })],
+          ["A2's AI-assisted narrative relabelled user_authored", w((s2) => { s2.entries.find((x) => x.key === "audit-trail-absent")!.provenance = "user_authored"; })],
+          ["A4's status changed from open to accepted_design_intent", w((s2) => { s2.entries.find((x) => x.key === "push-token-reassignment")!.status = "accepted_design_intent"; })],
+          ["J1 and J3 swapped between the A1 and A2 answers", w((_s2, r2) => {
+            const a = (r2.items as { key: string; judgments: string[] }[]).find((x) => x.key === "leaderboards-private-identity")!;
+            const b = (r2.items as { key: string; judgments: string[] }[]).find((x) => x.key === "audit-trail-absent")!;
+            a.judgments = ["J3", "J2"];
+            b.judgments = ["J1", "J4"];
+          })],
+          ["the recorded approval changed to not approved", w((_s2, r2) => { r2.approval.CP4 = "not approved — change the ranking"; })],
+          ["a narrative present with no recorded reply at all", checkCp4Record(ranked, store, null)],
+        ];
+        push({
+          defect: `the CP4 record broken six ways: ${cases.map((c) => c[0]).join("; ")}`,
+          gate: "wp5 (CP4): verbatim narratives, truthful provenance, the author's statuses, answers attached to the questions asked, a real approval",
+          caught: cases.every(([, f]) => f.length > 0),
+          firedCheck: cases.map(([what, f]) => `${what}: ${f.length ? `refused (${f[0]!.slice(0, 80)})` : "NOT REFUSED"}`).join("; "),
+          consequence: "WP5 REFUSED → exit 1; FINDINGS.md is not written",
+        });
+        const sReal = checkAuditScope(scope, official);
+        const sw = (f: (x: { resources: Record<string, unknown>[] }) => void): string[] => {
+          const s2 = clone(scope) as unknown as { resources: Record<string, unknown>[] };
+          f(s2);
+          return checkAuditScope(s2 as unknown as typeof scope, official!);
+        };
+        const sCases: [string, string[]][] = [
+          ["one resource dropped from the scope", sw((x) => { x.resources.pop(); })],
+          ["an exclusion with its residual risk removed", sw((x) => { delete x.resources.find((r) => r.disposition === "excluded_transient")!.residualRisk; })],
+          ["a resource citing the wrong Test ID", sw((x) => { x.resources[0]!.testId = "F10.public_blocks.030"; })],
+          ["a resource whose absence record is not in the run", sw((x) => { x.resources.push({ resource: "public.cosmetics", testId: "F10.public_cosmetics.999", disposition: "trail_required", clause: "x", reason: "x" }); })],
+        ];
+        push({
+          defect: `the J3/J4 audit scope: control (the real scope), then broken four ways: ${sCases.map((c) => c[0]).join("; ")}`,
+          gate: "wp5 (CP4): the scope covers exactly the audit-absence records, each exclusion with a reason and a residual risk",
+          caught: sReal.length === 0 && sCases.every(([, f]) => f.length > 0),
+          firedCheck: `real scope: ${sReal.length ? `FALSE ALARM (${sReal[0]})` : "no problem"}; ` + sCases.map(([what, f]) => `${what}: ${f.length ? "refused" : "NOT REFUSED"}`).join("; "),
+          consequence: "WP5 REFUSED → exit 1; FINDINGS.md is not written",
+        });
+      }
     }
   }
 

@@ -22,6 +22,12 @@ that file records *state*.
 > is a read-only assessment target and no gap is remediated by Attest (D3.31). WP5's
 > author-reserved artifact is still the findings narrative; what replaces the remediation is
 > remediation *guidance* and verification procedures.
+>
+> **Current-state note, 2026-09-25.** Neither reservation is outstanding any more, and neither
+> ended in the author's own composition. At CP4 the author adopted a findings narrative that is
+> AI-assisted wording the author reviewed (`user_reviewed_ai_draft`, D3.59), and under Amendment
+> A2 the framework-mapping rationales are AI-drafted and labelled so (D3.58, D3.60). The rubric
+> remains the author's; the intents remain `user_reviewed_ai_draft` (D3.54).
 
 ---
 
@@ -2668,3 +2674,135 @@ rows flipped → confirmed; the same with one regression → refused; unvalidate
 
 **Stated plainly, as A1 requires:** no remediation was implemented and none was independently
 verified, because Arc21 is a read-only target. Every "fix" in WP5 is a recommendation.
+
+---
+
+## Scope change — Amendment A2 (2026-09-25): completion without further routine gates
+
+### D3.58 — The author amended the authorship and checkpoint requirements for the unfinished work
+
+**What changed, and when.** In the same reply that answered CP4 (2026-09-25, about 17:30 UTC), the
+author recorded Amendment A2 to the brief. `PROJECT_BRIEF.md` is not version-controlled, so this
+entry is the version-controlled record of it; the brief carries the full text and a *superseded by
+A2* marker on each passage it affects.
+
+**It is prospective.** A2 applies only to work unfinished at CP4 — the findings narrative adopted at
+CP4, WP6, CP5 and WP7. It rewrites no history and changes no WP0–WP5 evidence or decision: the
+rubric (WP2) was written by the author before A2; the 240 intents (WP3) were adopted at Gate A as
+`user_reviewed_ai_draft` with **0** `user_authored`, exactly as recorded in D3.54; every run,
+verdict and frozen tier stands. It does not touch Arc21: Amendment A1 still governs.
+
+| Before A2 | After A2 |
+|---|---|
+| The findings narrative and the framework-mapping rationales are the author's to write (brief §1.1) | Either may be drafted by AI. It is labelled *AI-drafted*, *AI-assisted* or *user-reviewed AI draft* and is never presented as independently human-authored; a structured provenance field records it (`user_reviewed_ai_draft`, never `user_authored`) |
+| CP5 is a stop for the author's separate approval after WP6 | Waived prospectively by the author. The CP5 package is still generated and validated; CP5 is recorded as **superseded by Amendment A2**, not as approved |
+| Every checkpoint is a stop | After CP4 nothing routine stops the work — continuing, WP6, WP7, validation, regeneration, commits and pushes are authorised once their prerequisites hold |
+| — | Work still stops before completion if it would require modifying Arc21, destroying unrecoverable user data, exposing a real secret, misstating evidence or provenance, or resolving an irreducible contradiction with no conservative truthful disposition. An ordinary ambiguity is resolved conservatively and its limitation written down |
+
+**Why it is recorded this carefully.** The brief's interview-risk paragraph says the project's
+credibility depends on four artifacts being the author's own. A2 relaxes that for two of them, and
+the honest consequence is a provenance label, not a quieter claim: the resume-facing record must not
+say the author wrote the findings narrative or the framework-mapping rationales.
+
+**Alternatives.** (1) Keep the reservations and wait for the author at CP5 — the author declined
+this. (2) Treat the CP4 reply's wording as `user_authored` because the author sent it — rejected: the
+reply itself says the wording is AI-assisted text the author reviewed and adopted, and A2 forbids
+the stronger label. **What would change:** under (1) WP6's rationales would stay blank until the
+author wrote them; under (2) FINDINGS.md would overstate the author's authorship.
+
+## CP4 — the author's reply, applied
+
+### D3.59 — CP4 answered and approved: the reply recorded verbatim, the J3 rule applied resource by resource
+
+**Source.** The author's CP4 reply of 2026-09-25, answering `CP4_PACKET.md` as committed in
+`e6d5c4a`. It is recorded verbatim in `rubric/cp4-author-response.json` (statuses, narratives,
+J1–J14, the approval and what it does not mean), and the eight narratives and statuses are copied —
+programmatically, not retyped — into `rubric/wp5-author-narratives.json` as
+`user_reviewed_ai_draft`. No decision below was made by Attest.
+
+**Enforced, not asserted.** `attest wp5` refuses to write FINDINGS.md unless (`checkCp4Record`): every
+narrative in the store is the reply's text byte for byte; every status is the reply's; no entry is
+labelled `user_authored` while the reply records AI-assisted wording; each answered item still has
+the rank (A1…B4) it had when the author answered it; each J number attaches to the question the
+packet gave it (recomputed from the ranking, not trusted from the file); and the approval reads
+"approved". `prove-gates` breaks each of those on a copy and requires the refusal.
+
+**The decisions.**
+
+| Item | The author's status | The author's judgments |
+|---|---|---|
+| A1 leaderboards return a private-profile name | accepted / design intent | J1: the four WP3 records stay `deficient` against their frozen expectations; the WP5 status is accepted design intent. J2: one item, one root cause across four functions |
+| A2 no trail for 17 High-tier resources | open | J3: a trail is required for durable security-sensitive, authorization/privacy, configuration, economic or authoritative competitive state; transient live room/session state may be excluded; each exclusion recorded here. J4: wallet_ledger suffices for public.wallets *provided* it remains append-only, is complete for every balance-changing operation, and reconciliation proves the balance derivable; no duplicate wallet trail |
+| A3 partial trails | accepted / design intent | J5: the join to private.game_commands is an adequate actor trail *if* deterministic and retained; state that the join was not tested. J6: refused rate-limit attempts need not be stored in the application database |
+| A4 push-token reassignment | open | J7: a token moves between accounts only with explicit re-registration plus proof of possession or control, or another appropriately authenticated handover. J8: the frozen Medium tier stands |
+| B1 FORCE RLS not set | informational | J9: platform design, not an open finding by itself; FORCE is not required on every table without a concrete need |
+| B2 sprint standings names | accepted / design intent | J10: consistent with the leaderboard decision; the characterization stays |
+| B3 anonymous catalogue reads | accepted / design intent | J11: consistent with RUBRIC Part 4.4 |
+| B4 latent anon grants on realtime.messages | informational | J12: no demonstrated anonymous access; revoking the unused grants where the platform permits is preferable defence in depth |
+| — | — | J13: the D3.57 ranking rule accepted as written; frozen tiers unchanged. J14: `20260925T014011Z-5695a4c3df2d` is the WP3 result and `20260925T042837Z-wp4` the WP4 result; earlier runs stay as engineering history |
+
+**J3 applied to each resource.** The rule is the author's; applying it resource by resource is
+Attest's (AI-drafted under A2), conservative where a resource could be read either way, and checked
+against the evidence: `rubric/wp5-audit-scope.json` must name exactly the seventeen resources whose
+F10 absence record is a `gap`, with the same Test IDs (`checkAuditScope`). **Thirteen require a trail
+and have none** — the finding stays open for them: `private.career_drill_seeds`, `public.blocks`,
+`public.daily_challenges`, `public.friend_requests`, `public.friendships`,
+`public.game_session_seats`, `public.game_sessions`, `public.hand_records`, `public.profiles`,
+`public.rate_limit_policies`, `public.rulesets`, `public.tournament_entries` and
+`public.tournament_matches`. **Three are excluded**, each for this reason:
+
+| Excluded | Reason (J3: transient live room/session state with no durable audit requirement) | Residual risk, stated |
+|---|---|---|
+| `private.game_state_private` | the live engine state of one active session (shoe order, hole card), overwritten by every accepted command; every accepted command that changes it is recorded with its actor in `private.game_commands` — the complete trail WP3 found (F10.012–.015) — and completed hands are archived in `public.hand_records`, which stays in scope | a privileged write that bypasses command processing leaves no record of who made it |
+| `public.rooms` | lobby metadata whose access effect (who may join) lasts only while the room is live — `expires_at` is fixed at thirty minutes after creation and never extended; the room row holds no chips (Arc21's comment: no wallet movement from a private table; a wallet-backed public table's escrow is in `game_sessions`, in scope) | an unauthorized change to a live room's visibility or code is not attributable afterwards |
+| `public.room_members` | lobby membership, meaningful only while the room is live; stacks and escrow live in `game_session_seats` and `game_sessions` (in scope) and every chip movement in `wallet_ledger` | an unauthorized membership during a live room is not attributable afterwards |
+
+*Kept in scope although arguable:* `private.career_drill_seeds` (attempt-scoped, but security-sensitive
+and reward-bearing — the conservative reading); `public.game_session_seats` (session-scoped, but its
+rows outlive the session, authorize reading archived hands, and carry stack and buy-in).
+
+**J4 applied to `public.wallets`: conditional, and not established.** The author's acceptance
+depends on three conditions, and the evidence establishes them only in part, so the wallets row is
+reported as *conditionally covered — unverified*, not as satisfied:
+
+- *Append-only* — partly. Tested: UPDATE refused on the privileged path (F9.320), TRUNCATE refused
+  (F9.322), client UPDATE, DELETE and TRUNCATE refused (F10.233–.235). Read from the catalog on
+  2026-09-25, not tested: `guard_ledger_append_only` refuses DELETE only for client roles, so a
+  server-role DELETE is permitted — the design that lets an account deletion cascade to its ledger
+  rows (`wallet_ledger.user_id` and `wallet_id` are `ON DELETE CASCADE`).
+- *Complete for every balance-changing operation* — source reading only: every statement in the 59
+  migrations that writes `public.wallets` is paired with a `wallet_ledger` insert in the same function
+  (`apply_wallet_delta`; the signup handler's initial grant). Nothing in the database enforces the
+  pairing for a privileged writer.
+- *Reconciliation* — observed once: F9.316, alice's balance 25625 equals her ledger sum 25625. No
+  standing reconciliation check exists or was assessed.
+
+**J5's condition, read from the catalog (not tested).** No constraint links a game event to the
+command that caused it; the columns a join could use — `game_events (game_session_id,
+state_version)` and `private.game_commands (game_session_id, applied_version)` — are not declared
+one-to-one. And `private.game_commands.user_id` is `ON DELETE CASCADE` from `public.profiles`, so an
+account's deletion removes its commands, and with them the actor of its events. The acceptance
+stands as the author's decision; the "deterministic" condition is unverified and the "retained"
+condition does not hold after the actor's account is deleted. FINDINGS.md A3 says so.
+
+**J8, recorded as asked.** The frozen Medium tier of `public.push_tokens` stands for this assessment.
+No disagreement with it was raised; any later one is recorded prospectively, and WP2 is not changed.
+
+**J14, made durable.** `rubric/official-runs.json` records the official runs and why every other run
+is not a result; `attest wp5` (and every generator after it) reads the run ids from there instead of
+from hard-coded strings or command-line memory.
+
+**What the CP4 packet became.** Once the reply is recorded, `attest wp5` renders `CP4_PACKET.md` as
+the CP4 *record* — the same evidence sections, the author's status beside each item, the narratives
+and answers verbatim with their provenance, and the approval with what it does not mean — with no
+wall-clock timestamp, so an unchanged regeneration is byte-identical. The packet as the author read
+it is `git show e6d5c4a:CP4_PACKET.md`.
+
+**What did not change.** No WP3 verdict, no frozen tier, no ranking (the regenerated list assigns the
+same ids A1–C2 to the same items, which the check requires). One piece of AI-drafted WP5 prose was
+corrected while applying J4: the A2 item had called `wallet_ledger` "append-only with a truncate
+guard", and now says what the catalog shows — UPDATE refused for every role, client writes refused,
+a truncate guard, and server-role DELETE permitted by design.
+
+**Stated plainly, as A1 requires:** CP4's approval does not mean Arc21 was remediated, a finding was
+fixed or closed, or any remediation was independently verified. None was.

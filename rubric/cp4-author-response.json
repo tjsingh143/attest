@@ -1,0 +1,104 @@
+{
+  "WARNING": "The author's CP4 reply, recorded verbatim. Every status, narrative, judgment and the approval below is the author's decision, given in the dated reply named in recordedFrom; nothing here was decided by Attest. Under Amendment A2 (2026-09-25) the WORDING of the reply is AI-assisted text the author reviewed and adopted by sending it: it is recorded as user_reviewed_ai_draft and must never be presented as the author's independent composition. `attest wp5` refuses to write FINDINGS.md unless rubric/wp5-author-narratives.json carries these exact strings and statuses.",
+  "checkpoint": "CP4 — after WP5 (findings, risk prioritisation, remediation guidance and verification procedures; brief §9 as amended by A1 and A2)",
+  "presentedIn": {
+    "packet": "CP4_PACKET.md as committed in e6d5c4a (the packet the author answered)",
+    "wp3Run": "20260925T014011Z-5695a4c3df2d",
+    "wp4Run": "20260925T042837Z-wp4",
+    "planRun": "20260924T201920Z-5695a4c3df2d"
+  },
+  "recordedFrom": "The author's CP4 reply, given in conversation in the Claude Code project-completion session on 2026-09-25 (message received about 17:30 UTC, in a fresh context resuming at e6d5c4a), answering CP4_PACKET.md as committed in e6d5c4a. The same message recorded Amendment A2. Recorded here by Attest verbatim; nothing in this file was decided by Attest.",
+  "provenance": {
+    "decisions": "the author's: every status, every judgment (J1–J14), and the CP4 approval",
+    "wording": "user_reviewed_ai_draft — AI-assisted wording the author reviewed and adopted by sending the reply (Amendment A2, part B); not the author's independent composition",
+    "amendment": "A2"
+  },
+  "items": [
+    {
+      "id": "A1",
+      "key": "leaderboards-private-identity",
+      "status": "accepted_design_intent",
+      "narrative": "I consider this intended behavior because Arc21 is designed to keep players visible on competitive leaderboards even when their profile is private, although the frozen WP3 test used a stricter privacy expectation.",
+      "judgments": ["J1", "J2"]
+    },
+    {
+      "id": "A2",
+      "key": "audit-trail-absent",
+      "status": "open",
+      "narrative": "I think important long-term changes to security-sensitive, financial, privacy, configuration, and other authoritative state should be attributable and reconstructable, but I do not think every piece of short-lived session state needs its own permanent audit history.",
+      "judgments": ["J3", "J4"]
+    },
+    {
+      "id": "A3",
+      "key": "audit-trail-partial",
+      "status": "accepted_design_intent",
+      "narrative": "I consider the existing audit coverage acceptable here because a game event's actor can be reconstructed through the related command data, and I do not think every rejected rate-limit attempt needs to be permanently stored in the application database.",
+      "judgments": ["J5", "J6"]
+    },
+    {
+      "id": "A4",
+      "key": "push-token-reassignment",
+      "status": "open",
+      "narrative": "I do not think one account should be able to take over another account's push-token registration just by knowing the token value, so a legitimate handover should require stronger proof that the caller actually controls the device.",
+      "judgments": ["J7", "J8"]
+    },
+    {
+      "id": "B1",
+      "key": "force-rls-not-set",
+      "status": "informational",
+      "narrative": "I treat the owner and BYPASSRLS behavior as an important PostgreSQL privilege characteristic rather than a demonstrated client-facing flaw, but it should remain documented because those privileged roles are outside normal row-level policy enforcement.",
+      "judgments": ["J9"]
+    },
+    {
+      "id": "B2",
+      "key": "sprint-standings-names",
+      "status": "accepted_design_intent",
+      "narrative": "I consider names in sprint standings intentional because competitors need to be identifiable within the standings, so I would treat this consistently with the leaderboard behavior.",
+      "judgments": ["J10"]
+    },
+    {
+      "id": "B3",
+      "key": "anonymous-catalogues",
+      "status": "accepted_design_intent",
+      "narrative": "I consider anonymous access to the four catalogue tables intentional because they contain public catalogue or configuration information that is meant to be available without signing in.",
+      "judgments": ["J11"]
+    },
+    {
+      "id": "B4",
+      "key": "realtime-latent-anon-grant",
+      "status": "informational",
+      "narrative": "I do not see a current anonymous-data exposure because the policies still deny anonymous access, but the unused anonymous grants are unnecessary privilege surface and should be removed where the platform makes that practical.",
+      "judgments": ["J12"]
+    }
+  ],
+  "judgments": {
+    "J1": "accepted / design intent. Arc21's own specification and privacy-copy test explicitly state that private-profile players remain visible on leaderboards. Preserve the four WP3 deficient verdicts against the frozen expectations, but record the WP5 finding status as accepted design intent.",
+    "J2": "Treat the four leaderboard results as one item/root cause across four functions, not four independent findings.",
+    "J3": "Require an audit/change trail where the resource represents durable security-sensitive, authorization/privacy, configuration, economic, or authoritative competitive state. Do not require a separate permanent who-did-what-when trail merely because a resource is High-tier when it is transient operational/session state and its history is not needed after the session. Record each exclusion and its reason in DECISIONS.md. In particular, configuration such as rate_limit_policies and rulesets, privacy/relationship changes with authorization consequences, and authoritative durable competition/economy state should remain in scope; transient live room/session state may be excluded when no durable audit requirement exists.",
+    "J4": "Yes, treat wallet_ledger as a sufficient reconstruction/audit path for public.wallets provided the ledger remains append-only, complete for every balance-changing operation, and reconciliation proves the current wallet balance can be derived from it. Do not create a duplicate wallet audit trail solely to record the same information twice.",
+    "J5": "The join to private.game_commands is an adequate actor trail for game events if the relationship is deterministic and retained. The actor does not need to be duplicated directly into every game-event row solely for audit purposes. Document that the assessment did not independently test the join itself.",
+    "J6": "No, do not require every refused rate-limit attempt to be permanently recorded in the application database. The volume and privacy/security implications can outweigh the benefit. Aggregated or operational security logging can be used separately if Arc21 later needs abuse monitoring.",
+    "J7": "Moving a push token between accounts should not occur merely because a signed-in caller provides an existing token string. A legitimate device/account handover should require explicit re-registration plus proof of possession/control of that device or another appropriately authenticated handover mechanism. Keep A4 open.",
+    "J8": "Accept the frozen Medium tier for push_tokens for this assessment. The observed consequence is meaningful, but the test did not demonstrate account takeover or direct authorization bypass, and the frozen tier must not be retroactively changed because of the result. Record any future disagreement prospectively rather than changing WP2.",
+    "J9": "Treat this as informational/platform design, not an open Arc21 finding by itself. PostgreSQL owners and BYPASSRLS roles are intentionally outside ordinary RLS enforcement. Keep the privileged-role model documented and preserve least privilege; do not require FORCE RLS on every table without a concrete need.",
+    "J10": "accepted / design intent. Competitive sprint standings are intended to identify entrants. Treat this consistently with the leaderboard decision while preserving the characterization evidence.",
+    "J11": "Yes. Accept anonymous reads of the four catalogue tables as intentional design, consistent with the existing RUBRIC reasoning.",
+    "J12": "Treat this as informational. There is no demonstrated anonymous access today because policy denies it. Where Supabase/platform behavior permits, revoking unnecessary anon INSERT/SELECT/UPDATE grants is preferable defense in depth, but do not characterize the current state as an anonymous-data exposure.",
+    "J13": "Accept the D3.57 ranking rule as written. Keep the frozen WP2 tiers unchanged and rank using part, frozen tier, evidence class, exposure, Test-ID count, and name as documented.",
+    "J14": "Accept. Treat 20260925T014011Z-5695a4c3df2d as the official WP3 result and 20260925T042837Z-wp4 as the official WP4 result. Preserve the earlier completed-but-superseded, aborted, and manually stopped runs unchanged as engineering/audit history rather than deleting or presenting them as final results."
+  },
+  "judgmentScope": {
+    "J13": "the ranking rule (D3.57)",
+    "J14": "the run record: which runs are the official WP3 and WP4 results"
+  },
+  "approval": {
+    "CP4": "approved.",
+    "statement": "The findings, risk prioritization, remediation guidance, limitations, official-run selection and verification procedures are accepted with the statuses, narratives and judgments above.",
+    "doesNotMean": [
+      "Arc21 was remediated;",
+      "findings were fixed;",
+      "findings were closed;",
+      "remediation was independently verified."
+    ]
+  }
+}

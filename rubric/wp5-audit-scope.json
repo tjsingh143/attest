@@ -1,0 +1,151 @@
+{
+  "WARNING": "AI-DRAFTED APPLICATION of the author's CP4 rule (J3, J4; rubric/cp4-author-response.json) to each of the 17 resources whose F10 absence row is a gap. The rule is the author's; applying it resource by resource is Attest's (Claude's) work under Amendment A2, recorded with its reason and the evidence it rests on, and every exclusion is written up in DECISIONS.md D3.59. Where a resource could be read either way, it is kept in scope (the conservative reading). `attest wp5` refuses to write FINDINGS.md unless these 17 resources are exactly the resources of the 17 F10 absence records.",
+  "rule": "J3 (a trail is required for durable security-sensitive, authorization/privacy, configuration, economic or authoritative competitive state; transient live room/session state may be excluded when no durable audit requirement exists) and J4 (wallet_ledger suffices for public.wallets provided the ledger remains append-only, is complete for every balance-changing operation, and reconciliation proves the balance derivable from it)",
+  "provenance": "ai_drafted_application_of_author_rule",
+  "dispositions": {
+    "trail_required": "the author's rule requires a who-did-what-when trail and none exists: the A2 finding stays open for this resource",
+    "excluded_transient": "transient live room/session state with no durable audit requirement: excluded under J3, with the reason and the residual risk stated",
+    "ledger_conditional": "covered by wallet_ledger under J4 only if its three conditions hold; the assessment does not establish all three, so the coverage is conditional and unverified"
+  },
+  "resources": [
+    {
+      "resource": "private.career_drill_seeds",
+      "testId": "F10.private_career_drill_seeds.006",
+      "disposition": "trail_required",
+      "clause": "durable security-sensitive state",
+      "reason": "Holds seed_secret, which decides what a career drill attempt is graded against; grading is reward-bearing (the reward is paid through apply_wallet_delta). Rows persist for the life of the attempt. It is attempt-scoped rather than live room state, so it is the closest resource to the J3 boundary and is kept in scope as the conservative reading."
+    },
+    {
+      "resource": "private.game_state_private",
+      "testId": "F10.private_game_state_private.021",
+      "disposition": "excluded_transient",
+      "clause": "transient live session state",
+      "reason": "The live engine state of one active game session (shoe order, dealer hole card), overwritten by every accepted command. Every accepted command that changes it is recorded, with its actor, in private.game_commands — the complete trail WP3 found (F10.012–.015 effective) — and completed hands are archived in public.hand_records, which stays in scope.",
+      "residualRisk": "A privileged write that bypasses command processing would leave no record of who made it."
+    },
+    {
+      "resource": "public.blocks",
+      "testId": "F10.public_blocks.030",
+      "disposition": "trail_required",
+      "clause": "privacy/relationship change with authorization consequences",
+      "reason": "Read by viewer_is_blocked_by inside profiles_select_visible: removing a block changes who may read a profile (frozen WP2 rating, integrity High)."
+    },
+    {
+      "resource": "public.daily_challenges",
+      "testId": "F10.public_daily_challenges.048",
+      "disposition": "trail_required",
+      "clause": "authoritative durable competitive state and configuration",
+      "reason": "One global challenge per date; its seed_secret and seed_commitment decide the deal for every entrant and make the shoe verifiable (frozen WP2 rating, blast radius High)."
+    },
+    {
+      "resource": "public.friend_requests",
+      "testId": "F10.public_friend_requests.064",
+      "disposition": "trail_required",
+      "clause": "privacy/relationship change with authorization consequences",
+      "reason": "Accepting a request creates a friendship, which profiles_select_visible reads (frozen WP2 rating, integrity High)."
+    },
+    {
+      "resource": "public.friendships",
+      "testId": "F10.public_friendships.071",
+      "disposition": "trail_required",
+      "clause": "privacy/relationship change with authorization consequences",
+      "reason": "Read by viewer_is_friend_of inside profiles_select_visible: creating or removing an edge changes profile-visibility decisions."
+    },
+    {
+      "resource": "public.game_session_seats",
+      "testId": "F10.public_game_session_seats.090",
+      "disposition": "trail_required",
+      "clause": "authorization and economic state that outlives the session",
+      "reason": "Seat membership authorizes reading the session's events and archived hands after play ends, and the seat carries stack and buy_in; rows survive account deletion (user_id SET NULL, 'Deleted player'), so this is durable state, not live-only."
+    },
+    {
+      "resource": "public.game_sessions",
+      "testId": "F10.public_game_sessions.098",
+      "disposition": "trail_required",
+      "clause": "economic and authoritative competitive state",
+      "reason": "Carries escrow_chips, status and version; a session with unreconciled escrow may not be deleted (game_sessions_guard_escrow). A table's chips in play live here, not in public.rooms."
+    },
+    {
+      "resource": "public.hand_records",
+      "testId": "F10.public_hand_records.109",
+      "disposition": "trail_required",
+      "clause": "authoritative durable competition history",
+      "reason": "The archive of completed hands; nothing reconstructs it (frozen WP2 rating, reversibility High)."
+    },
+    {
+      "resource": "public.profiles",
+      "testId": "F10.public_profiles.156",
+      "disposition": "trail_required",
+      "clause": "privacy change with authorization consequences",
+      "reason": "The privacy column is read by profiles_select_visible: changing it changes who may read the profile (frozen WP2 rating, integrity High)."
+    },
+    {
+      "resource": "public.rate_limit_policies",
+      "testId": "F10.public_rate_limit_policies.180",
+      "disposition": "trail_required",
+      "clause": "configuration (named in J3)",
+      "reason": "Every rate limit in the product; altering window_length or max_events weakens a security control for every user."
+    },
+    {
+      "resource": "public.room_members",
+      "testId": "F10.public_room_members.188",
+      "disposition": "excluded_transient",
+      "clause": "transient live room state",
+      "reason": "Membership of a lobby. What it authorizes — reading and acting on that room — matters only while the room is live (a lobby's expires_at is fixed at 30 minutes after creation and is never extended; a lobby past it is marked expired the next time the room paths run). The room row holds no chips: a private table plays a fixed session stack with no wallet movement, and a wallet-backed public table's escrow and stacks are held in game_sessions and game_session_seats (both in scope), with every chip movement in wallet_ledger.",
+      "residualRisk": "An unauthorized membership while a room is live would not be attributable afterwards."
+    },
+    {
+      "resource": "public.rooms",
+      "testId": "F10.public_rooms.196",
+      "disposition": "excluded_transient",
+      "clause": "transient live room state",
+      "reason": "Lobby metadata (code, visibility, host, ruleset, expiry). Its access effect — who may join — lasts only while the room is live (expires_at is fixed at 30 minutes after creation). The room row holds no chips: Arc21's comment on public.rooms says no wallet movement is possible from a private table, and a wallet-backed public table's escrow is held in game_sessions (in scope).",
+      "residualRisk": "An unauthorized change to a live room's visibility or code would not be attributable afterwards."
+    },
+    {
+      "resource": "public.rulesets",
+      "testId": "F10.public_rulesets.203",
+      "disposition": "trail_required",
+      "clause": "configuration (named in J3)",
+      "reason": "Global rules used by sessions and tournaments and recorded against hands (frozen WP2 rating, integrity High)."
+    },
+    {
+      "resource": "public.tournament_entries",
+      "testId": "F10.public_tournament_entries.211",
+      "disposition": "trail_required",
+      "clause": "authoritative durable competition/economy state",
+      "reason": "placement and prize_chips are the authoritative outcome of a shared competition."
+    },
+    {
+      "resource": "public.tournament_matches",
+      "testId": "F10.public_tournament_matches.219",
+      "disposition": "trail_required",
+      "clause": "authoritative durable competition state",
+      "reason": "The winner field decides progression and prizes."
+    },
+    {
+      "resource": "public.wallets",
+      "testId": "F10.public_wallets.243",
+      "disposition": "ledger_conditional",
+      "clause": "J4",
+      "reason": "The author accepts wallet_ledger as the trail for public.wallets provided three conditions hold. Attest's evidence establishes them only in part (see conditions); the coverage is recorded as conditional and unverified, not as satisfied.",
+      "conditions": [
+        {
+          "condition": "the ledger remains append-only",
+          "status": "partly established",
+          "evidence": "Tested: an UPDATE on the privileged path is refused by wallet_ledger_append_only (F9.public_wallets.320) and a TRUNCATE by wallet_ledger_deny_truncate (F9.public_wallets.322); client UPDATE, DELETE and TRUNCATE are refused (F10.public_wallet_ledger.233–.235). Read from the catalog, not tested: guard_ledger_append_only refuses DELETE only for client roles, so a server-role DELETE is permitted — the design that lets an account deletion cascade to its ledger rows (wallet_ledger.user_id and wallet_id are ON DELETE CASCADE)."
+        },
+        {
+          "condition": "complete for every balance-changing operation",
+          "status": "supported by source reading only",
+          "evidence": "Not tested by WP3. A read-only reading of Arc21's 59 migrations found every statement that writes public.wallets paired with a wallet_ledger insert in the same function (apply_wallet_delta; the signup handler's initial grant). Nothing in the database enforces that pairing for a privileged writer: public.wallets carries only a client-write guard."
+        },
+        {
+          "condition": "reconciliation proves the current balance can be derived from the ledger",
+          "status": "observed once",
+          "evidence": "F9.public_wallets.316: after two concurrent deltas, alice's balance (25625) equals her ledger sum (25625). No other wallet was reconciled, and no standing reconciliation check exists in the schema or was assessed."
+        }
+      ]
+    }
+  ]
+}

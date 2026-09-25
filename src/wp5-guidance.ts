@@ -23,6 +23,11 @@
  * It never decides whether an item is accepted as design intent. Where the
  * evidence points both ways, both sides are stated and the question is put to
  * the author.
+ *
+ * After CP4 (2026-09-25). The author answered: every status, judgment and the
+ * approval are the author's and live verbatim in rubric/cp4-author-response.json.
+ * `cp4Notes` below are AI-DRAFTED too (Amendment A2): they state what each of
+ * those decisions means for the evidence — never a decision of their own.
  */
 
 /** The fields of a WP3 evidence record the selectors read. */
@@ -75,6 +80,11 @@ export interface ItemSpec {
   readonly limitations: readonly string[];
   /** The specific judgment only the author can make. */
   readonly judgment: readonly string[];
+  /**
+   * AI-drafted (Amendment A2): what the author's CP4 decision on this item means
+   * for its evidence. Rendered beside the author's verbatim answers, labelled.
+   */
+  readonly cp4Notes?: readonly string[];
   readonly remediation: readonly RemediationOption[];
   /**
    * Exact re-verification with existing Test IDs. `mustBecome` is the verdict
@@ -159,6 +169,15 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
         "the product)? The WP5 status is yours to set; the evidence verdict does not change.",
       "If it is open: one finding across four functions (one root cause), or four?",
     ],
+    cp4Notes: [
+      "The status is the author's reading of the product, not a change in the evidence: the four WP3 records stay `deficient`, " +
+        "because each is measured against its frozen expectation and is never re-judged (J1).",
+      "One item and one root cause across the four functions — SECURITY DEFINER joins to public.profiles with no privacy " +
+        "condition — not four independent findings (J2).",
+      "Remediation option 3 below is the one the decision corresponds to. Options 1 and 2, and the verification procedure, stay " +
+        "as reference guidance should the product decision change; bringing the frozen expectation into line with the design " +
+        "would be a new planning run approved by the author, never an edit to results.",
+    ],
     remediation: [
       {
         option: "Exclude private-privacy accounts from every leaderboard's result except the caller's own row — a privacy condition " +
@@ -210,8 +229,10 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "seat, entry or setting cannot be attributed or reconstructed from the database itself.",
     contrary: [
       "Two structures in Arc21 are complete trails and pass: private.game_commands (F10.012–.015) and public.wallet_ledger " +
-        "(F10.232–.235), which is append-only with a truncate guard. public.wallets is reconstructable from wallet_ledger, as the " +
-        "row's own covers text notes — its row answers the family-10 question for the wallets table itself, not for the economy.",
+        "(F10.232–.235), which refuses UPDATE for every role, refuses client writes and carries a truncate guard (a server-role " +
+        "DELETE is permitted by design, so an account deletion can cascade — see J4's conditions). public.wallets is " +
+        "reconstructable from wallet_ledger, as the row's own covers text notes — its row answers the family-10 question for the " +
+        "wallets table itself, not for the economy.",
     ],
     limitations: [
       "The search reads the database catalogs only. A trail kept outside the schema — platform logs, pgaudit configured by the " +
@@ -224,6 +245,14 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
         "(catalogue tables such as public.rulesets, configuration such as public.rate_limit_policies) need change history and " +
         "others (per-session state) do not. Each exclusion needs a reason in DECISIONS.md.",
       "Is wallet_ledger's reconstruction path sufficient for public.wallets?",
+    ],
+    cp4Notes: [
+      "The 17 WP3 records stay `gap` whatever is decided: the author's rule decides where a trail is required, not whether one " +
+        "exists (J3).",
+      "The scope table below applies the author's rule to each resource. The application is AI-drafted under Amendment A2, " +
+        "conservative where a resource could be read either way, and every exclusion is written up in DECISIONS.md D3.59.",
+      "Under J4 no duplicate wallet trail is recommended: remediation options 1 and 2 apply to the resources the rule keeps in " +
+        "scope, not to public.wallets, whose coverage instead depends on the three J4 conditions being verified.",
     ],
     remediation: [
       {
@@ -286,6 +315,20 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "Is a game event's actor needed in the event itself, or is the join to private.game_commands an adequate trail?",
       "Should refused attempts be recorded at all, given the volume and what they reveal?",
     ],
+    cp4Notes: [
+      "Both WP3 records stay `gap` against their frozen expectations; the status records that the author accepts the design " +
+        "(J5, J6), not that a trail now exists.",
+      "J5's acceptance is conditional — the join to private.game_commands must be deterministic and retained — and, as J5 asks " +
+        "to be stated, WP3 did not test the join. Read from the catalog afterwards (a read, not a test): no constraint links a " +
+        "game event to the command that caused it — the columns a join could use are game_events (game_session_id, " +
+        "state_version) and private.game_commands (game_session_id, applied_version), and nothing declares that match " +
+        "one-to-one — and private.game_commands.user_id is ON DELETE CASCADE from public.profiles, so deleting an account " +
+        "removes its commands and with them the actor of its events. The 'deterministic' condition is unverified; the " +
+        "'retained' condition does not hold once the actor's account is deleted.",
+      "Refused rate-limit attempts are not required in the application database (J6); aggregated or operational security " +
+        "logging outside it remains available if abuse monitoring is ever needed. Remediation option 2 below is therefore not " +
+        "recommended under the author's decision.",
+    ],
     remediation: [
       {
         option: "Record the actor on each game event server-side (from the command's verified user_id, or a reference to the " +
@@ -342,6 +385,15 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "Is moving a token between accounts intended (device handover), and if so, what should prove the caller holds the device?",
       "Does the frozen Medium tier of push_tokens reflect this consequence? A tier is never changed after results (brief §7); a " +
         "disagreement is recorded in DECISIONS.md as exactly that.",
+    ],
+    cp4Notes: [
+      "Open (J7). The author's requirement — explicit re-registration plus proof of possession or control of the device, or " +
+        "another appropriately authenticated handover — corresponds to remediation option 2, with option 1's refusal as the " +
+        "behaviour for any caller who cannot give that proof. Option 3 alone would not meet it: it detects a takeover rather " +
+        "than preventing it.",
+      "The frozen Medium tier of public.push_tokens stands for this assessment (J8): the probe showed a registration moving to " +
+        "the caller, not an account takeover or a direct authorization bypass. Any later disagreement with the tier is recorded " +
+        "prospectively; WP2 is not changed.",
     ],
     remediation: [
       {
@@ -409,6 +461,11 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "Accepted as the platform's design (documented), or open (some tables should be FORCED, with definer functions owned by a " +
         "role that is subject to policy)?",
     ],
+    cp4Notes: [
+      "Informational, not an open Arc21 finding by itself (J9): owners and BYPASSRLS roles sit outside ordinary row-level " +
+        "enforcement by PostgreSQL's design. The privileged-role model stays documented and least privilege preserved; FORCE ROW " +
+        "LEVEL SECURITY is not required on every table without a concrete need. The 24 characterization records are unchanged.",
+    ],
     remediation: [
       {
         option: "FORCE row-level security on the highest-integrity tables and move SECURITY DEFINER functions to a dedicated owner " +
@@ -449,6 +506,10 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "private-privacy account, which profiles_select_visible would have withheld.",
     limitations: ["Exercised with the blocker viewing the blocked player; the reverse direction and a private account were not."],
     judgment: ["Accepted / design-intent (standings must name every entrant), or open (the same question as the leaderboards)?"],
+    cp4Notes: [
+      "Accepted as design intent, consistently with the leaderboard decision (J10); the characterization record (F5.255) is " +
+        "preserved as evidence.",
+    ],
     remediation: [
       {
         option: "If it should respect blocks or privacy: the same shared anonymising helper as the leaderboard item.",
@@ -476,6 +537,10 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "all four, anon holds SELECT and no other privilege (WP0 inventory), so no anonymous write reaches them directly.",
     limitations: ["WP3 did not enumerate every column an anonymous caller receives; the rows establish row-level scope only."],
     judgment: ["Accepted / design-intent, as RUBRIC 4.4 already reasons?"],
+    cp4Notes: [
+      "Accepted as design intent, consistently with RUBRIC Part 4.4 (J11). The eight F4 records keep guarding the boundary: an " +
+        "anonymous caller reads active catalogue rows only.",
+    ],
     remediation: [
       {
         option: "None proposed if accepted. If not: require an account for the catalogue reads.",
@@ -504,6 +569,11 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "(realtime is a platform schema).",
     limitations: ["Whether Arc21 can or should revoke a platform default was not assessed."],
     judgment: ["Accept as a platform default, or ask for the grant to be revoked where the platform allows it?"],
+    cp4Notes: [
+      "Informational (J12): no anonymous access is demonstrated today, because no policy admits anon, and the current state is " +
+        "not an anonymous-data exposure. Revoking the unused anon INSERT, SELECT and UPDATE grants where the platform permits is " +
+        "the preferred defence in depth — remediation option 1 below.",
+    ],
     remediation: [
       {
         option: "Revoke anon's privileges on realtime.messages if the platform permits it, or add a restrictive policy that denies " +
@@ -528,8 +598,8 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
     resourcesAtRisk: ["public.wallet_ledger"],
     whatHappened:
       "As alice, an UPDATE and a TRUNCATE of public.wallet_ledger were refused with 42501 by the table grant, so the append-only " +
-      "trigger these rows were written to examine never ran for a client. Registered contradiction C2-grant-before-trigger; you " +
-      "chose to keep both rows not measured at Gate A. The trigger itself is exercised on the privileged path, where it refuses " +
+      "trigger these rows were written to examine never ran for a client. Registered contradiction C2-grant-before-trigger; the " +
+      "author chose to keep both rows not measured at Gate A. The trigger itself is exercised on the privileged path, where it refuses " +
       "both (F9.320, F9.322, effective).",
     whyItMatters: "Nothing is exposed: the client is refused earlier than planned. The limitation is only that the trigger is not what refused it.",
     limitations: [],
@@ -547,7 +617,7 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
     resourcesAtRisk: [],
     whatHappened:
       "For eleven tables, deleting an account removes every row it owned by foreign-key cascade, so a still-valid token of the " +
-      "deleted account has no row of its own left to reach. Registered contradiction C5; at Gate A you kept these not measured " +
+      "deleted account has no row of its own left to reach. Registered contradiction C5; at Gate A the author kept these not measured " +
       "rather than manufacture an artificial target. The three tables where rows survive the deletion (a game session's events, " +
       "seats and metadata) were retargeted and all held (B.331–.333, effective).",
     whyItMatters: "The absence of a target is the schema's cascade working as designed; it is not evidence that access was refused.",

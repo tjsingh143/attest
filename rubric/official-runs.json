@@ -1,0 +1,23 @@
+{
+  "WARNING": "Which runs are the official results is the author's decision (CP4, J14, 2026-09-25; rubric/cp4-author-response.json). Every report generator reads the run ids from this file; none hard-codes them. Earlier runs are kept unedited as engineering and audit history and are never reported as results.",
+  "decidedBy": "the author, CP4 J14 (reply of 2026-09-25)",
+  "wp3": "20260925T014011Z-5695a4c3df2d",
+  "plan": "20260924T201920Z-5695a4c3df2d",
+  "wp4": "20260925T042837Z-wp4",
+  "frozenCp3": "20260922T234324Z-5695a4c3df2d",
+  "notResults": [
+    { "runId": "20260924T203033Z-5695a4c3df2d", "kind": "WP3", "disposition": "superseded", "why": "complete (345 records) but its validation fails one check (three F9 records carry no read-back identity), and an Attest heuristic defect mis-judged eleven F10 audit absences (D3.55)" },
+    { "runId": "20260925T010904Z-5695a4c3df2d", "kind": "WP3", "disposition": "aborted", "why": "aborted after 55 records: a supabase db reset failed while the CLI restarted containers on a heavily loaded host (D3.55)" },
+    { "runId": "20260925T021927Z-wp4", "kind": "WP4", "disposition": "stopped by hand", "why": "first state aborted at 310 of 326 records after three failed resets and the second state's reset hung, on a host at load average ~128; exposed three Attest defects fixed before the next run (D3.56)" },
+    { "runId": "20260925T035025Z-wp4", "kind": "WP4", "disposition": "stopped by hand", "why": "stopped after its first state: two false deficient verdicts came from a state guard that compared digests as strings; fixed in 48084e3 (D3.56)" }
+  ],
+  "planningAndWorksheetRuns": [
+    { "runId": "20260922T071548Z-5695a4c3df2d", "what": "the planning run that produced the approved WP3 matrix (CHECKPOINTS.md)" },
+    { "runId": "20260922T234324Z-5695a4c3df2d", "what": "the CP1/CP3 run: frozen WP0 inventory, WP1 validation, WP2 risk inputs and tiers" },
+    { "runId": "20260923T042007Z-5695a4c3df2d", "what": "first planning run under the corrected planner (D3.35)" },
+    { "runId": "20260923T094706Z-5695a4c3df2d", "what": "AUTHOR INTENT worksheet (drafts only)" },
+    { "runId": "20260924T174635Z-5695a4c3df2d", "what": "regenerated AUTHOR INTENT worksheet (drafts only)" },
+    { "runId": "20260924T175203Z-5695a4c3df2d", "what": "Gate A review table (generated; drafts only)" },
+    { "runId": "20260924T201920Z-5695a4c3df2d", "what": "the planning run the official WP3 runs execute" }
+  ]
+}

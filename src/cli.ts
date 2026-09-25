@@ -361,10 +361,11 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
     case "wp5": {
       // WP5 (Amendment A1): findings, risk prioritisation and remediation
       // guidance, and the CP4 packet (D3.57). Writes only Attest files.
+      // With no run arguments it builds from the official runs the author selected at CP4 (J14; rubric/official-runs.json).
       const arg = (k: string) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split("=")[1];
-      const wp3 = arg("wp3-run"), planRun = arg("plan-run"), wp4 = arg("wp4-run") ?? null;
-      if (!wp3 || !planRun) { console.error("usage: attest wp5 --wp3-run=<runId> --plan-run=<runId> [--wp4-run=<runId>]"); process.exitCode = 2; break; }
-      const { writeWp5 } = await import("./wp5-run.ts");
+      const { writeWp5, loadOfficialRuns } = await import("./wp5-run.ts");
+      const off = await loadOfficialRuns();
+      const wp3 = arg("wp3-run") ?? off.wp3, planRun = arg("plan-run") ?? off.plan, wp4 = arg("wp4-run") ?? off.wp4;
       const r = await writeWp5({ wp3RunId: wp3, planRunId: planRun, wp4RunId: wp4, log: (m) => console.log(m) });
       if (!r.ok) process.exitCode = 1;
       break;

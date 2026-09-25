@@ -12,6 +12,12 @@ had visibly proceeded past them, which is an inference, not a record.
 This file is that record. It exists so the next reader does not have to make the same
 inference.
 
+> **Amendment A2, 2026-09-25.** The author changed the checkpoint workflow for the unfinished
+> work: after CP4 there are no further routine stops, and CP5's separate interaction is waived
+> prospectively. So the brief's "all five checkpoints … approved" cannot be — and is not —
+> claimed: CP1–CP4 are approved; CP5 is recorded as *superseded by Amendment A2*. See "Scope
+> change — Amendment A2" below and `DECISIONS.md` D3.58.
+
 ## What is being claimed, and what is not
 
 **These approvals are reaffirmed by the author on 2026-09-22, in the continuation session that
@@ -38,8 +44,8 @@ detect.
 | — | WP3 **planning**: the 345-row test matrix | **approved** | reaffirmed 2026-09-22 |
 | — | **Gate A** — every author decision before WP3 execution | **answered by the author 2026-09-24 (~20:00 UTC) and applied** (D3.54; `rubric/wp3-gate-a-decisions.json`) | 2026-09-24 |
 | — | WP3 **execution**: running the 345 tests | **executed** — run `20260925T014011Z-5695a4c3df2d` is the result; two earlier runs kept as superseded / aborted records (D3.55) | 2026-09-25 |
-| **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | **reached — presented in `CP4_PACKET.md`, awaiting the author's reply; not approved** | 2026-09-25 |
-| **CP5** | after WP6 — framework mapping and limitations | not reached | — |
+| **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | **approved by the author** — the author's CP4 reply, recorded verbatim in `rubric/cp4-author-response.json` (D3.59). The narratives in it are AI-assisted wording the author reviewed and adopted (Amendment A2), not the author's independent composition | 2026-09-25 (presented; answered the same day) |
+| **CP5** | after WP6 — framework mapping and limitations | not reached — **its separate author interaction is waived prospectively by Amendment A2** (below); it will be recorded as superseded, never as approved | — |
 
 WP3 planning is not one of the brief's five checkpoints. It is recorded here because the
 matrix is frozen in the same sense the tiers are: the executor implements it rather than
@@ -232,6 +238,43 @@ procedures (`FINDINGS.md`, D3.57). **The CP4 packet is `CP4_PACKET.md`.**
 blank until the author answers in the format of `CP4_PACKET.md` §7; the narrative store
 (`rubric/wp5-author-narratives.json`) is created with every entry `awaiting_author`. No finding was
 remediated and none is closed: Arc21 is a read-only target.
+
+*(Answered the same day — see "2026-09-25 — CP4 answered and approved" below. This section is the
+record of the state at the time it was written.)*
+
+## Scope change — 2026-09-25: Amendment A2
+
+**The author amended the brief on 2026-09-25, in the reply that answered CP4.** It is prospective:
+it applies only to unfinished work (the CP4 narrative, WP6, CP5, WP7), rewrites no history, changes
+no WP0–WP5 evidence or decision, and does not touch Arc21 (A1 still governs).
+
+- **AI-assisted narrative is permitted, and labelled.** Remaining narrative and the framework-mapping
+  rationales may be AI-drafted; they are labelled *AI-drafted*, *AI-assisted* or *user-reviewed AI
+  draft*, and nothing AI-worded is presented as independently human-authored.
+- **CP5's separate interaction is waived prospectively by the author.** The CP5 package is still
+  generated and validated; CP5 is recorded as *superseded by Amendment A2*, not as approved.
+- **No more routine stops after CP4.** Work stops before completion only if it would require
+  modifying Arc21, destroying unrecoverable user data, exposing a secret, misstating evidence or
+  provenance, or an irreducible contradiction with no conservative truthful disposition.
+
+The brief carries A2's full text (`PROJECT_BRIEF.md`, not version-controlled); `DECISIONS.md` D3.58
+is its version-controlled record.
+
+## 2026-09-25 — CP4 answered and approved
+
+The author answered CP4 on 2026-09-25 (about 17:30 UTC) in the format of `CP4_PACKET.md` §7 and wrote
+**"CP4: approved."** Recorded verbatim in `rubric/cp4-author-response.json`; applied exactly (D3.59).
+
+| | |
+|---|---|
+| Statuses (the author's) | A1 accepted / design intent · A2 **open** · A3 accepted / design intent · A4 **open** · B1 informational · B2 accepted / design intent · B3 accepted / design intent · B4 informational |
+| Narratives | eight, verbatim; AI-assisted wording the author reviewed and adopted — `user_reviewed_ai_draft`, 0 `user_authored` |
+| J1–J14 | recorded verbatim; J3 applied to each of the 17 audit-absence resources (13 require a trail, 3 excluded as transient live state, `public.wallets` conditional on J4's conditions — not all established); J13 ranking rule accepted; J14 official runs fixed in `rubric/official-runs.json` |
+| Evidence | unchanged: 345 records, the same verdicts; frozen tiers unchanged; the same ranking (A1–C2) |
+| Regenerated | `FINDINGS.md`; `CP4_PACKET.md`, now the CP4 record (the packet as read: `git show e6d5c4a:CP4_PACKET.md`) |
+
+**What the approval does not mean** — in the author's words: Arc21 was remediated; findings were
+fixed; findings were closed; remediation was independently verified. None of those happened.
 
 ## Candidate findings on the table (smoke, not WP3 results) — superseded by the WP3 result
 

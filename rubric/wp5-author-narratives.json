@@ -1,61 +1,61 @@
 {
-  "WARNING": "The author's words, verbatim. Every narrative and every status decision here must come from the author — recorded with `recordedFrom` naming the dated reply it came from. Nothing in this file may be drafted, paraphrased or completed by an AI. An entry that is still `awaiting_author` renders as a blank in FINDINGS.md.",
+  "WARNING": "Every narrative and every status decision here comes from the author's dated reply named in recordedFrom, copied verbatim from rubric/cp4-author-response.json; attest wp5 refuses to write FINDINGS.md if they differ by a byte. Provenance says who wrote the WORDS: user_authored means the author composed them; user_reviewed_ai_draft means AI-assisted wording the author reviewed and adopted (Amendment A2, 2026-09-25) — it is never to be presented as the author's own composition. Nothing in this file may be drafted, paraphrased or completed by Attest. An entry still awaiting_author renders as a blank.",
   "entries": [
     {
       "key": "leaderboards-private-identity",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I consider this intended behavior because Arc21 is designed to keep players visible on competitive leaderboards even when their profile is private, although the frozen WP3 test used a stricter privacy expectation.",
+      "status": "accepted_design_intent",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     },
     {
       "key": "audit-trail-absent",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I think important long-term changes to security-sensitive, financial, privacy, configuration, and other authoritative state should be attributable and reconstructable, but I do not think every piece of short-lived session state needs its own permanent audit history.",
+      "status": "open",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     },
     {
       "key": "audit-trail-partial",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I consider the existing audit coverage acceptable here because a game event's actor can be reconstructed through the related command data, and I do not think every rejected rate-limit attempt needs to be permanently stored in the application database.",
+      "status": "accepted_design_intent",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     },
     {
       "key": "push-token-reassignment",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I do not think one account should be able to take over another account's push-token registration just by knowing the token value, so a legitimate handover should require stronger proof that the caller actually controls the device.",
+      "status": "open",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     },
     {
       "key": "force-rls-not-set",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I treat the owner and BYPASSRLS behavior as an important PostgreSQL privilege characteristic rather than a demonstrated client-facing flaw, but it should remain documented because those privileged roles are outside normal row-level policy enforcement.",
+      "status": "informational",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     },
     {
       "key": "sprint-standings-names",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I consider names in sprint standings intentional because competitors need to be identifiable within the standings, so I would treat this consistently with the leaderboard behavior.",
+      "status": "accepted_design_intent",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     },
     {
       "key": "anonymous-catalogues",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I consider anonymous access to the four catalogue tables intentional because they contain public catalogue or configuration information that is meant to be available without signing in.",
+      "status": "accepted_design_intent",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     },
     {
       "key": "realtime-latent-anon-grant",
-      "narrative": null,
-      "status": null,
-      "provenance": "awaiting_author",
-      "recordedFrom": null
+      "narrative": "I do not see a current anonymous-data exposure because the policies still deny anonymous access, but the unused anonymous grants are unnecessary privilege surface and should be removed where the platform makes that practical.",
+      "status": "informational",
+      "provenance": "user_reviewed_ai_draft",
+      "recordedFrom": "the author's CP4 reply of 2026-09-25 (rubric/cp4-author-response.json)"
     }
   ]
 }

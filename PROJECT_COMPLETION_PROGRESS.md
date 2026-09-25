@@ -20,6 +20,12 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
   rationales (WP6). The harness may draft, structure and challenge; it may not author or approve.
 - Brief §9: CP4 after WP5, CP5 after WP6, each a real stop for explicit author approval.
 - Brief §10: definition of done (as amended by A1).
+- **Amendment A2 (2026-09-25, recorded with the CP4 reply; D3.58):** prospective only. Remaining
+  narrative (the CP4 narrative, WP6 rationales, report prose) may be AI-drafted and is labelled so —
+  never as independently human-authored; CP5's separate interaction is waived by the author and
+  recorded as superseded, not approved; no further routine stops after CP4. Stops remain only for:
+  modifying Arc21, destroying unrecoverable user data, exposing a secret, misstating evidence or
+  provenance, an irreducible contradiction.
 
 ## Starting point (verified from disk 2026-09-24, before any edit in this mission)
 
@@ -50,9 +56,10 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 | WP3 result validation | **PASSED 19/19** (run 3); vs run 1: only the 11 F10 rows differ, all 345 actual outcomes identical | harness `e1164c7d` = tree of `f8cc830` |
 | WP4 drift | **COMPLETE** — run `20260925T042837Z-wp4` (all 4 states exit 0) | 2 earlier WP4 runs stopped and kept (host overload; digest-order defect) — D3.56 |
 | WP5 findings / guidance (A1) | **COMPLETE (generated)** — FINDINGS.md, CP4_PACKET.md, evidence/runs/20260925T014011Z-5695a4c3df2d/wp5/ | 4 findings, 4 informational, 2 limitations — D3.57 |
-| **CP4** | **REACHED — presented, awaiting the author (NOT approved)** | CP4_PACKET.md §7 is the response format |
-| WP6 framework mapping | NOT STARTED | |
-| **CP5** | NOT REACHED | |
+| **CP4** | **APPROVED by the author 2026-09-25** (reply recorded verbatim, `rubric/cp4-author-response.json`; D3.59) | narratives `user_reviewed_ai_draft` (A2); J3 applied: 13 in scope / 3 excluded / wallets conditional |
+| Amendment A2 | **RECORDED** (brief, D3.58, CHECKPOINTS) | prospective; CP5 separate interaction waived |
+| WP6 framework mapping | IN PROGRESS | |
+| **CP5** | to be recorded as SUPERSEDED by A2 (never "approved") | |
 | WP7 reporting / dashboard | NOT STARTED | |
 | Reproducibility audit | NOT STARTED | |
 | Adversarial review | NOT STARTED | |
@@ -60,8 +67,8 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 
 ## Current phase
 
-**STOPPED AT CP4 (2026-09-25), waiting for the author's reply.** Nothing past CP4 may start until the
-author answers in the format of `CP4_PACKET.md` §7.
+**CP4 answered and approved (2026-09-25); Amendment A2 recorded; WP6 in progress.** No further
+routine stops (A2). The CP4 stop that stood here is kept below as history.
 
 ## Commands and results
 
@@ -101,6 +108,10 @@ author answers in the format of `CP4_PACKET.md` §7.
 | 2026-09-25 03:50–04:26 | `wp4` (run 2, `20260925T035025Z-wp4`) | **stopped by hand** after H1: 2 false deficients (.262/.268) from digest guards compared as strings (UNION ALL order) → fixed `48084e3` (sorted digests + content comparison), prove-gates 74/74; run 3 WP3 unaffected (only failing guard is .269's row check) |
 | 2026-09-25 04:28–05:40 | `wp4` (run 3, `20260925T042837Z-wp4`) | **COMPLETE**, all exits 0: H1 341/345 answerable, H2 345/345; no pass→fail; 6 fail→pass; T-controlled table caught (no row-level control, not client-reachable); C-current inventory identical to frozen CP3 inventory |
 | 2026-09-25 ~05:41 | `wp5` | 10 items: A1 leaderboards (High, deficient ×4), A2 no audit trail ×17 (High, gap), A3 partial trails ×2 (High, gap), A4 push token (Medium, deficient); B1–B4 informational; C1–C2 limitations; 0 problems; narratives store created blank |
+| 2026-09-25 ~17:30 | **the author's CP4 reply + Amendment A2 received** (new context resumed at `e6d5c4a`) | verified from disk first: HEAD = origin/main = `e6d5c4a`; WP3 345 = 283/19/25/5/13 recomputed from raw records; validation 19/19; WP4 all exits 0; Arc21 fingerprint `13569cf0…eaf1` unchanged; local DB = Attest build (59 migrations, 5 Attest accounts) |
+| 2026-09-25 | A2 recorded (brief + D3.58); reply recorded verbatim (`rubric/cp4-author-response.json`); narratives copied programmatically (`user_reviewed_ai_draft`); J14 → `rubric/official-runs.json`; J3/J4 applied per resource → `rubric/wp5-audit-scope.json` (catalog reads: ledger DELETE allowed for server roles; commands cascade on account deletion) | D3.59 |
+| 2026-09-25 | `wp5` (new checks `checkCp4Record`, `checkAuditScope`) | written, 0 problems; same ranking A1–C2; FINDINGS.md + CP4 record byte-identical across two regenerations |
+| 2026-09-25 ~22:03 UTC | DB re-checked (unchanged, no foreign sessions) → `bringup` (47.6 s), `seed-extensions` (37/37), `prove-gates` | **76/76** caught, **6/6** controls, restored (new: CP4 record ×6, audit scope ×4, control: real store) |
 
 ## Evidence generated in this mission
 
@@ -147,15 +158,15 @@ author answers in the format of `CP4_PACKET.md` §7.
 
 ## Exact next action
 
-**STOPPED AT CP4.** When the author replies (format: `CP4_PACKET.md` §7):
+*(History: "STOPPED AT CP4 — record the reply verbatim, D3.58, regenerate wp5, CP4 → approved" — done
+2026-09-25, D3.58/D3.59.)*
 
-1. Record every narrative VERBATIM in `rubric/wp5-author-narratives.json` (`provenance:
-   user_authored`, `status` as given, `recordedFrom` = the dated reply). Never draft, paraphrase or
-   complete a narrative; a line the author left out stays `awaiting_author`.
-2. Record J1–J14 answers in DECISIONS (a D3.58 "CP4 answered" entry); if J13 changes the ranking
-   rule, implement it in `src/wp5-findings.ts` as the author's decision (never change a frozen tier).
-3. Regenerate: `npm run attest wp5 -- --wp3-run=20260925T014011Z-5695a4c3df2d --plan-run=20260924T201920Z-5695a4c3df2d --wp4-run=20260925T042837Z-wp4`.
-4. CHECKPOINTS: CP4 → approved (dated, from the reply) only if the author wrote "approved".
-5. Then WP6 (framework mapping scaffold: NIST SP 800-53 Rev 5 AC-2/3/6/24, AU-2/3/12, CM-3, SI-7;
-   21 CFR Part 11 §11.10(d)(e)(g), §11.300 — candidate IDs + structure only; rationales are the
-   author's), the ≤1-page CSA limitations note (limitations longer than claims) → CP5 STOP.
+1. WP6: `npm run attest wp6` — the framework mapping (NIST SP 800-53 Rev 5, 21 CFR Part 11 study
+   exercise) from the official evidence, AI-drafted rationale labelled (A2), independently validated;
+   the ≤ 1-page CSA note (limitations longer than claims). D3.60.
+2. CP5: record as *superseded by Amendment A2* with the generated package; never "approved".
+3. WP7: assurance report, dashboard, plain-language summary, README generated section; `attest
+   reports` regenerates every output from the official evidence; `attest validate-reports`
+   re-derives every headline number from raw evidence.
+4. Reproducibility audit (fresh clone), adversarial review, git hygiene, push, DB/backup
+   disposition, resume handoff.
