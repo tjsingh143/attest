@@ -173,7 +173,10 @@ The WP3 executor is held to the same standard, one level up (`DECISIONS.md` D3.3
 | `DECISIONS.md` | Every judgment call, with its alternatives and its reasoning. |
 | `RUBRIC.md` | The risk rubric. Written by hand; the harness supplies facts, not scores. |
 | `CHECKPOINTS.md` | Which checkpoints are approved, and what WP3 execution is still gated on. |
-| `rubric/` | The author's inputs the harness reads: ratings, F5 invariants, fixtures, intents, and the frozen approved WP3 matrix. |
+| `rubric/` | The author's inputs the harness reads: ratings, F5 invariants, fixtures, intents, the frozen approved WP3 matrix, the Gate A decisions, and the WP5 narratives (the author's words only). |
+| `FINDINGS.md` | WP5: the ranked findings, remediation guidance and verification procedures — generated from the evidence; the narrative under each finding is the author's. |
+| `CP4_PACKET.md` | The CP4 checkpoint packet: what WP3 found, what WP4 saw change, the ranked list, and every decision only the author can make. |
+| `.wp4-states/` | Scratch (gitignored): Arc21's earlier schema states, written with `git archive`, which WP4 rebuilds from. Never Arc21 itself. |
 
 ## Limitations
 

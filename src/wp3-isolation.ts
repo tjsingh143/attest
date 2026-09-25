@@ -79,7 +79,12 @@ export async function stateDigest(admin: Session, rels?: readonly string[]): Pro
     [[...STATE_SCHEMAS]],
   );
   for (const r of seq.rows) out[`seq:${r.s as string}`] = r.v as string;
-  return out;
+  // Keys in a fixed order. The rows above arrive in UNION ALL order, which
+  // PostgreSQL does not guarantee (a parallel append may interleave them); a
+  // digest serialized in arrival order could differ as a string while being
+  // identical in content. That produced two false "changed" guards in the first
+  // complete WP4 state (D3.56).
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
 export function diffDigests(a: Record<string, string>, b: Record<string, string>): string[] {

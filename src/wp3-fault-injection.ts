@@ -56,7 +56,7 @@ import {
   checkBindingsComplete, checkNoEffectFromState, checkVacuityPremises, checkPremisesLive, checkInsertPositives,
   checkClaimCoverage, type ReadinessCheck,
 } from "./wp3-readiness.ts";
-import { prepareAll, f7RoleClaims, dirtyReason, unrelatedTablesDigest, F7_SCRATCH, type PreparedProbe } from "./wp3-execute.ts";
+import { prepareAll, f7RoleClaims, dirtyReason, unrelatedTablesDigest, sameDigest, F7_SCRATCH, type PreparedProbe } from "./wp3-execute.ts";
 import { bindingFor, classifyAccountDeletion, type Binding } from "./wp3-bindings.ts";
 import { judgeProbe, evaluatorExists, evaluatorFor, type Observed, type CheckResult, type Judgement } from "./wp3-evaluate.ts";
 import { classify } from "./wp3-outcome.ts";
@@ -1166,6 +1166,30 @@ export async function runInjections(
         consequence: "a future fix is confirmed only by evidence",
       });
     }
+  }
+
+  // ------------------------------------------------------------------
+  // 7f. digest snapshots compare by content (D3.56): the same state written in
+  //     another key order is unchanged; one changed value is a change
+  // ------------------------------------------------------------------
+  {
+    const real = await stateDigest(ctx.admin);
+    const keys = Object.keys(real);
+    const sorted = keys.every((k, i) => i === 0 || keys[i - 1]! < k);
+    const reordered = JSON.stringify(Object.fromEntries(Object.entries(real).reverse()));
+    const canonical = JSON.stringify(real);
+    const k0 = keys.find((k) => !k.startsWith("seq:"))!;
+    const moved = JSON.stringify({ ...real, [k0]: "0".repeat(32) + ":0" });
+    const snap = { kind: "database" as const };
+    const sameOk = sameDigest(snap, canonical, reordered);
+    const diffOk = !sameDigest(snap, canonical, moved);
+    push({
+      defect: "the same database digest serialized in reverse key order, and a digest with one relation's value changed",
+      gate: "state guards (D3.56): a digest snapshot is unchanged when its content is, whatever its order; stateDigest writes keys in a fixed order",
+      caught: sorted && sameOk && diffOk && canonical !== reordered,
+      firedCheck: `stateDigest keys sorted: ${sorted}; reordered copy judged ${sameOk ? "unchanged" : "CHANGED"}; one value changed judged ${diffOk ? "changed" : "UNCHANGED"}`,
+      consequence: "no false 'the database changed' from row order; a real change still fails the guard",
+    });
   }
 
   // ------------------------------------------------------------------

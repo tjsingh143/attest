@@ -162,6 +162,16 @@ async function snapshot(admin: Session, s: Snapshot): Promise<string> {
   }
 }
 
+/** Two digest snapshots with the same relations and values are the same state, whatever order they were written in. */
+export function sameDigest(s: Snapshot, before: string, after: string): boolean {
+  if (s.kind !== "database" && s.kind !== "tables" && s.kind !== "unrelated_tables") return false;
+  try {
+    return diffDigests(JSON.parse(before) as Record<string, string>, JSON.parse(after) as Record<string, string>).length === 0;
+  } catch {
+    return false;
+  }
+}
+
 function describeSnapDiff(s: Snapshot, before: string, after: string): string {
   if (before === after) return s.kind === "account_rows" ? `unchanged (${(JSON.parse(before || "[]") as unknown[]).length} row(s) compared)` : "unchanged";
   if (s.kind === "account_rows") {
@@ -365,9 +375,10 @@ export async function runOne(
           ok = ok && j.ok;
           parts.push(j.detail);
         } else {
-          const same = before === after;
+          // Digest snapshots compare by content, never by serialization (D3.56).
+          const same = before === after || sameDigest(g.snap, before ?? "", after);
           ok = ok && same;
-          parts.push(describeSnapDiff(g.snap, before ?? "", after));
+          parts.push(same ? describeSnapDiff(g.snap, after, after) : describeSnapDiff(g.snap, before ?? "", after));
         }
       }
       if (g.after) {

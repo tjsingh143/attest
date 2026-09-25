@@ -472,8 +472,8 @@ export const WP5_ITEMS: readonly ItemSpec[] = [
       "policy naming anon. WP3 confirmed the boundary: an anonymous caller reads the active rows and is refused the inactive or " +
       "cancelled row the policy excludes (eight F4 rows, all effective).",
     whyItMatters:
-      "RUBRIC Part 4.4 records these as intentionally readable catalogue data whose risk is integrity, not confidentiality. No " +
-      "anonymous write path was found.",
+      "RUBRIC Part 4.4 records these as intentionally readable catalogue data whose risk is integrity, not confidentiality. On " +
+      "all four, anon holds SELECT and no other privilege (WP0 inventory), so no anonymous write reaches them directly.",
     limitations: ["WP3 did not enumerate every column an anonymous caller receives; the rows establish row-level scope only."],
     judgment: ["Accepted / design-intent, as RUBRIC 4.4 already reasons?"],
     remediation: [

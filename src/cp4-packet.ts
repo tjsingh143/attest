@@ -87,8 +87,22 @@ export function renderCp4Packet(x: Cp4Inputs): string {
       p(`| ${df.from} → ${df.to} | ${c.added} | ${c.removed} | ${c.definitionChanged} | ${c.attributesChanged} | ${c.newResources} (${c.newUnprotectedResources}) | ${c.newlyExposed} | ${df.results ? rc["pass → fail"] ?? 0 : "—"} | ${df.results ? rc["fail → pass"] ?? 0 : "—"} |`);
     }
     p();
-    p("The last state adds one Attest-only table with no row-level security to a scratch copy of the current schema — never to");
-    p("Arc21 — to show the detector reporting a new unprotected resource without anyone looking for it.");
+    for (const df of d.diffs as Rec[]) {
+      const tr = (df.results?.transitions ?? []) as Rec[];
+      const pf = tr.filter((t) => t.kind === "pass → fail"), fp = tr.filter((t) => t.kind === "fail → pass");
+      if (!pf.length && !fp.length) continue;
+      const show = (xs: Rec[]) => xs.slice(0, 10).map((t) => `\`${t.testId}\` (${t.from?.summary ?? "?"} → ${t.to?.summary ?? "?"})`).join(", ") + (xs.length > 10 ? `, … ${xs.length - 10} more` : "");
+      p(`- **${df.from} → ${df.to}**${fp.length ? ` — fail → pass: ${show(fp)}` : ""}${pf.length ? `${fp.length ? ";" : " —"} pass → fail: ${show(pf)}` : ""}`);
+    }
+    for (const df of d.diffs as Rec[]) {
+      for (const r of (df.inventory.newResources ?? []) as Rec[]) {
+        if (r.unprotected) p(`- **${df.from} → ${df.to}** — new resource with no row-level control: \`${r.resource}\` (${r.clientReachable ? "reachable by a client role now" : "no client grant today — one GRANT from exposed"})`);
+      }
+    }
+    p();
+    p("Historical results are today's approved questions asked of an earlier schema, not findings about Arc21 today. The last");
+    p("state adds one Attest-only table with no row-level security to a scratch copy of the current schema — never to Arc21 —");
+    p("to show the detector reporting a new unprotected resource without anyone looking for it.");
   }
   p();
 
