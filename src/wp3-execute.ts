@@ -937,6 +937,8 @@ export interface RunSummary {
   readonly rebuilds: number;
   readonly rebuildSeconds: number;
   readonly elapsedSeconds: number;
+  /** Rebuilds whose `supabase db reset` was retried before succeeding, and why (D3.55). */
+  readonly resetRetries: readonly { readonly epoch: number; readonly retries: readonly string[] }[];
 }
 
 /**
@@ -955,6 +957,7 @@ export async function runTests(
   let baseline: BaselineEpoch | null = null;
   let dirty: string | null = "the run starts on a fresh rebuild";
   let rebuilds = 0, rebuildMs = 0;
+  const resetRetries: { epoch: number; retries: readonly string[] }[] = [];
   const triggerFns = await (async () => {
     const a = await adminSession("trigger-functions");
     try {
@@ -980,6 +983,7 @@ export async function runTests(
       }
       rebuilds++;
       rebuildMs += baseline.durationMs;
+      if (baseline.resetRetries.length) resetRetries.push({ epoch: baseline.epoch, retries: baseline.resetRetries });
       rebuiltBefore = true;
       dirty = null;
     }
@@ -998,6 +1002,6 @@ export async function runTests(
   return {
     aborted, records, byVerdict, byObservation,
     harnessErrors: records.filter((r) => r.observation === "harness_error").length,
-    rebuilds, rebuildSeconds: rebuildMs / 1000, elapsedSeconds: (Date.now() - started) / 1000,
+    rebuilds, rebuildSeconds: rebuildMs / 1000, elapsedSeconds: (Date.now() - started) / 1000, resetRetries,
   };
 }

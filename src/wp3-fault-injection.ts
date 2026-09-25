@@ -67,6 +67,7 @@ import { captureArc21State, compareArc21State, READ_ONLY_GIT_ENV } from "./arc21
 import { readAppliedState, readSchemaVersion, unbuiltInstanceReason } from "./schema-version.ts";
 import { diffInventories, diffResults, type ResultPoint } from "./wp4-drift.ts";
 import { loadValidationInputs, validateLoaded } from "./wp3-validate-results.ts";
+import { resetFailurePhase } from "./bringup.ts";
 import type { Inventory } from "./inventory.ts";
 import { readdir, readFile } from "node:fs/promises";
 import { RUNS_ROOT } from "./config.ts";
@@ -1016,16 +1017,20 @@ export async function runInjections(
   }
 
   // ------------------------------------------------------------------
-  // 7c. the independent WP3 validator (D3.55), on the newest real results file
+  // 7c. the independent WP3 validator (D3.55), on the newest complete results file
   //
   // Each case breaks one thing in an in-memory copy of a real, committed
   // results file and requires the check that owns it to fail and to name the
-  // record. Nothing is written anywhere.
+  // record. Nothing is written anywhere. An aborted run is skipped: it lacks
+  // most of the kinds of record the cases break.
   // ------------------------------------------------------------------
   {
     let resultsRun: string | null = null;
     for (const d of (await readdir(RUNS_ROOT)).sort().reverse()) {
-      try { await readFile(join(RUNS_ROOT, d, "wp3-results.json")); resultsRun = d; break; } catch { /* next */ }
+      try {
+        const f = JSON.parse(await readFile(join(RUNS_ROOT, d, "wp3-results.json"), "utf8")) as { meta?: { aborted?: unknown }; records?: unknown[] };
+        if (!f.meta?.aborted && (f.records?.length ?? 0) === ctx.manifest.rows.length) { resultsRun = d; break; }
+      } catch { /* next */ }
     }
     if (!resultsRun) {
       push({ defect: "the independent WP3 validator", gate: "validate-wp3", caught: false, firedCheck: "NO WP3 RESULTS FILE EXISTS TO BREAK", consequence: "unproven" });
@@ -1081,6 +1086,23 @@ export async function runInjections(
         consequence: "VALIDATION FAILED → exit 1; the run is not accepted as evidence",
       });
     }
+  }
+
+  // ------------------------------------------------------------------
+  // 7d. the rebuild retry (D3.55): only a failure after every migration
+  //     applied — the CLI restarting containers — is retried
+  // ------------------------------------------------------------------
+  {
+    const migrating = "Resetting local database...\nApplying migration 20260813120000_foundation.sql...\nERROR: relation \"public.x\" does not exist (SQLSTATE 42P01)";
+    const restarting = "Applying migration 20260909120000_career_attempt_counts.sql...\nSeeding data from supabase/seed.sql...\nRestarting containers...\nsupabase_storage_arc21 container logs:\n{\"level\":30,\"msg\":\"[Server] Started Successfully\"}";
+    const a = resetFailurePhase(migrating), b = resetFailurePhase(restarting);
+    push({
+      defect: "a reset that fails while applying a migration, and one that fails only while the CLI restarts containers",
+      gate: "bringup (D3.55): a migration failure is never retried; a container-restart failure is, and the rebuilt state is then verified as always",
+      caught: !a.retryable && b.retryable,
+      firedCheck: `migration failure → ${a.retryable ? "RETRIED" : "not retried"} (${a.phase}); restart failure → ${b.retryable ? "retried" : "NOT RETRIED"} (${b.phase})`,
+      consequence: "a broken migration stops the run at once; a slow container is retried at most twice",
+    });
   }
 
   // ------------------------------------------------------------------

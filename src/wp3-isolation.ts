@@ -188,6 +188,8 @@ export interface BaselineEpoch {
   readonly digest: Readonly<Record<string, string>>;
   readonly catalog: string;
   readonly counts: Readonly<Record<string, number>>;
+  /** Failed `supabase db reset` attempts retried before this rebuild succeeded (D3.55). */
+  readonly resetRetries: readonly string[];
 }
 
 export interface Canonical {
@@ -240,7 +242,7 @@ export async function rebuildBaseline(opts: {
 }): Promise<BaselineEpoch> {
   const log = opts.log ?? (() => {});
   const t0 = Date.now();
-  await bringup(() => {});
+  const b = await bringup((m) => { if (/reset attempt/.test(m)) log(m); });
   const sv = await readSchemaVersion();
   if (sv.migrationSetSha256 !== opts.expectedSchema) {
     throw new BaselineVerificationError(`the rebuilt schema is ${sv.migrationSetSha256.slice(0, 12)}…, not the planned ${opts.expectedSchema.slice(0, 12)}…`);
@@ -269,10 +271,10 @@ export async function rebuildBaseline(opts: {
     throw new Arc21ChangedError(`HARNESS SAFETY VIOLATION during rebuild ${opts.epoch}: ${cmp.differences.join("; ")}`);
   }
   const durationMs = Date.now() - t0;
-  log(`  baseline ${opts.epoch} rebuilt and verified in ${(durationMs / 1000).toFixed(1)}s`);
+  log(`  baseline ${opts.epoch} rebuilt and verified in ${(durationMs / 1000).toFixed(1)}s${b.resetRetries.length ? ` (${b.resetRetries.length} reset attempt(s) retried first)` : ""}`);
   return {
     epoch: opts.epoch, rebuiltAt: new Date().toISOString(), durationMs, schemaVersion: sv.migrationSetSha256,
-    digest: verified.digest, catalog: verified.catalog, counts: verified.counts,
+    digest: verified.digest, catalog: verified.catalog, counts: verified.counts, resetRetries: b.resetRetries,
   };
 }
 

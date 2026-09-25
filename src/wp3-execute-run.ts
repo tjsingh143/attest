@@ -86,6 +86,7 @@ export async function executeWp3(
     meta: {
       runId, kind: "WP3 assessment", sut: ctx.sut, harness: ctx.harness, probes: ids.length, recorded: summary.records.length,
       rebuilds: summary.rebuilds, rebuildSeconds: summary.rebuildSeconds, elapsedSeconds: summary.elapsedSeconds,
+      resetRetries: summary.resetRetries,
       aborted: summary.aborted,
     },
     ...(summary.aborted ? { ABORTED: `The run stopped before ${summary.aborted.beforeTestId}: ${summary.aborted.reason}. Only ${summary.records.length} of ${ids.length} probes were recorded; this is not a complete WP3 assessment.` } : {}),
