@@ -131,7 +131,12 @@ export function diffInventories(a: Inventory, b: Inventory): InventoryDiff {
 // result transitions
 // ---------------------------------------------------------------------------
 
-export interface ResultPoint { readonly verdict: string; readonly observation: string }
+export interface ResultPoint {
+  readonly verdict: string;
+  readonly observation: string;
+  /** What the probe actually returned ("error PT404", "2 row(s)") — shown beside a transition, never compared. */
+  readonly summary?: string;
+}
 
 export type TransitionKind =
   | "pass → fail" | "fail → pass"

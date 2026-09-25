@@ -61,25 +61,27 @@ export interface BringupResult {
 /**
  * `supabase db reset --local`, run inside the Arc21 repository.
  *
- * Retried — at most twice, and only when the reset got through every migration
- * and failed afterwards, while the CLI was restarting and health-checking the
- * platform containers. The second official WP3 run (20260925T010904Z) was
- * aborted by exactly that: on a heavily loaded host a storage container came up
- * after the CLI's health check gave up, although the schema had been rebuilt
- * (D3.55). A failure while applying migrations is never retried: it would fail
- * the same way again. Retrying cannot hide a bad state — whatever a reset
- * produces is then checked like every other rebuild: the applied migrations
- * against the files, and in a WP3 run the fixtures and the canonical digests.
+ * Retried — at most three times, with a growing pause — unless the failure is a
+ * SQL error raised by a migration, which would fail the same way again. The
+ * second official WP3 run (20260925T010904Z) was aborted by a reset that applied
+ * every migration and then failed while the CLI health-checked a restarted
+ * container on a heavily loaded host; the first WP4 run (20260925T021927Z) lost
+ * its first state to three failures on a host at load average ~128, one of them
+ * while the CLI was still initialising the schema (D3.55, D3.56). Neither was a
+ * migration error. Retrying cannot hide a bad state — whatever a reset produces
+ * is then checked like every other rebuild: the applied migrations against the
+ * files, and in a WP3 run the fixtures and the canonical digests.
  */
-const RESET_ATTEMPTS = 3;
+const RESET_ATTEMPTS = 4;
 
-/** Where a failed reset stopped, from the CLI's own output; only a post-migration failure is retryable. */
+/** Where a failed reset stopped, from the CLI's own output; only a SQL error from a migration is final. */
 export function resetFailurePhase(out: string): { retryable: boolean; phase: string } {
   const lines = out.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("{"));
-  const afterMigrations = /Restarting containers/.test(out);
-  return afterMigrations
-    ? { retryable: true, phase: `after every migration applied, while restarting containers (${lines.filter((l) => /container|health|timed out|timeout/i.test(l)).slice(-2).join(" / ") || lines.at(-1) || "no detail"})` }
-    : { retryable: false, phase: `before the migrations finished (${lines.at(-1) ?? "no detail"})` };
+  const sqlError = lines.find((l) => /^ERROR:/.test(l) || /\(SQLSTATE [0-9A-Z]{5}\)/.test(l));
+  if (sqlError) return { retryable: false, phase: `a migration raised a SQL error (${sqlError.slice(0, 160)})` };
+  const lastStep = [...lines].reverse().find((l) => /\.\.\.$/.test(l)) ?? "no step recorded";
+  const detail = lines.filter((l) => /container|health|timed out|timeout|refused|reset by peer|EOF/i.test(l)).slice(-2).join(" / ");
+  return { retryable: true, phase: `during "${lastStep}" with no SQL error${detail ? ` (${detail})` : ""}` };
 }
 
 async function resetFromMigrations(log: (s: string) => void): Promise<{ seconds: number; retries: string[] }> {
@@ -97,8 +99,9 @@ async function resetFromMigrations(log: (s: string) => void): Promise<{ seconds:
       const { retryable, phase } = resetFailurePhase(`${e.stdout ?? ""}\n${e.stderr ?? ""}\n${e.message}`);
       if (!retryable || attempt >= RESET_ATTEMPTS) throw err;
       retries.push(`attempt ${attempt} failed ${phase}`);
-      log(`  supabase db reset attempt ${attempt} failed ${phase}; retrying in ${15 * attempt}s`);
-      await new Promise((r) => setTimeout(r, 15_000 * attempt));
+      const pause = 30 * 2 ** (attempt - 1);
+      log(`  supabase db reset attempt ${attempt} failed ${phase}; retrying in ${pause}s`);
+      await new Promise((r) => setTimeout(r, pause * 1000));
     }
   }
 }

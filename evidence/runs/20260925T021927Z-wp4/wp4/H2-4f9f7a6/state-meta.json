@@ -1,0 +1,9 @@
+{
+  "label": "Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening",
+  "why": "the last committed state before 20260904120000_least_privilege_and_entry_visibility, Arc21's own authorization hardening",
+  "source": "git-commit",
+  "commit": "4f9f7a6",
+  "provenance": "git archive of commit 4f9f7a6b22f4811e3e61ae6969306da6a98419c2 (read-only; nothing checked out in the protected checkout)",
+  "migrationSetSha256": "5827d84d4ea5e6ce9b89c3425a0f9c28eb0860950563a6056328f83ecc09cdf8",
+  "migrationCount": 53
+}

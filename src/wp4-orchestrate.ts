@@ -17,6 +17,7 @@ import { ATTEST_ROOT, RUNS_ROOT } from "./config.ts";
 import { WP4_STATES, materialize, type MaterializedState } from "./wp4-states.ts";
 import { diffInventories, diffResults, type InventoryDiff, type ResultPoint } from "./wp4-drift.ts";
 import type { Inventory } from "./inventory.ts";
+import { readHarnessVersion } from "./harness-version.ts";
 
 export interface Wp4Options {
   readonly wp3RunId: string;
@@ -39,7 +40,7 @@ async function child(args: string[], env: NodeJS.ProcessEnv, logPath: string): P
 }
 
 const pointsOf = (records: readonly Record<string, unknown>[]) =>
-  new Map(records.map((r) => [String(r.testId), { verdict: String(r.verdict), observation: String(r.observation) } as ResultPoint]));
+  new Map(records.map((r) => [String(r.testId), { verdict: String(r.verdict), observation: String(r.observation), summary: String(r.actualSummary ?? "") } as ResultPoint]));
 
 export async function runWp4(opts: Wp4Options): Promise<{ runId: string; ok: boolean; safetyViolation: boolean }> {
   const runId = `${new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z")}-wp4`;
@@ -71,6 +72,31 @@ export async function runWp4(opts: Wp4Options): Promise<{ runId: string; ok: boo
   // Leave the disposable database as the current state's canonical build.
   opts.log(`\n--- restoring the current state's build (bringup)`);
   const restore = await child(["bringup"], {}, join(root, "restore.log"));
+  await writeFile(join(root, "states.json"), JSON.stringify({ exits: Object.fromEntries(Object.entries(outcome).map(([k, v]) => [k, v.exit])), restoreExit: restore, materialized: materialized.map((m) => ({ name: m.name, provenance: m.provenance, migrationSetSha256: m.migrationSetSha256, migrationCount: m.migrations.length })) }, null, 2) + "\n");
+  const ok = await writeDrift({ runId, wp3RunId: opts.wp3RunId, planRunId: opts.planRunId, log: opts.log });
+  return { runId, ok: ok && Object.values(outcome).every((o) => o.exit === 0) && restore === 0, safetyViolation: false };
+}
+
+/**
+ * Compute the drift of a WP4 run from what its states persisted — the
+ * inventories, the historical results and the official WP3 run — and write
+ * drift.json and drift-report.md. `attest wp4-report` calls this alone, so the
+ * report is always regenerated from the evidence store, never edited.
+ */
+export async function writeDrift(opts: { runId: string; wp3RunId: string; planRunId: string; log: (s: string) => void }): Promise<boolean> {
+  const { runId } = opts;
+  const root = join(RUNS_ROOT, runId, "wp4");
+  const exists = async (p: string) => { try { await readFile(p); return true; } catch { return false; } };
+  let persisted: { exits?: Record<string, number>; restoreExit?: number } = {};
+  try { persisted = JSON.parse(await readFile(join(root, "states.json"), "utf8")); } catch { /* an older run: infer below */ }
+  const outcome: Record<string, { exit: number }> = {};
+  for (const spec of WP4_STATES) {
+    const inferred = (await exists(join(root, spec.name, "inventory.json"))) && (!spec.runProbes || (await exists(join(root, spec.name, "results.json")))) ? 0 : 1;
+    outcome[spec.name] = { exit: persisted.exits?.[spec.name] ?? inferred };
+  }
+  const restore = persisted.restoreExit ?? 0;
+  const metaOf = async (s: string) => JSON.parse(await readFile(join(root, s, "state-meta.json"), "utf8")) as { migrationSetSha256: string; migrationCount: number };
+  const materialized = await Promise.all(WP4_STATES.map(async (s) => metaOf(s.name).then((m) => ({ migrationSetSha256: m.migrationSetSha256, migrations: { length: m.migrationCount } }))));
 
   // ---- drift -------------------------------------------------------------
   const inv = async (s: string) => JSON.parse(await readFile(join(root, s, "inventory.json"), "utf8")) as Inventory;
@@ -94,17 +120,22 @@ export async function runWp4(opts: Wp4Options): Promise<{ runId: string; ok: boo
     const results = ra && rb ? diffResults(ra.points, rb.points) : null;
     diffs.push({ from: a, to: b, inventory, results, resultsNote: ra && rb ? `${ra.source} → ${rb.source}` : "results exist for only one side" });
   }
+  const incompatibleOf = async (s: string) => {
+    try { return (JSON.parse(await readFile(join(root, s, "results.json"), "utf8")) as { incompatible: { testId: string; reason: string }[] }).incompatible; } catch { return null; }
+  };
   const summary = {
     WARNING: "WP4 drift evidence. Historical states are Arc21's own earlier schemas, rebuilt in a disposable database; their results are what TODAY's approved questions return against THAT schema, not findings about current Arc21. The controlled state contains one Attest-only migration and is a detector test, not an assessment.",
     runId, wp3RunId: opts.wp3RunId, planRunId: opts.planRunId,
-    states: WP4_STATES.map((s, i) => ({ name: s.name, label: s.label, why: s.why, source: s.source.kind === "git-commit" ? `commit ${s.source.commit}` : s.source.kind, migrationSetSha256: materialized[i]!.migrationSetSha256, migrationCount: materialized[i]!.migrations.length, exit: outcome[s.name]!.exit })),
+    reportGeneratedAt: new Date().toISOString(),
+    reportGeneratedBy: await readHarnessVersion(),
+    states: await Promise.all(WP4_STATES.map(async (s, i) => ({ name: s.name, label: s.label, why: s.why, source: s.source.kind === "git-commit" ? `commit ${s.source.commit}` : s.source.kind, migrationSetSha256: materialized[i]!.migrationSetSha256, migrationCount: materialized[i]!.migrations.length, exit: outcome[s.name]!.exit, incompatible: s.runProbes ? await incompatibleOf(s.name) : null }))),
     restoreExit: restore,
     diffs: diffs.map((d) => ({ from: d.from, to: d.to, inventory: d.inventory, results: d.results ? { counts: d.results.counts, transitions: d.results.transitions.filter((t) => t.kind !== "unchanged") } : null, resultsNote: d.resultsNote })),
   };
   await writeFile(join(root, "drift.json"), JSON.stringify(summary, null, 2) + "\n");
   await writeFile(join(root, "drift-report.md"), renderDriftReport(summary));
-  const ok = Object.values(outcome).every((o) => o.exit === 0) && restore === 0;
-  return { runId, ok, safetyViolation: false };
+  opts.log(`  drift written: evidence/runs/${runId}/wp4/drift-report.md`);
+  return Object.values(outcome).every((o) => o.exit === 0) && restore === 0;
 }
 
 type Summary = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -117,14 +148,21 @@ export function renderDriftReport(s: Summary): string {
   p("> Generated by `npm run attest wp4` from the persisted runs below. Nothing in it is hand-written.");
   p(`> ${s.WARNING}`);
   p();
-  p(`WP4 run \`${s.runId}\` · current-state results: official WP3 run \`${s.wp3RunId}\` · approved probes from planning run \`${s.planRunId}\``);
+  p(`WP4 run \`${s.runId}\` · current-state results: official WP3 run \`${s.wp3RunId}\` · approved probes from planning run \`${s.planRunId}\`${s.reportGeneratedBy ? ` · report generated ${s.reportGeneratedAt} by harness \`${String(s.reportGeneratedBy.sourcesSha256).slice(0, 12)}\` from the persisted state outputs` : ""}`);
   p();
   p("## The states");
   p();
-  p("| State | Source | Migrations | Schema hash | Why this state |");
-  p("|---|---|---:|---|---|");
-  for (const st of s.states) p(`| \`${st.name}\` | ${st.source} | ${st.migrationCount} | \`${String(st.migrationSetSha256).slice(0, 12)}…\` | ${st.why}${st.exit !== 0 ? ` **(run exit ${st.exit})**` : ""} |`);
+  p("| State | Source | Migrations | Schema hash | Approved probes it could not answer | Why this state |");
+  p("|---|---|---:|---|---:|---|");
+  for (const st of s.states) p(`| \`${st.name}\` | ${st.source} | ${st.migrationCount} | \`${String(st.migrationSetSha256).slice(0, 12)}…\` | ${st.incompatible ? st.incompatible.length : st.name === "C-current" ? "— (the official WP3 run)" : "— (inventory only)"} | ${st.why}${st.exit !== 0 ? ` **(run exit ${st.exit})**` : ""} |`);
   p();
+  for (const st of s.states) {
+    if (!st.incompatible?.length) continue;
+    p(`**Approved probes \`${st.name}\` could not answer** — recorded as incompatible, never as a pass or a failure:`);
+    p();
+    for (const x of st.incompatible as Summary[]) p(`- \`${x.testId}\` — ${String(x.reason).slice(0, 220)}`);
+    p();
+  }
   for (const d of s.diffs) {
     const c = d.inventory.counts;
     p(`## ${d.from} → ${d.to}`);
@@ -174,8 +212,10 @@ export function renderDriftReport(s: Summary): string {
       for (const [k, n] of Object.entries(d.results.counts)) p(`| ${k} | ${n} |`);
       p();
       const t = d.results.transitions as Summary[];
-      list("pass → fail", t.filter((x) => x.kind === "pass → fail"), (x) => `\`${x.testId}\``, 60);
-      list("fail → pass", t.filter((x) => x.kind === "fail → pass"), (x) => `\`${x.testId}\``, 60);
+      const both = (x: Summary) => `\`${x.testId}\` — ${x.from?.summary ?? "?"} (${x.from?.observation ?? "?"}) → ${x.to?.summary ?? "?"} (${x.to?.observation ?? "?"})`;
+      list("pass → fail", t.filter((x) => x.kind === "pass → fail"), both, 60);
+      list("fail → pass", t.filter((x) => x.kind === "fail → pass"), both, 60);
+      list("other verdict changes", t.filter((x) => x.kind === "other change" || x.kind === "became measured" || x.kind === "became not_measured"), (x) => `${both(x)}: ${x.from?.verdict} → ${x.to?.verdict}`, 60);
     } else {
       p(`*Result transitions: ${d.resultsNote}.*`);
       p();

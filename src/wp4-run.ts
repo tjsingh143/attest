@@ -37,6 +37,7 @@ import { prepareAll, runTests, type PreparedProbe, type RunContext } from "./wp3
 import { SEED_EXTENSION_IMPLS, verifyOne } from "./seed-extensions.ts";
 import { applySetupInTxn } from "./wp3-readiness.ts";
 import { loadIntentStore } from "./author-intents.ts";
+import { registeredContradictionsFor } from "./wp3-contradictions.ts";
 import type { Arc21SourceState } from "./arc21-guard.ts";
 
 export interface CompatibilityResult {
@@ -90,7 +91,17 @@ export async function checkCompatibility(admin: Session, plan: Wp3Plan, prepared
       }
       const reasons: string[] = [];
       const compile = async (what: string, sql: string) => {
-        const e = await tryIn(admin, async () => { await admin.query(`prepare attest_wp4_probe as ${sql}`); await admin.query("deallocate attest_wp4_probe"); });
+        // PREPARE takes SELECT, INSERT, UPDATE, DELETE, MERGE and VALUES only. A
+        // TRUNCATE is answerable exactly when its relation exists, so that is what
+        // is checked for it (the first WP4 run marked four answerable TRUNCATE
+        // probes incompatible; D3.56).
+        const t = /^\s*truncate\s+(?:table\s+)?(?:only\s+)?([\w."]+)/i.exec(sql);
+        const e = t
+          ? await tryIn(admin, async () => {
+              const r = (await admin.query(`select to_regclass($1) is not null as ok`, [t[1]])).rows[0] as { ok: boolean };
+              if (!r.ok) throw new Error(`relation ${t[1]} does not exist`);
+            })
+          : await tryIn(admin, async () => { await admin.query(`prepare attest_wp4_probe as ${sql}`); await admin.query("deallocate attest_wp4_probe"); });
         if (e) reasons.push(`${what} does not compile here: ${e}`);
       };
       if (p.spec.kind === "sql" || p.spec.kind === "rpc") {
@@ -111,7 +122,12 @@ export async function checkCompatibility(admin: Session, plan: Wp3Plan, prepared
       }
       if (b.reachability) await compile("reachability", b.reachability.sql);
       if (b.reference) await compile("the reference statement", b.reference.statement);
-      if (!reasons.length) {
+      // A row with a registered contradiction is expected to fail its premise —
+      // that is the contradiction — and the executor records it `not_measured`,
+      // exactly as in WP3. Requiring its premises here would drop it from the
+      // state and turn "not measured" into "not asked" (D3.56).
+      const registered = registeredContradictionsFor(t.testId).length > 0;
+      if (!reasons.length && !registered) {
         // Premises, on the probe's own setup, inside a savepoint that is always undone.
         const err = await tryIn(admin, async () => {
           if (b.setupKey) await applySetupInTxn(admin, b.setupKey);

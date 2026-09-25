@@ -1104,13 +1104,14 @@ export async function runInjections(
   {
     const migrating = "Resetting local database...\nApplying migration 20260813120000_foundation.sql...\nERROR: relation \"public.x\" does not exist (SQLSTATE 42P01)";
     const restarting = "Applying migration 20260909120000_career_attempt_counts.sql...\nSeeding data from supabase/seed.sql...\nRestarting containers...\nsupabase_storage_arc21 container logs:\n{\"level\":30,\"msg\":\"[Server] Started Successfully\"}";
-    const a = resetFailurePhase(migrating), b = resetFailurePhase(restarting);
+    const initialising = "Resetting local database...\nRecreating database...\nInitialising schema...\n";
+    const a = resetFailurePhase(migrating), b = resetFailurePhase(restarting), c = resetFailurePhase(initialising);
     push({
-      defect: "a reset that fails while applying a migration, and one that fails only while the CLI restarts containers",
-      gate: "bringup (D3.55): a migration failure is never retried; a container-restart failure is, and the rebuilt state is then verified as always",
-      caught: !a.retryable && b.retryable,
-      firedCheck: `migration failure → ${a.retryable ? "RETRIED" : "not retried"} (${a.phase}); restart failure → ${b.retryable ? "retried" : "NOT RETRIED"} (${b.phase})`,
-      consequence: "a broken migration stops the run at once; a slow container is retried at most twice",
+      defect: "a reset that fails with a migration's SQL error; one that fails while the CLI restarts containers; one that fails while it initialises the schema",
+      gate: "bringup (D3.55, D3.56): a migration's SQL error is never retried; an infrastructure failure is, and the rebuilt state is then verified as always",
+      caught: !a.retryable && b.retryable && c.retryable,
+      firedCheck: `SQL error → ${a.retryable ? "RETRIED" : "not retried"} (${a.phase}); restart failure → ${b.retryable ? "retried" : "NOT RETRIED"} (${b.phase}); initialisation failure → ${c.retryable ? "retried" : "NOT RETRIED"} (${c.phase})`,
+      consequence: "a broken migration stops the run at once; an overloaded host is retried at most three times (30 s, 60 s, 120 s)",
     });
   }
 

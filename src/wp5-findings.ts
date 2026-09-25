@@ -166,7 +166,20 @@ export async function buildWp5(opts: { wp3RunId: string; wp4RunId?: string | nul
   const scored = new Map((tiers.scored as Rec[]).map((s) => [String(s.resource), s]));
   const inventory = JSON.parse(await readFile(join(RUNS_ROOT, FROZEN_CP3_RUN, "inventory.json"), "utf8")) as Rec;
   let drift: Rec | null = null;
-  if (opts.wp4RunId) drift = JSON.parse(await readFile(join(RUNS_ROOT, opts.wp4RunId, "wp4", "drift.json"), "utf8")) as Rec;
+  const history: { name: string; label: string; verdictOf: Map<string, string>; incompatible: Set<string> }[] = [];
+  if (opts.wp4RunId) {
+    drift = JSON.parse(await readFile(join(RUNS_ROOT, opts.wp4RunId, "wp4", "drift.json"), "utf8")) as Rec;
+    for (const st of drift.states as Rec[]) {
+      try {
+        const res = JSON.parse(await readFile(join(RUNS_ROOT, opts.wp4RunId, "wp4", String(st.name), "results.json"), "utf8")) as Rec;
+        history.push({
+          name: String(st.name), label: String(st.label),
+          verdictOf: new Map((res.records as Rec[]).map((r) => [String(r.testId), String(r.verdict)])),
+          incompatible: new Set((res.incompatible as Rec[]).map((x) => String(x.testId))),
+        });
+      } catch { /* a state that ran no probes */ }
+    }
+  }
   const store = await loadNarratives();
 
   // --- grouping, checked against the evidence ---------------------------------
@@ -219,16 +232,21 @@ export async function buildWp5(opts: { wp3RunId: string; wp4RunId?: string | nul
 
     const approvedEscalations = [...new Set(sel.map((r) => escalationOf(String(planById.get(r.testId)?.covers ?? ""))).filter((x): x is string => !!x))].slice(0, 2);
 
+    // The same Test IDs against Arc21's earlier schemas: today's questions, yesterday's schema (D3.56).
+    // An item with no record of its own (a WP0 observation) is traced through the records holding around it.
+    const basis = sel.length ? sel : sup;
     const driftLines: string[] = [];
-    if (drift) {
-      for (const d of drift.diffs as Rec[]) {
-        if (!d.results) continue;
-        const moved = (d.results.transitions as Rec[]).filter((t) => sel.some((r) => r.testId === t.testId));
-        if (moved.length) driftLines.push(`${d.from} → ${d.to}: ${moved.map((t) => `\`${t.testId}\` ${t.from?.verdict ?? "not run"} → ${t.to?.verdict ?? "not run"}`).join("; ")}`);
+    if (!sel.length && sup.length && history.length) driftLines.push(`Traced through the ${sup.length} record(s) holding around it:`);
+    for (const h of history) {
+      if (!basis.length) break;
+      const tally: Record<string, number> = {};
+      for (const r of basis) {
+        const v = h.incompatible.has(r.testId) ? "could not be asked (schema lacks what the probe needs)" : (h.verdictOf.get(r.testId) ?? "not recorded");
+        tally[v] = (tally[v] ?? 0) + 1;
       }
-      const states = (drift.states as Rec[]).filter((s) => s.name !== "C-current" && s.name !== "T-controlled").map((s) => s.name);
-      if (sel.length && !driftLines.length) driftLines.push(`No transition for these Test IDs between the states compared (${states.join(", ")} → current): each state that could run them gave the same verdict, or could not run them (see the drift report).`);
+      driftLines.push(`\`${h.name}\` — ${h.label}: ${Object.entries(tally).map(([v, n]) => `${n} ${v}`).join(", ")}.`);
     }
+    if (driftLines.length) driftLines.push(`Today, in the official run: ${Object.entries(basis.reduce<Record<string, number>>((m, r) => ({ ...m, [r.verdict]: (m[r.verdict] ?? 0) + 1 }), {})).map(([v, n]) => `${n} ${v}`).join(", ")}.`);
 
     const author = store.entries.find((e) => e.key === spec.key) ?? { key: spec.key, narrative: null, status: null, provenance: "awaiting_author" as const, recordedFrom: null };
     return { spec, sel, sup, tier, tierBasis, exposure, evidenceClass, bullets, approvedEscalations, driftLines, author };

@@ -348,6 +348,16 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       else if (!r.ok) process.exitCode = 1;
       break;
     }
+    case "wp4-report": {
+      // Regenerate a WP4 run's drift.json and drift-report.md from what its states persisted (D3.56).
+      const runId = process.argv.slice(3).find((a) => !a.startsWith("--"));
+      const wp3 = process.argv.find((a) => a.startsWith("--wp3-run="))?.split("=")[1];
+      const planRun = process.argv.find((a) => a.startsWith("--plan-run="))?.split("=")[1];
+      if (!runId || !wp3 || !planRun) { console.error("usage: attest wp4-report <wp4 runId> --wp3-run=<runId> --plan-run=<runId>"); process.exitCode = 2; break; }
+      const { writeDrift } = await import("./wp4-orchestrate.ts");
+      if (!(await writeDrift({ runId, wp3RunId: wp3, planRunId: planRun, log: (m) => console.log(m) }))) process.exitCode = 1;
+      break;
+    }
     case "wp5": {
       // WP5 (Amendment A1): findings, risk prioritisation and remediation
       // guidance, and the CP4 packet (D3.57). Writes only Attest files.
@@ -592,7 +602,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|wp4 --wp3-run= --plan-run=|\n         wp5 --wp3-run= --plan-run= [--wp4-run=]|verify-finding <item> --official= --candidate=|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|wp4 --wp3-run= --plan-run=|wp4-report <id> --wp3-run= --plan-run=|\n         wp5 --wp3-run= --plan-run= [--wp4-run=]|verify-finding <item> --official= --candidate=|run]`);
       process.exitCode = 2;
   }
 }
