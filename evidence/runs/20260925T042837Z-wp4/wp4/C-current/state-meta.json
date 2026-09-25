@@ -1,0 +1,9 @@
+{
+  "label": "Arc21's working tree (59 migrations, one uncommitted) — the state the WP3 assessment ran against",
+  "why": "the current state; its results are the official WP3 run's, not re-executed",
+  "source": "working-tree",
+  "commit": null,
+  "provenance": "a file copy of the protected checkout's supabase/ directory as it stands, uncommitted migration included",
+  "migrationSetSha256": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+  "migrationCount": 59
+}

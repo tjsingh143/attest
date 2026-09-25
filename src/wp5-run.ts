@@ -22,6 +22,8 @@ type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-exp
  * shown beside whatever the run's own file and validation say.
  */
 const RUN_NOTES: Readonly<Record<string, string>> = {
+  "20260925T021927Z-wp4": "stopped by hand: its first state aborted at 310 of 326 records after three failed resets and its second state's reset hung, on a host at load average ~128 (8 GB RAM, 14 GB swap in use); it also exposed three Attest defects, fixed before the next run (D3.56)",
+  "20260925T035025Z-wp4": "stopped by hand after its first state: two false `deficient` verdicts came from a state guard that compared digests as strings; fixed in 48084e3 (D3.56)",
   "20260924T203033Z-5695a4c3df2d": "complete (345 records) but superseded: its validation fails one check (three F9 server-side records carry no read-back identity), and an Attest heuristic defect turned eleven F10 audit absences into `not_as_predicted` (D3.55)",
   "20260925T010904Z-5695a4c3df2d": "aborted after 55 records: a `supabase db reset` failed while the CLI restarted containers on a heavily loaded host (D3.55)",
 };
@@ -66,7 +68,12 @@ export async function writeWp5(opts: { wp3RunId: string; planRunId: string; wp4R
     superseded.push({ runId: d, why: RUN_NOTES[d] ?? "an earlier official run; see DECISIONS.md" });
   }
   const drift = opts.wp4RunId ? (JSON.parse(await readFile(join(RUNS_ROOT, opts.wp4RunId, "wp4", "drift.json"), "utf8")) as Rec) : null;
-  await writeFile(CP4_PACKET_PATH, renderCp4Packet({ wp5: r, validation, superseded, drift, generatedAt: new Date().toISOString() }));
+  const supersededWp4: { runId: string; why: string }[] = [];
+  for (const d of (await readdir(RUNS_ROOT)).sort()) {
+    if (!d.endsWith("-wp4") || d === opts.wp4RunId) continue;
+    supersededWp4.push({ runId: d, why: RUN_NOTES[d] ?? "an earlier WP4 run; see DECISIONS.md D3.56" });
+  }
+  await writeFile(CP4_PACKET_PATH, renderCp4Packet({ wp5: r, validation, superseded, supersededWp4, drift, generatedAt: new Date().toISOString() }));
   opts.log(`WP5 written: ${r.items.length} items (${r.items.filter((i) => i.part === "finding").length} findings, ${r.items.filter((i) => i.part === "informational").length} informational, ${r.items.filter((i) => i.part === "limitation").length} limitations)`);
   for (const i of r.items) opts.log(`  ${i.id.padEnd(3)} ${i.tier.padEnd(6)} ${i.evidenceClass.padEnd(13)} ${String(i.testIds.length).padStart(3)}  ${i.title}`);
   opts.log(`  FINDINGS.md, CP4_PACKET.md, evidence/runs/${opts.wp3RunId}/wp5/`);

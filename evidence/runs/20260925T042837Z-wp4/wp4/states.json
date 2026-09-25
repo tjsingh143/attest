@@ -1,0 +1,35 @@
+{
+  "exits": {
+    "H1-009464c": 0,
+    "H2-4f9f7a6": 0,
+    "C-current": 0,
+    "T-controlled": 0
+  },
+  "restoreExit": 0,
+  "materialized": [
+    {
+      "name": "H1-009464c",
+      "provenance": "git archive of commit 009464c84175fda2f36e92c2fcc5f14ff42d1905 (read-only; nothing checked out in the protected checkout)",
+      "migrationSetSha256": "1d20b4f7965515ece430986f011f74b0f967042362f938f23e7438328f4db80e",
+      "migrationCount": 45
+    },
+    {
+      "name": "H2-4f9f7a6",
+      "provenance": "git archive of commit 4f9f7a6b22f4811e3e61ae6969306da6a98419c2 (read-only; nothing checked out in the protected checkout)",
+      "migrationSetSha256": "5827d84d4ea5e6ce9b89c3425a0f9c28eb0860950563a6056328f83ecc09cdf8",
+      "migrationCount": 53
+    },
+    {
+      "name": "C-current",
+      "provenance": "a file copy of the protected checkout's supabase/ directory as it stands, uncommitted migration included",
+      "migrationSetSha256": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+      "migrationCount": 59
+    },
+    {
+      "name": "T-controlled",
+      "provenance": "a file copy of the protected checkout's supabase/ directory as it stands, uncommitted migration included, plus the Attest-only migration 20260924000000_attest_wp4_unprotected_table.sql",
+      "migrationSetSha256": "b1950d5a590a8df1331376bd4579de002c99008357cbe1574a5197c56a2f284d",
+      "migrationCount": 60
+    }
+  ]
+}

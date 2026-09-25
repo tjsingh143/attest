@@ -1,0 +1,61 @@
+{
+  "WARNING": "The author's words, verbatim. Every narrative and every status decision here must come from the author — recorded with `recordedFrom` naming the dated reply it came from. Nothing in this file may be drafted, paraphrased or completed by an AI. An entry that is still `awaiting_author` renders as a blank in FINDINGS.md.",
+  "entries": [
+    {
+      "key": "leaderboards-private-identity",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    },
+    {
+      "key": "audit-trail-absent",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    },
+    {
+      "key": "audit-trail-partial",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    },
+    {
+      "key": "push-token-reassignment",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    },
+    {
+      "key": "force-rls-not-set",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    },
+    {
+      "key": "sprint-standings-names",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    },
+    {
+      "key": "anonymous-catalogues",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    },
+    {
+      "key": "realtime-latent-anon-grant",
+      "narrative": null,
+      "status": null,
+      "provenance": "awaiting_author",
+      "recordedFrom": null
+    }
+  ]
+}

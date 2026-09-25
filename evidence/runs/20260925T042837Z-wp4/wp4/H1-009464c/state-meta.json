@@ -1,0 +1,9 @@
+{
+  "label": "Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization",
+  "why": "the last committed state before 20260831120000_realtime_channel_authorization added Arc21's policies on realtime.messages",
+  "source": "git-commit",
+  "commit": "009464c",
+  "provenance": "git archive of commit 009464c84175fda2f36e92c2fcc5f14ff42d1905 (read-only; nothing checked out in the protected checkout)",
+  "migrationSetSha256": "1d20b4f7965515ece430986f011f74b0f967042362f938f23e7438328f4db80e",
+  "migrationCount": 45
+}

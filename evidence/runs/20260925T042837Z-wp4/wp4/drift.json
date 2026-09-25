@@ -1,0 +1,2285 @@
+{
+  "WARNING": "WP4 drift evidence. Historical states are Arc21's own earlier schemas, rebuilt in a disposable database; their results are what TODAY's approved questions return against THAT schema, not findings about current Arc21. The controlled state contains one Attest-only migration and is a detector test, not an assessment.",
+  "runId": "20260925T042837Z-wp4",
+  "wp3RunId": "20260925T014011Z-5695a4c3df2d",
+  "planRunId": "20260924T201920Z-5695a4c3df2d",
+  "reportGeneratedAt": "2026-09-25T05:40:07.999Z",
+  "reportGeneratedBy": {
+    "version": "0.1.0",
+    "sourcesSha256": "73f01533ac9bdec37a18f9661795ba3c462557010d9573ec4cc5bb032c5a5a75",
+    "fileCount": 76
+  },
+  "states": [
+    {
+      "name": "H1-009464c",
+      "label": "Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization",
+      "why": "the last committed state before 20260831120000_realtime_channel_authorization added Arc21's policies on realtime.messages",
+      "source": "commit 009464c",
+      "migrationSetSha256": "1d20b4f7965515ece430986f011f74b0f967042362f938f23e7438328f4db80e",
+      "migrationCount": 45,
+      "exit": 0,
+      "incompatible": [
+        {
+          "testId": "F5.leaderboard_weekly_xp.271",
+          "reason": "the approved statement does not compile here: function public.leaderboard_weekly_xp(unknown, unknown) does not exist"
+        },
+        {
+          "testId": "F5.leaderboard_weekly_xp.272",
+          "reason": "the approved statement does not compile here: function public.leaderboard_weekly_xp(unknown, unknown) does not exist"
+        },
+        {
+          "testId": "F5.latest_verifiable_daily_challenge.278",
+          "reason": "the approved statement does not compile here: function public.latest_verifiable_daily_challenge() does not exist"
+        },
+        {
+          "testId": "F5.touch_last_seen.298",
+          "reason": "the approved statement does not compile here: function public.touch_last_seen() does not exist"
+        }
+      ]
+    },
+    {
+      "name": "H2-4f9f7a6",
+      "label": "Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening",
+      "why": "the last committed state before 20260904120000_least_privilege_and_entry_visibility, Arc21's own authorization hardening",
+      "source": "commit 4f9f7a6",
+      "migrationSetSha256": "5827d84d4ea5e6ce9b89c3425a0f9c28eb0860950563a6056328f83ecc09cdf8",
+      "migrationCount": 53,
+      "exit": 0,
+      "incompatible": []
+    },
+    {
+      "name": "C-current",
+      "label": "Arc21's working tree (59 migrations, one uncommitted) — the state the WP3 assessment ran against",
+      "why": "the current state; its results are the official WP3 run's, not re-executed",
+      "source": "working-tree",
+      "migrationSetSha256": "5695a4c3df2d3f6c6311999ae268f776e96c3beb657e8a8a466be2ebb62aabec",
+      "migrationCount": 59,
+      "exit": 0,
+      "incompatible": null
+    },
+    {
+      "name": "T-controlled",
+      "label": "the current state plus one Attest-only migration adding a table with no row-level security and no policy",
+      "why": "a deliberate, controlled change proving the detector catches a new unprotected resource on the next run, without anyone looking for it",
+      "source": "controlled",
+      "migrationSetSha256": "b1950d5a590a8df1331376bd4579de002c99008357cbe1574a5197c56a2f284d",
+      "migrationCount": 60,
+      "exit": 0,
+      "incompatible": null
+    }
+  ],
+  "restoreExit": 0,
+  "diffs": [
+    {
+      "from": "H1-009464c",
+      "to": "H2-4f9f7a6",
+      "inventory": {
+        "added": [
+          {
+            "resource": "public.latest_verifiable_daily_challenge()",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.latest_verifiable_daily_challenge()#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.latest_verifiable_daily_challenge()",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.latest_verifiable_daily_challenge()#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "The most recent challenge whose seed has been published, for the fairness view. Never returns a live challenge: a row is only here once revealed, and a reveal cannot happen before closes_at."
+          },
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "The daily board, one page at a time. Score, then accuracy, then EV lost, then submission time — the specification's order. Accuracy and EV lost come from the attempt's own graded decisions, never from the week bucket."
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.matchmaking_queue",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.matchmaking_queue#trigger:matchmaking_queue_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "matchmaking_queue_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.player_daily_xp",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.player_daily_xp#trigger:player_daily_xp_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "player_daily_xp_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.release_room_seat(p_room_id uuid, p_user_id uuid)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.release_room_seat(p_room_id uuid, p_user_id uuid)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            },
+            "declaredIntent": "Ends one player's room membership, migrating the host role and closing the room when it empties. Server-only: the argument names whose seat to release. leave_room is the caller-scoped wrapper, and the Edge Functions call this when a player cashes out of a table that has already dealt."
+          },
+          {
+            "resource": "public.retire_empty_lobby_room(p_room_id uuid)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.retire_empty_lobby_room(p_room_id uuid)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            },
+            "declaredIntent": "Closes a lobby room that has no members and no game. Server-only: the argument names somebody else's room."
+          },
+          {
+            "resource": "public.reveal_closed_daily_seeds()",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.reveal_closed_daily_seeds()#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            },
+            "declaredIntent": "Publishes the seed of every challenge whose window has closed, so the commitment published before play can actually be checked. Idempotent. Server-only: the guard trigger refuses an early reveal independently."
+          },
+          {
+            "resource": "public.room_members",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.room_members#trigger:room_members_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "room_members_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.rooms",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.rooms#trigger:rooms_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "rooms_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.touch_last_seen()",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.touch_last_seen()#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.touch_last_seen()",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.touch_last_seen()#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "Stamps the caller's own last_seen_at. The fallback beneath ephemeral Realtime presence: called when a player publishes presence, so \"last seen\" means \"last on the presence channel\"."
+          },
+          {
+            "resource": "public.wallet_ledger",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.wallet_ledger#trigger:wallet_ledger_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "wallet_ledger_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "realtime.messages",
+            "resourceKind": "table",
+            "controlKind": "policy",
+            "controlId": "realtime.messages#policy:arc21_game_topic_is_for_its_seated_players",
+            "present": true,
+            "detail": {
+              "policy_name": "arc21_game_topic_is_for_its_seated_players",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(EXISTS ( SELECT 1\n   FROM game_session_seats s\n  WHERE ((s.user_id = auth.uid()) AND (s.status <> 'left'::seat_status) AND (realtime.topic() = ('game:'::text || (s.game_session_id)::text)))))",
+              "with_check_expr": null
+            },
+            "declaredIntent": "A game broadcast is readable only by an account holding a seat at that game that it has not left."
+          },
+          {
+            "resource": "realtime.messages",
+            "resourceKind": "table",
+            "controlKind": "policy",
+            "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+            "present": true,
+            "detail": {
+              "policy_name": "arc21_only_presence_may_be_written_by_a_client",
+              "command": "INSERT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": null,
+              "with_check_expr": "(realtime.topic() = 'presence:players'::text)"
+            },
+            "declaredIntent": "A client may publish presence and nothing else. Game state is broadcast by the server alone."
+          },
+          {
+            "resource": "realtime.messages",
+            "resourceKind": "table",
+            "controlKind": "policy",
+            "controlId": "realtime.messages#policy:arc21_presence_roster_needs_an_account",
+            "present": true,
+            "detail": {
+              "policy_name": "arc21_presence_roster_needs_an_account",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(realtime.topic() = 'presence:players'::text)",
+              "with_check_expr": null
+            },
+            "declaredIntent": "The shared presence roster requires a signed-in account; the client filters it to friends."
+          }
+        ],
+        "removed": [
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "The daily board. Score, then accuracy, then EV lost, then submission time — the specification's order. Accuracy and EV lost come from the attempt's own graded decisions, never from the week bucket, which mixes in other modes."
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          }
+        ],
+        "changed": [],
+        "newResources": [],
+        "removedResources": [],
+        "newlyExposed": [],
+        "counts": {
+          "added": 23,
+          "removed": 8,
+          "changed": 0,
+          "definitionChanged": 0,
+          "attributesChanged": 0,
+          "newResources": 0,
+          "newUnprotectedResources": 0,
+          "newUnprotectedReachable": 0,
+          "removedResources": 0,
+          "newlyExposed": 0,
+          "added.function_execute_grant": 6,
+          "added.security_definer_function": 9,
+          "added.trigger": 5,
+          "added.policy": 3,
+          "removed.function_execute_grant": 4,
+          "removed.security_definer_function": 4
+        }
+      },
+      "results": {
+        "counts": {
+          "unchanged": 330,
+          "became measured": 7,
+          "fail → pass": 4,
+          "only in the later run": 4
+        },
+        "transitions": [
+          {
+            "testId": "F5.accept_friend_request.257",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.get_room_state.246",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.invite_friend_to_room.248",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.latest_verifiable_daily_challenge.278",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F5.leaderboard_weekly_xp.271",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "3 row(s)"
+            }
+          },
+          {
+            "testId": "F5.leaderboard_weekly_xp.272",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error 42501"
+            }
+          },
+          {
+            "testId": "F5.send_friend_request.259",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.set_room_ready.247",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.touch_last_seen.298",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8.realtime_messages.307",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8.realtime_messages.309",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8.realtime_messages.311",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "error 42501"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8i.realtime_messages.313",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F8i.realtime_messages.314",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F8i.realtime_messages.315",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          }
+        ]
+      },
+      "resultsNote": "20260925T042837Z-wp4/H1-009464c → 20260925T042837Z-wp4/H2-4f9f7a6"
+    },
+    {
+      "from": "H2-4f9f7a6",
+      "to": "C-current",
+      "inventory": {
+        "added": [],
+        "removed": [
+          {
+            "resource": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "service_role"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          }
+        ],
+        "changed": [
+          {
+            "controlId": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)#security_definer",
+            "resource": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)",
+            "controlKind": "security_definer_function",
+            "change": "attributes",
+            "fields": [
+              "executable_by"
+            ],
+            "before": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "service_role"
+              ]
+            },
+            "after": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            }
+          },
+          {
+            "controlId": "public.matchmaking_queue#policy:matchmaking_queue_select_own",
+            "resource": "public.matchmaking_queue",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "roles",
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "matchmaking_queue_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "(user_id = auth.uid())",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "matchmaking_queue_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.player_daily_xp#policy:player_daily_xp_select_own",
+            "resource": "public.player_daily_xp",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "roles",
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "player_daily_xp_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "(user_id = auth.uid())",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "player_daily_xp_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.player_decision_periods#policy:player_decision_periods_select_own",
+            "resource": "public.player_decision_periods",
+            "controlKind": "policy",
+            "change": "attributes",
+            "fields": [
+              "roles"
+            ],
+            "before": {
+              "policy_name": "player_decision_periods_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "player_decision_periods_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.room_members#policy:room_members_select_same_room",
+            "resource": "public.room_members",
+            "controlKind": "policy",
+            "change": "attributes",
+            "fields": [
+              "roles"
+            ],
+            "before": {
+              "policy_name": "room_members_select_same_room",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "caller_is_room_member(room_id)",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "room_members_select_same_room",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "caller_is_room_member(room_id)",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.rooms#policy:rooms_select_member",
+            "resource": "public.rooms",
+            "controlKind": "policy",
+            "change": "attributes",
+            "fields": [
+              "roles"
+            ],
+            "before": {
+              "policy_name": "rooms_select_member",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "caller_is_room_member(id)",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "rooms_select_member",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "caller_is_room_member(id)",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.tournament_entries#policy:tournament_entries_select_visible",
+            "resource": "public.tournament_entries",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "tournament_entries_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR viewer_is_in_tournament(tournament_id) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE (p.id = tournament_entries.user_id))))",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "tournament_entries_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR viewer_is_in_tournament(tournament_id))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.tournament_matches#policy:tournament_matches_select_visible",
+            "resource": "public.tournament_matches",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "tournament_matches_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(viewer_is_in_tournament(tournament_id) OR (EXISTS ( SELECT 1\n   FROM tournament_entries e\n  WHERE (e.id = ANY (ARRAY[tournament_matches.entry_a_id, tournament_matches.entry_b_id])))))",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "tournament_matches_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "viewer_is_in_tournament(tournament_id)",
+              "with_check_expr": null
+            }
+          }
+        ],
+        "newResources": [],
+        "removedResources": [],
+        "newlyExposed": [],
+        "counts": {
+          "added": 0,
+          "removed": 1,
+          "changed": 8,
+          "definitionChanged": 4,
+          "attributesChanged": 4,
+          "newResources": 0,
+          "newUnprotectedResources": 0,
+          "newUnprotectedReachable": 0,
+          "removedResources": 0,
+          "newlyExposed": 0,
+          "removed.function_execute_grant": 1,
+          "changed.security_definer_function": 1,
+          "changed.policy": 7
+        }
+      },
+      "results": {
+        "counts": {
+          "unchanged": 342,
+          "fail → pass": 2,
+          "became measured": 1
+        },
+        "transitions": [
+          {
+            "testId": "F1.public_tournament_entries.205",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "2 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F1.public_tournament_matches.213",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "1 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F5.enforce_rate_limit.300",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error 22023"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          }
+        ]
+      },
+      "resultsNote": "20260925T042837Z-wp4/H2-4f9f7a6 → the official WP3 run 20260925T014011Z-5695a4c3df2d"
+    },
+    {
+      "from": "C-current",
+      "to": "T-controlled",
+      "inventory": {
+        "added": [
+          {
+            "resource": "public.attest_wp4_unprotected_notes",
+            "resourceKind": "table",
+            "controlKind": "rls_enabled",
+            "controlId": "public.attest_wp4_unprotected_notes#rls_enabled",
+            "present": false,
+            "detail": {
+              "rls_enabled": false
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.attest_wp4_unprotected_notes",
+            "resourceKind": "table",
+            "controlKind": "rls_forced",
+            "controlId": "public.attest_wp4_unprotected_notes#rls_forced",
+            "present": false,
+            "detail": {
+              "rls_forced": false,
+              "owner": "postgres"
+            },
+            "declaredIntent": null
+          }
+        ],
+        "removed": [],
+        "changed": [],
+        "newResources": [
+          {
+            "resource": "public.attest_wp4_unprotected_notes",
+            "unprotected": true,
+            "clientReachable": false,
+            "observations": [
+              {
+                "resource": "public.attest_wp4_unprotected_notes",
+                "kind": "rls_disabled_not_reachable",
+                "detail": "row-level security is off; no client-reachable role holds a privilege, so access is refused by the grant surface alone"
+              }
+            ]
+          }
+        ],
+        "removedResources": [],
+        "newlyExposed": [],
+        "counts": {
+          "added": 2,
+          "removed": 0,
+          "changed": 0,
+          "definitionChanged": 0,
+          "attributesChanged": 0,
+          "newResources": 1,
+          "newUnprotectedResources": 1,
+          "newUnprotectedReachable": 0,
+          "removedResources": 0,
+          "newlyExposed": 0,
+          "added.rls_enabled": 1,
+          "added.rls_forced": 1
+        }
+      },
+      "results": null,
+      "resultsNote": "results exist for only one side"
+    },
+    {
+      "from": "H1-009464c",
+      "to": "C-current",
+      "inventory": {
+        "added": [
+          {
+            "resource": "public.latest_verifiable_daily_challenge()",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.latest_verifiable_daily_challenge()#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.latest_verifiable_daily_challenge()",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.latest_verifiable_daily_challenge()#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "The most recent challenge whose seed has been published, for the fairness view. Never returns a live challenge: a row is only here once revealed, and a reveal cannot happen before closes_at."
+          },
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "The daily board, one page at a time. Score, then accuracy, then EV lost, then submission time — the specification's order. Accuracy and EV lost come from the attempt's own graded decisions, never from the week bucket."
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer, p_offset integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.matchmaking_queue",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.matchmaking_queue#trigger:matchmaking_queue_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "matchmaking_queue_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.player_daily_xp",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.player_daily_xp#trigger:player_daily_xp_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "player_daily_xp_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.release_room_seat(p_room_id uuid, p_user_id uuid)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.release_room_seat(p_room_id uuid, p_user_id uuid)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            },
+            "declaredIntent": "Releases one member's room seat, migrates the host if they held it, closes the room when it empties, and cancels the matchmaking reservation that produced the seat. Server-only: the argument names somebody else's room."
+          },
+          {
+            "resource": "public.retire_empty_lobby_room(p_room_id uuid)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.retire_empty_lobby_room(p_room_id uuid)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            },
+            "declaredIntent": "Closes a lobby room that has no members and no game. Server-only: the argument names somebody else's room."
+          },
+          {
+            "resource": "public.reveal_closed_daily_seeds()",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.reveal_closed_daily_seeds()#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            },
+            "declaredIntent": "Publishes the seed of every challenge whose window has closed, so the commitment published before play can actually be checked. Idempotent. Server-only: the guard trigger refuses an early reveal independently."
+          },
+          {
+            "resource": "public.room_members",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.room_members#trigger:room_members_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "room_members_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.rooms",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.rooms#trigger:rooms_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "rooms_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.touch_last_seen()",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.touch_last_seen()#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.touch_last_seen()",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.touch_last_seen()#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "Stamps the caller's own last_seen_at. The fallback beneath ephemeral Realtime presence: called when a player publishes presence, so \"last seen\" means \"last on the presence channel\"."
+          },
+          {
+            "resource": "public.wallet_ledger",
+            "resourceKind": "table",
+            "controlKind": "trigger",
+            "controlId": "public.wallet_ledger#trigger:wallet_ledger_deny_client_write",
+            "present": true,
+            "detail": {
+              "trigger": "wallet_ledger_deny_client_write",
+              "function": "public.deny_client_write",
+              "timing": "BEFORE",
+              "level": "ROW",
+              "events": [
+                "INSERT",
+                "DELETE",
+                "UPDATE"
+              ],
+              "enabled": "O",
+              "can_refuse": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "realtime.messages",
+            "resourceKind": "table",
+            "controlKind": "policy",
+            "controlId": "realtime.messages#policy:arc21_game_topic_is_for_its_seated_players",
+            "present": true,
+            "detail": {
+              "policy_name": "arc21_game_topic_is_for_its_seated_players",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(EXISTS ( SELECT 1\n   FROM game_session_seats s\n  WHERE ((s.user_id = auth.uid()) AND (s.status <> 'left'::seat_status) AND (realtime.topic() = ('game:'::text || (s.game_session_id)::text)))))",
+              "with_check_expr": null
+            },
+            "declaredIntent": "A game broadcast is readable only by an account holding a seat at that game that it has not left."
+          },
+          {
+            "resource": "realtime.messages",
+            "resourceKind": "table",
+            "controlKind": "policy",
+            "controlId": "realtime.messages#policy:arc21_only_presence_may_be_written_by_a_client",
+            "present": true,
+            "detail": {
+              "policy_name": "arc21_only_presence_may_be_written_by_a_client",
+              "command": "INSERT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": null,
+              "with_check_expr": "(realtime.topic() = 'presence:players'::text)"
+            },
+            "declaredIntent": "A client may publish presence and nothing else. Game state is broadcast by the server alone."
+          },
+          {
+            "resource": "realtime.messages",
+            "resourceKind": "table",
+            "controlKind": "policy",
+            "controlId": "realtime.messages#policy:arc21_presence_roster_needs_an_account",
+            "present": true,
+            "detail": {
+              "policy_name": "arc21_presence_roster_needs_an_account",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(realtime.topic() = 'presence:players'::text)",
+              "with_check_expr": null
+            },
+            "declaredIntent": "The shared presence roster requires a signed-in account; the client filters it to friends."
+          }
+        ],
+        "removed": [
+          {
+            "resource": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "service_role"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_daily_challenge(p_date date, p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_daily_challenge(p_date date, p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": "The daily board. Score, then accuracy, then EV lost, then submission time — the specification's order. Accuracy and EV lost come from the attempt's own graded decisions, never from the week bucket, which mixes in other modes."
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_strategy_accuracy(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_strategy_accuracy(p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_tournament_wins(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_tournament_wins(p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "function_execute_grant",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer)#execute",
+            "present": true,
+            "detail": {
+              "executable_by": [
+                "authenticated"
+              ],
+              "security_definer": true
+            },
+            "declaredIntent": null
+          },
+          {
+            "resource": "public.leaderboard_weekly_xp(p_limit integer)",
+            "resourceKind": "function",
+            "controlKind": "security_definer_function",
+            "controlId": "public.leaderboard_weekly_xp(p_limit integer)#security_definer",
+            "present": true,
+            "detail": {
+              "owner": "postgres",
+              "language": "sql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "authenticated"
+              ]
+            },
+            "declaredIntent": null
+          }
+        ],
+        "changed": [
+          {
+            "controlId": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)#security_definer",
+            "resource": "public.apply_wallet_delta(p_user_id uuid, p_delta bigint, p_reason ledger_reason, p_idempotency_key text, p_reference_type text, p_reference_id uuid, p_metadata jsonb)",
+            "controlKind": "security_definer_function",
+            "change": "attributes",
+            "fields": [
+              "executable_by"
+            ],
+            "before": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": [
+                "service_role"
+              ]
+            },
+            "after": {
+              "owner": "postgres",
+              "language": "plpgsql",
+              "config": [
+                "search_path=public, pg_temp"
+              ],
+              "executable_by": []
+            }
+          },
+          {
+            "controlId": "public.matchmaking_queue#policy:matchmaking_queue_select_own",
+            "resource": "public.matchmaking_queue",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "roles",
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "matchmaking_queue_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "(user_id = auth.uid())",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "matchmaking_queue_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.player_daily_xp#policy:player_daily_xp_select_own",
+            "resource": "public.player_daily_xp",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "roles",
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "player_daily_xp_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "(user_id = auth.uid())",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "player_daily_xp_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.player_decision_periods#policy:player_decision_periods_select_own",
+            "resource": "public.player_decision_periods",
+            "controlKind": "policy",
+            "change": "attributes",
+            "fields": [
+              "roles"
+            ],
+            "before": {
+              "policy_name": "player_decision_periods_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "player_decision_periods_select_own",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(user_id = ( SELECT auth.uid() AS uid))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.room_members#policy:room_members_select_same_room",
+            "resource": "public.room_members",
+            "controlKind": "policy",
+            "change": "attributes",
+            "fields": [
+              "roles"
+            ],
+            "before": {
+              "policy_name": "room_members_select_same_room",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "caller_is_room_member(room_id)",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "room_members_select_same_room",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "caller_is_room_member(room_id)",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.rooms#policy:rooms_select_member",
+            "resource": "public.rooms",
+            "controlKind": "policy",
+            "change": "attributes",
+            "fields": [
+              "roles"
+            ],
+            "before": {
+              "policy_name": "rooms_select_member",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "PUBLIC"
+              ],
+              "using_expr": "caller_is_room_member(id)",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "rooms_select_member",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "caller_is_room_member(id)",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.tournament_entries#policy:tournament_entries_select_visible",
+            "resource": "public.tournament_entries",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "tournament_entries_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR viewer_is_in_tournament(tournament_id) OR (EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE (p.id = tournament_entries.user_id))))",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "tournament_entries_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "((user_id = ( SELECT auth.uid() AS uid)) OR viewer_is_in_tournament(tournament_id))",
+              "with_check_expr": null
+            }
+          },
+          {
+            "controlId": "public.tournament_matches#policy:tournament_matches_select_visible",
+            "resource": "public.tournament_matches",
+            "controlKind": "policy",
+            "change": "definition",
+            "fields": [
+              "using_expr"
+            ],
+            "before": {
+              "policy_name": "tournament_matches_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "(viewer_is_in_tournament(tournament_id) OR (EXISTS ( SELECT 1\n   FROM tournament_entries e\n  WHERE (e.id = ANY (ARRAY[tournament_matches.entry_a_id, tournament_matches.entry_b_id])))))",
+              "with_check_expr": null
+            },
+            "after": {
+              "policy_name": "tournament_matches_select_visible",
+              "command": "SELECT",
+              "permissive": "PERMISSIVE",
+              "roles": [
+                "authenticated"
+              ],
+              "using_expr": "viewer_is_in_tournament(tournament_id)",
+              "with_check_expr": null
+            }
+          }
+        ],
+        "newResources": [],
+        "removedResources": [],
+        "newlyExposed": [],
+        "counts": {
+          "added": 23,
+          "removed": 9,
+          "changed": 8,
+          "definitionChanged": 4,
+          "attributesChanged": 4,
+          "newResources": 0,
+          "newUnprotectedResources": 0,
+          "newUnprotectedReachable": 0,
+          "removedResources": 0,
+          "newlyExposed": 0,
+          "added.function_execute_grant": 6,
+          "added.security_definer_function": 9,
+          "added.trigger": 5,
+          "added.policy": 3,
+          "removed.function_execute_grant": 5,
+          "removed.security_definer_function": 4,
+          "changed.security_definer_function": 1,
+          "changed.policy": 7
+        }
+      },
+      "results": {
+        "counts": {
+          "unchanged": 327,
+          "fail → pass": 6,
+          "became measured": 8,
+          "only in the later run": 4
+        },
+        "transitions": [
+          {
+            "testId": "F1.public_tournament_entries.205",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "2 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F1.public_tournament_matches.213",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "1 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F5.accept_friend_request.257",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.enforce_rate_limit.300",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error 22023"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F5.get_room_state.246",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.invite_friend_to_room.248",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.latest_verifiable_daily_challenge.278",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F5.leaderboard_weekly_xp.271",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "3 row(s)"
+            }
+          },
+          {
+            "testId": "F5.leaderboard_weekly_xp.272",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error 42501"
+            }
+          },
+          {
+            "testId": "F5.send_friend_request.259",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.set_room_ready.247",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "control_not_reached",
+              "summary": "error P0002"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "error PT404"
+            }
+          },
+          {
+            "testId": "F5.touch_last_seen.298",
+            "kind": "only in the later run",
+            "from": null,
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8.realtime_messages.307",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8.realtime_messages.309",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8.realtime_messages.311",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "error 42501"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "1 row(s)"
+            }
+          },
+          {
+            "testId": "F8i.realtime_messages.313",
+            "kind": "fail → pass",
+            "from": {
+              "verdict": "deficient",
+              "observation": "not_as_predicted",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F8i.realtime_messages.314",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          },
+          {
+            "testId": "F8i.realtime_messages.315",
+            "kind": "became measured",
+            "from": {
+              "verdict": "not_measured",
+              "observation": "precondition_failed",
+              "summary": "0 row(s)"
+            },
+            "to": {
+              "verdict": "effective",
+              "observation": "as_predicted",
+              "summary": "0 row(s)"
+            }
+          }
+        ]
+      },
+      "resultsNote": "20260925T042837Z-wp4/H1-009464c → the official WP3 run 20260925T014011Z-5695a4c3df2d"
+    }
+  ]
+}

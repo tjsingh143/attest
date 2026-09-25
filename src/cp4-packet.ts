@@ -17,6 +17,8 @@ export interface Cp4Inputs {
   readonly validation: Rec;
   /** Earlier official runs and why they are not the result. */
   readonly superseded: readonly { readonly runId: string; readonly why: string }[];
+  /** Earlier WP4 runs and why they are not the result. */
+  readonly supersededWp4: readonly { readonly runId: string; readonly why: string }[];
   readonly drift: Rec | null;
   readonly generatedAt: string;
 }
@@ -91,7 +93,8 @@ export function renderCp4Packet(x: Cp4Inputs): string {
       const tr = (df.results?.transitions ?? []) as Rec[];
       const pf = tr.filter((t) => t.kind === "pass → fail"), fp = tr.filter((t) => t.kind === "fail → pass");
       if (!pf.length && !fp.length) continue;
-      const show = (xs: Rec[]) => xs.slice(0, 10).map((t) => `\`${t.testId}\` (${t.from?.summary ?? "?"} → ${t.to?.summary ?? "?"})`).join(", ") + (xs.length > 10 ? `, … ${xs.length - 10} more` : "");
+      const codeOnly = (t: Rec) => /^error /.test(String(t.from?.summary ?? "")) && /^error /.test(String(t.to?.summary ?? ""));
+      const show = (xs: Rec[]) => xs.slice(0, 10).map((t) => `\`${t.testId}\` (${t.from?.summary ?? "?"} → ${t.to?.summary ?? "?"}${codeOnly(t) ? ": refused in both states; only where and how it is signalled changed" : ""})`).join(", ") + (xs.length > 10 ? `, … ${xs.length - 10} more` : "");
       p(`- **${df.from} → ${df.to}**${fp.length ? ` — fail → pass: ${show(fp)}` : ""}${pf.length ? `${fp.length ? ";" : " —"} pass → fail: ${show(pf)}` : ""}`);
     }
     for (const df of d.diffs as Rec[]) {
@@ -100,6 +103,12 @@ export function renderCp4Packet(x: Cp4Inputs): string {
       }
     }
     p();
+    if (x.supersededWp4.length) {
+      p("Earlier WP4 runs, kept unedited and **not** the result:");
+      p();
+      for (const r of x.supersededWp4) p(`- \`${r.runId}\` — ${r.why}`);
+      p();
+    }
     p("Historical results are today's approved questions asked of an earlier schema, not findings about Arc21 today. The last");
     p("state adds one Attest-only table with no row-level security to a scratch copy of the current schema — never to Arc21 —");
     p("to show the detector reporting a new unprotected resource without anyone looking for it.");
@@ -140,7 +149,7 @@ export function renderCp4Packet(x: Cp4Inputs): string {
   n++; const jRank = `J${n}`; js.push(jRank);
   p(`- **${jRank}** The ranking rule (D3.57): accept it, or state the rule you want. A different rule is recorded as your decision; it never changes a frozen tier.`);
   n++; const jRuns = `J${n}`; js.push(jRuns);
-  p(`- **${jRuns}** The official-run record: the earlier runs above are kept as superseded or aborted records and \`${v.runId}\` is the WP3 result. Accept?`);
+  p(`- **${jRuns}** The run record: the earlier WP3 and WP4 runs above are kept as superseded, aborted or stopped records; \`${v.runId}\` is the WP3 result${x.drift ? ` and \`${x.drift.runId}\` the WP4 result` : ""}. Accept?`);
   p();
 
   // --- 6. approval ----------------------------------------------------------

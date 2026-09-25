@@ -1,0 +1,744 @@
+{
+  "WARNING": "WP5 findings. Arc21 is a read-only target: nothing here was remediated or closed. Titles, explanations and remediation options are AI-drafted for the author's review; the author's narrative is merged from rubric/wp5-author-narratives.json.",
+  "wp3RunId": "20260925T014011Z-5695a4c3df2d",
+  "wp4RunId": "20260925T042837Z-wp4",
+  "totals": {
+    "records": 345,
+    "byVerdict": {
+      "effective": 283,
+      "characterized": 25,
+      "gap": 19,
+      "deficient": 5,
+      "not_measured": 13
+    },
+    "reported": 62,
+    "frozenCp3Run": "20260922T234324Z-5695a4c3df2d",
+    "planRunId": "20260924T201920Z-5695a4c3df2d"
+  },
+  "items": [
+    {
+      "id": "A1",
+      "key": "leaderboards-private-identity",
+      "part": "finding",
+      "title": "Four leaderboard functions return a private-profile player's display name to other signed-in players",
+      "tier": "High",
+      "tierBasis": "frozen WP2 tier of `public.profiles`",
+      "exposure": "authenticated",
+      "evidenceClass": "deficient",
+      "testIds": [
+        "F5.leaderboard_weekly_xp.271",
+        "F5.leaderboard_daily_challenge.273",
+        "F5.leaderboard_strategy_accuracy.274",
+        "F5.leaderboard_tournament_wins.275"
+      ],
+      "supportingTestIds": [
+        "F1.public_profiles.145",
+        "F1.public_profiles.146",
+        "F1.public_profiles.147",
+        "F1.public_profiles.148",
+        "F5.player_public_profile.263",
+        "F5.player_public_profile.264",
+        "F5.leaderboard_weekly_xp.272",
+        "F5.my_leaderboard_position.301"
+      ],
+      "bullets": [
+        "4 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 4 deficient.",
+        "`F5.leaderboard_weekly_xp.271` — as `authenticated:alice`: `select * from public.leaderboard_weekly_xp($1, $2)` [10,0] → 3 row(s); UNMET: \"no private-privacy account identity\" — a private-privacy account's identity appears (erin): \"Erin\" → **deficient**",
+        "`F5.leaderboard_daily_challenge.273` — as `authenticated:alice`: `select * from public.leaderboard_daily_challenge((now() at time zone 'utc')::date)` → 3 row(s); UNMET: \"no private-privacy identity\" — a private-privacy account's identity appears (erin): \"Erin\" → **deficient**",
+        "… and 2 more of the same kind: `F5.leaderboard_strategy_accuracy.274`, `F5.leaderboard_tournament_wins.275`.",
+        "Holding around it (effective): `F1.public_profiles.145`, `F1.public_profiles.146`, `F1.public_profiles.147`, `F1.public_profiles.148`, `F5.player_public_profile.263`, `F5.player_public_profile.264`, `F5.leaderboard_weekly_xp.272`, `F5.my_leaderboard_position.301`.",
+        "Frozen WP2 rating of `public.profiles` (CP3): tier High, impact High (Integrity impact = High); integrity High — \"The `privacy` column is read by profiles_select_visible, so an unauthorized change to it alters who may read that profile — an access-control decision.\"."
+      ],
+      "approvedEscalations": [
+        "returning a private-privacy account's identity, or being callable without an account at all. WP0's own pgTAP gate treats granting this to anon as a breach",
+        "returning a private account's identity, or leaking seed_secret through the join"
+      ],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 1 could not be asked (schema lacks what the probe needs), 3 deficient.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 4 deficient.",
+        "Today, in the official run: 4 deficient."
+      ],
+      "author": {
+        "key": "leaderboards-private-identity",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "Signed in as alice, each of leaderboard_weekly_xp, leaderboard_daily_challenge, leaderboard_strategy_accuracy and leaderboard_tournament_wins returned a row for erin — a seeded account whose profile privacy is 'private' — carrying her display name next to her score or wins. The approved expectation of each row was a projection with no private-privacy account's identity. All four functions are SECURITY DEFINER and join public.profiles with no privacy or block condition (Arc21 source, 20260905120000_bounded_client_reads.sql), so the policy that withholds erin's profile row from alice, profiles_select_visible, is never consulted.",
+      "whyItMatters": "The approved rows name the escalation: \"returning a private-privacy account's identity\". The frozen WP2 rating makes public.profiles High-tier because its privacy column decides who may read the profile (RUBRIC Part 4.2; cp3-tiers.json). A player who chose 'private' is still identifiable, by display name, to every signed-in player on four boards. The exposure needs no special knowledge: any account can call the functions (anonymous callers are refused, F5.272).",
+      "contrary": [
+        "Arc21 documents this behaviour as intended. `tests/settings/privacy-copy.test.ts` in the Arc21 checkout states that the privacy setting \"does NOT take the player off the leaderboards\", calls that \"not a bug\", cites the product specification's leaderboard section (\"avatar, display name, value\"; it forbids only \"a private email or account identifier\"), and requires the settings note to tell players that leaderboards remain visible.",
+        "The WP3 expectation (\"no private-privacy account identity\") was approved at WP3 planning without that context. The WP3 verdict stays `deficient` whatever is decided here: it is measured against the frozen expectation and is never re-judged."
+      ],
+      "limitations": [
+        "One private account (erin) and one caller (alice) were exercised per function; 'friends' privacy and a blocked relationship were not exercised on the leaderboards.",
+        "The source reading (SECURITY DEFINER, no privacy condition) explains the observation; the WP3 records establish only the observation itself."
+      ],
+      "judgment": [
+        "Is this an open finding (the product should hide or anonymise private players on leaderboards), or accepted / design-intent (Arc21's specification and settings note already say leaderboards stay visible, and the WP3 expectation was stricter than the product)? The WP5 status is yours to set; the evidence verdict does not change.",
+        "If it is open: one finding across four functions (one root cause), or four?"
+      ],
+      "remediation": [
+        {
+          "option": "Exclude private-privacy accounts from every leaderboard's result except the caller's own row — a privacy condition in each function (for example `p.privacy <> 'private' or t.user_id = auth.uid()`).",
+          "tradeoffs": "Private players vanish from global standings. Applied before ranking, other players' ranks renumber around them; applied after, a gap in the rank sequence reveals that a hidden entry exists. Four functions must change consistently, and `my_leaderboard_position` must agree with them on who is ranked."
+        },
+        {
+          "option": "Keep private accounts ranked but anonymise their row for everyone except that account: display name replaced (for example 'Private player'), avatar withheld; optionally shown in full to friends for 'friends' privacy.",
+          "tradeoffs": "Standings stay complete and consistent, but the score and rank of a private player are still disclosed, unattributed. Needs a single shared helper so the four functions cannot drift apart."
+        },
+        {
+          "option": "Accept as design intent and record it: 'private' governs the profile row and statistics, not competitive standings — as the settings note already tells players.",
+          "tradeoffs": "No code change. The four WP3 rows keep reporting `deficient` against their frozen expectation until that expectation is re-approved in a new planning run — a planning change, not a result change."
+        }
+      ],
+      "verification": {
+        "mustBecome": "effective",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation.",
+          "Also required unchanged: F5.leaderboard_weekly_xp.272 (anonymous callers refused) and F5.my_leaderboard_position.301 (only the caller's own position) must stay `effective`."
+        ],
+        "caveat": "Only the first two options can be verified this way; the third is a decision, recorded, not a fix."
+      }
+    },
+    {
+      "id": "A2",
+      "key": "audit-trail-absent",
+      "part": "finding",
+      "title": "No who-did-what-when record exists for 17 High-tier resources",
+      "tier": "High",
+      "tierBasis": "highest frozen WP2 tier among 17 resources (High: `private.career_drill_seeds`, `private.game_state_private`, `public.blocks`, `public.daily_challenges`, …)",
+      "exposure": "anonymous",
+      "evidenceClass": "gap",
+      "testIds": [
+        "F10.private_career_drill_seeds.006",
+        "F10.private_game_state_private.021",
+        "F10.public_blocks.030",
+        "F10.public_daily_challenges.048",
+        "F10.public_friend_requests.064",
+        "F10.public_friendships.071",
+        "F10.public_game_session_seats.090",
+        "F10.public_game_sessions.098",
+        "F10.public_hand_records.109",
+        "F10.public_profiles.156",
+        "F10.public_rate_limit_policies.180",
+        "F10.public_room_members.188",
+        "F10.public_rooms.196",
+        "F10.public_rulesets.203",
+        "F10.public_tournament_entries.211",
+        "F10.public_tournament_matches.219",
+        "F10.public_wallets.243"
+      ],
+      "supportingTestIds": [],
+      "bullets": [
+        "17 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 17 gap.",
+        "`F10.private_career_drill_seeds.006` — as `probe-admin`: `select (hist = 0 and softdel = 0 and deltrig = 0) as no_trail, 'history/versioning/audit relations naming '…` → 1 row(s); met: \"NONE FOUND\" — no_trail = true (history/versioning/audit relations naming career_drill_seeds: 0, soft-delete columns: 0, delete triggers that write a record: 0 (delete triggers that only guard or refuse, not a trail: 0)) → **gap**",
+        "`F10.private_game_state_private.021` — as `probe-admin`: `select (hist = 0 and softdel = 0 and deltrig = 0) as no_trail, 'history/versioning/audit relations naming '…` → 1 row(s); met: \"NONE FOUND\" — no_trail = true (history/versioning/audit relations naming game_state_private: 0, soft-delete columns: 0, delete triggers that write a record: 0 (delete triggers that only guard or refuse, not a trail: 0)) → **gap**",
+        "`F10.public_blocks.030` — as `probe-admin`: `select (hist = 0 and softdel = 0 and deltrig = 0) as no_trail, 'history/versioning/audit relations naming '…` → 1 row(s); met: \"NONE FOUND\" — no_trail = true (history/versioning/audit relations naming blocks: 0, soft-delete columns: 0, delete triggers that write a record: 0 (delete triggers that only guard or refuse, not a trail: 0)) → **gap**",
+        "… and 14 more of the same kind: `F10.public_daily_challenges.048`, `F10.public_friend_requests.064`, `F10.public_friendships.071`, `F10.public_game_session_seats.090`, `F10.public_game_sessions.098`, `F10.public_hand_records.109`, `F10.public_profiles.156`, `F10.public_rate_limit_policies.180`, `F10.public_room_members.188`, `F10.public_rooms.196`, `F10.public_rulesets.203`, `F10.public_tournament_entries.211`, `F10.public_tournament_matches.219`, `F10.public_wallets.243`.",
+        "Frozen WP2 tiers of the 17 resources (CP3): 17 High."
+      ],
+      "approvedEscalations": [],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 17 gap.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 17 gap.",
+        "Today, in the official run: 17 gap."
+      ],
+      "author": {
+        "key": "audit-trail-absent",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "For each resource, a server-side catalog search found no history, versioning or audit relation naming it, no soft-delete column, and no DELETE trigger whose function writes a record. The DELETE triggers that do exist on eleven of them are guards that refuse a delete; they record nothing about who tried (D3.55). A change to any of these tables — including a privileged one — leaves no record of who made it, when, or what the value was before.",
+      "whyItMatters": "The brief's family 10 asks whether a record of who-did-what-when exists for High-tier resources and says that if it does not, that is a finding. Each row's approved covers text names what is lost for that resource (for example, public.wallets: \"the balance is overwritten in place and carries no attribution for the change\"). Without a trail, a wrong balance, seat, entry or setting cannot be attributed or reconstructed from the database itself.",
+      "contrary": [
+        "Two structures in Arc21 are complete trails and pass: private.game_commands (F10.012–.015) and public.wallet_ledger (F10.232–.235), which is append-only with a truncate guard. public.wallets is reconstructable from wallet_ledger, as the row's own covers text notes — its row answers the family-10 question for the wallets table itself, not for the economy."
+      ],
+      "limitations": [
+        "The search reads the database catalogs only. A trail kept outside the schema — platform logs, pgaudit configured by the host, log drains, backups — would not be seen, and Attest did not assess the hosted platform.",
+        "The heuristic counts a DELETE trigger as a trail only if its function contains an INSERT INTO. A trigger that records by another route (a function call, NOTIFY to a listener) would be missed."
+      ],
+      "judgment": [
+        "Which of the 17 need a trail? The brief asks the question for every High-tier resource; you may reasonably decide that some (catalogue tables such as public.rulesets, configuration such as public.rate_limit_policies) need change history and others (per-session state) do not. Each exclusion needs a reason in DECISIONS.md.",
+        "Is wallet_ledger's reconstruction path sufficient for public.wallets?"
+      ],
+      "remediation": [
+        {
+          "option": "One generic audit trigger writing (table, row id, operation, old and new row as JSONB, auth.uid(), current_user, time) into an append-only audit table protected the way wallet_ledger is: append-only guard, truncate guard, no client grant.",
+          "tradeoffs": "Write amplification and storage growth, heaviest on hot tables (game_session_seats, room_members). Secrets must be excluded — daily_challenges.seed_secret and career_drill_seeds would otherwise be copied into the log. auth.uid() is null for server jobs, so current_user must be recorded too. Needs a retention rule."
+        },
+        {
+          "option": "Targeted history only where integrity matters most (for example seats, room membership, tournament entries and matches, rate-limit policies), relying on wallet_ledger for the economy.",
+          "tradeoffs": "Less cost and less noise; coverage is a judgment that must be written down, and the uncovered tables keep the gap."
+        },
+        {
+          "option": "Platform-level logging (pgaudit or the host's log drains).",
+          "tradeoffs": "No schema change; statement-level rather than row-level, configured outside the repository, invisible to this harness's catalog check, and its retention is someone else's setting."
+        }
+      ],
+      "verification": {
+        "mustBecome": "characterized",
+        "mustObserve": "not_as_predicted",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation.",
+          "Each remediated resource's F10 absence row must report `not_as_predicted` → `characterized`: its frozen prediction was \"none found\", and a trail is now found.",
+          "The new trail then needs its own rows — does it carry an actor, an action and a time, and can a client change or delete it — modelled on F10.public_wallet_ledger.232–.235. That is a planning change the author approves; it cannot be done by editing results."
+        ],
+        "caveat": "The frozen absence rows can show that the absence ended; they cannot show that the new trail is any good. `verify-finding` requires all seventeen to change, so a partial remediation is reported row by row as not confirmed."
+      }
+    },
+    {
+      "id": "A3",
+      "key": "audit-trail-partial",
+      "part": "finding",
+      "title": "Two partial trails: game events carry no actor, and rate-limit events record only allowed attempts",
+      "tier": "High",
+      "tierBasis": "highest frozen WP2 tier among 2 resources (High: `public.game_events`, `public.rate_limit_events`)",
+      "exposure": "authenticated",
+      "evidenceClass": "gap",
+      "testIds": [
+        "F10.public_game_events.079",
+        "F10.public_rate_limit_events.171"
+      ],
+      "supportingTestIds": [
+        "F10.public_game_events.080",
+        "F10.public_game_events.081",
+        "F10.public_game_events.082",
+        "F10.public_rate_limit_events.172",
+        "F10.public_rate_limit_events.173",
+        "F10.public_rate_limit_events.174"
+      ],
+      "bullets": [
+        "2 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 2 gap.",
+        "`F10.public_game_events.079` — as `authenticated:alice`: `select type, created_at from public.game_events limit 5` → 1 row(s); met: \"rows returned\" — 1 row(s) returned (at least 1) → **gap**",
+        "`F10.public_rate_limit_events.171` — as `server-side (admin) — RLS is enabled with no policy and no client grant exists`: `select user_id, action, occurred_at from public.rate_limit_events limit 5` → 4 row(s); met: \"rows returned\" — 4 row(s) returned (at least 1) → **gap**",
+        "Holding around it (effective): `F10.public_game_events.080`, `F10.public_game_events.081`, `F10.public_game_events.082`, `F10.public_rate_limit_events.172`, `F10.public_rate_limit_events.173`, `F10.public_rate_limit_events.174`.",
+        "Frozen WP2 tiers of the 2 resources (CP3): 2 High."
+      ],
+      "approvedEscalations": [],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 2 gap.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 2 gap.",
+        "Today, in the official run: 2 gap."
+      ],
+      "author": {
+        "key": "audit-trail-partial",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "public.game_events returned rows carrying an action and a time but has no actor column: recipient_user_id says who a seat-scoped event is for, not who caused it. public.rate_limit_events returned rows carrying an actor, an action and a time, but by design it records allowed attempts only and is pruned on every consume, so it holds at most one window. Clients cannot modify or delete either (six supporting rows, all effective).",
+      "whyItMatters": "The approved rows mark both as partial and as finding candidates: game_events answers what happened when in a session but not who did it; rate_limit_events \"cannot answer 'who was refused, when'\" — the question an investigation of abuse asks first.",
+      "contrary": [],
+      "limitations": [
+        "The actor of a game event may be recoverable by joining to private.game_commands (which does record user_id); WP3 did not test that join, so this item does not claim the actor is unrecoverable — only that the event record does not carry it."
+      ],
+      "judgment": [
+        "Is a game event's actor needed in the event itself, or is the join to private.game_commands an adequate trail?",
+        "Should refused attempts be recorded at all, given the volume and what they reveal?"
+      ],
+      "remediation": [
+        {
+          "option": "Record the actor on each game event server-side (from the command's verified user_id, or a reference to the private.game_commands row that caused it).",
+          "tradeoffs": "Event payloads are published to clients through Realtime: an actor column must not leak into the public projection where it would reveal hidden information about other seats."
+        },
+        {
+          "option": "A separate append-only log of refused rate-limit attempts, with its own retention, kept apart from the pruned window table.",
+          "tradeoffs": "Refusals can be high-volume under attack — the very time the log matters — so it needs a bound; and it records who was refused, which is itself personal data."
+        }
+      ],
+      "verification": {
+        "mustBecome": "gap",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation."
+        ],
+        "caveat": "Neither frozen row can confirm this fix. F10.079's approved expectation asks only for an action and a time, and F10.171's for rows it already returns, so both would still report `gap` after a fix. Verifying one needs the row's expectation re-approved to require what is missing (an actor; a refusal record) — a planning change the author approves."
+      }
+    },
+    {
+      "id": "A4",
+      "key": "push-token-reassignment",
+      "part": "finding",
+      "title": "register_push_token lets a signed-in player take over another account's device registration",
+      "tier": "Medium",
+      "tierBasis": "frozen WP2 tier of `public.push_tokens`",
+      "exposure": "authenticated",
+      "evidenceClass": "deficient",
+      "testIds": [
+        "F5.register_push_token.269"
+      ],
+      "supportingTestIds": [
+        "F1.public_push_tokens.157",
+        "F1.public_push_tokens.158",
+        "F2.public_push_tokens.159",
+        "F2.public_push_tokens.160",
+        "F3.public_push_tokens.161",
+        "F3.public_push_tokens.162",
+        "F4.public_push_tokens.163",
+        "F6.public_push_tokens.164",
+        "F6.public_push_tokens.165",
+        "F5.retire_push_token.268"
+      ],
+      "bullets": [
+        "1 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 1 deficient.",
+        "`F5.register_push_token.269` — as `authenticated:alice`: `select * from public.register_push_token($1, $2)` [\"ExponentPushToken[attest-bob]\",\"ios\"] → 1 row(s); UNMET: \"refusal, or a row attributed to alice that does NOT displace bob's\" — not refused, and the caller's registration exists; bob's row: bob's token row still exists with user_id = bob: rows for that token still owned by bob: 0 → **deficient**",
+        "Holding around it (effective): `F1.public_push_tokens.157`, `F1.public_push_tokens.158`, `F2.public_push_tokens.159`, `F2.public_push_tokens.160`, `F3.public_push_tokens.161`, `F3.public_push_tokens.162`, `F4.public_push_tokens.163`, `F6.public_push_tokens.164`, `F6.public_push_tokens.165`, `F5.retire_push_token.268`.",
+        "Frozen WP2 rating of `public.push_tokens` (CP3): tier Medium, impact Medium (Not High; at least one consequence dimension is Medium or High (Data=Medium, Integrity=Medium, Reversibility=Medium)); data Medium — \"Per-device push registration — a device identifier tied to an account. Personal operational data rather than a credential.\"."
+      ],
+      "approvedEscalations": [
+        "registering a token string already belonging to another account, which reassigns that device's registration to the caller: the token still identifies the same physical device, so its previous owner may stop receiving their notifications on it and notifications for the caller may be delivered to it instead"
+      ],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 1 deficient.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 1 deficient.",
+        "Today, in the official run: 1 deficient."
+      ],
+      "author": {
+        "key": "push-token-reassignment",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "Signed in as alice, a call to register_push_token with the token string of bob's registered device completed, and afterwards the row carrying that token belonged to alice: bob's registration was gone. The function is SECURITY DEFINER and its upsert reads `on conflict (token) do update set user_id = v_me` (Arc21 source, 20260905120000_bounded_client_reads.sql), so an existing row with that token is reassigned to whoever calls it.",
+      "whyItMatters": "The approved row's escalation: registering a token string already belonging to another account reassigns that device's registration to the caller, so its previous owner may stop receiving their notifications on it and notifications for the caller may be delivered to it instead. The table's own comment says \"A user manages only their own rows\". The frozen WP2 rating keeps push_tokens Medium: a bad token \"misroutes that account's notifications, which is a delivery fault rather than an authorization or economy change\".",
+      "contrary": [
+        "Reassignment has a legitimate use: when a phone changes hands between accounts (one player signs out, another signs in on the same install), the token is the same and should follow the new account. Attest found no Arc21 document saying whether a token may move between accounts."
+      ],
+      "limitations": [
+        "The attack needs the victim's token string. Other players' tokens are not readable through the API (F1.158, F4.163 effective); how a token could be learned — from the device, logs or a notification payload — was not assessed.",
+        "Only the database effect was measured; no push notification was sent or delivered."
+      ],
+      "judgment": [
+        "Is moving a token between accounts intended (device handover), and if so, what should prove the caller holds the device?",
+        "Does the frozen Medium tier of push_tokens reflect this consequence? A tier is never changed after results (brief §7); a disagreement is recorded in DECISIONS.md as exactly that."
+      ],
+      "remediation": [
+        {
+          "option": "Refuse cross-account reassignment in the function: update the conflicting row only when it already belongs to the caller (`on conflict (token) do update … where push_tokens.user_id = v_me`), and otherwise refuse or ignore; have the client retire its token on sign-out (retire_push_token exists).",
+          "tradeoffs": "A device whose previous account never signed out (app deleted, session expired) cannot register for the new account until the old row is retired — the server needs a way to clear a stale row (Arc21 already has a server-only deactivate_push_token)."
+        },
+        {
+          "option": "Allow reassignment only with proof the caller holds the device — for example a silent push carrying a one-time code that the app must echo back before the token is bound.",
+          "tradeoffs": "Proves possession properly, but adds a round trip, a pending-registration state and a failure mode when push delivery is slow."
+        },
+        {
+          "option": "Keep reassignment but make it visible: record it (old owner, new owner, time) and notify the previous owner in-app.",
+          "tradeoffs": "Detects abuse rather than preventing it; the misrouting still happens."
+        }
+      ],
+      "verification": {
+        "mustBecome": "effective",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation.",
+          "Also required unchanged: every push_tokens row (F1.157/.158, F2.159/.160, F3.161/.162, F4.163, F6.164/.165) and F5.retire_push_token.268 must stay `effective`."
+        ]
+      }
+    },
+    {
+      "id": "B1",
+      "key": "force-rls-not-set",
+      "part": "informational",
+      "title": "Row-level security is enabled but not forced on every Arc21 table: the owner and BYPASSRLS roles are not subject to policies",
+      "tier": "High",
+      "tierBasis": "highest frozen WP2 tier among 21 resources (High: `private.career_drill_seeds`, `private.game_commands`, `private.game_state_private`, `public.blocks`, …)",
+      "exposure": "anonymous",
+      "evidenceClass": "characterized",
+      "testIds": [
+        "F7.private_career_drill_seeds.005",
+        "F7.private_game_commands.011",
+        "F7.private_game_state_private.020",
+        "F7.public_blocks.029",
+        "F7.public_daily_challenges.047",
+        "F7.public_friend_requests.063",
+        "F7.public_friendships.070",
+        "F7.public_game_events.078",
+        "F7.public_game_session_seats.089",
+        "F7.public_game_sessions.097",
+        "F7.public_hand_records.108",
+        "F7.public_profiles.155",
+        "F7.public_rate_limit_events.170",
+        "F7.public_rate_limit_policies.179",
+        "F7.public_room_members.187",
+        "F7.public_rooms.195",
+        "F7.public_rulesets.202",
+        "F7.public_tournament_entries.210",
+        "F7.public_tournament_matches.218",
+        "F7.public_wallet_ledger.231",
+        "F7.public_wallets.242",
+        "F7m.mechanism.303",
+        "F7m.mechanism.305",
+        "F7m.role_properties.306"
+      ],
+      "supportingTestIds": [
+        "F7m.mechanism.304"
+      ],
+      "bullets": [
+        "24 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 24 characterized.",
+        "`F7.private_career_drill_seeds.005` — as `probe-admin`: `select c.relrowsecurity as rls_enabled, not c.relforcerowsecurity as rls_not_forced, pg_get_userbyid(c.relo…` → 1 row(s); met: \"rls_enabled = true\" — rls_enabled = true (rls_enabled = true, rls_forced = false, owner = postgres) → **characterized**",
+        "… and 23 more of the same kind: `F7.private_game_commands.011`, `F7.private_game_state_private.020`, `F7.public_blocks.029`, `F7.public_daily_challenges.047`, `F7.public_friend_requests.063`, `F7.public_friendships.070`, `F7.public_game_events.078`, `F7.public_game_session_seats.089`, `F7.public_game_sessions.097`, `F7.public_hand_records.108`, `F7.public_profiles.155`, `F7.public_rate_limit_events.170`, `F7.public_rate_limit_policies.179`, `F7.public_room_members.187`, `F7.public_rooms.195`, `F7.public_rulesets.202`, `F7.public_tournament_entries.210`, `F7.public_tournament_matches.218`, `F7.public_wallet_ledger.231`, `F7.public_wallets.242`, `F7m.mechanism.303`, `F7m.mechanism.305`, `F7m.role_properties.306`.",
+        "WP0 inventory (frozen, run `20260922T234324Z-5695a4c3df2d`): 39 resource(s) with `rls_enabled_not_forced` — `private.career_drill_seeds`, `private.game_commands`, `private.game_state_private`, `public.blocks`, `public.career_attempts`, `public.career_nodes`, ….",
+        "Holding around it (effective): `F7m.mechanism.304`.",
+        "Frozen WP2 tiers of the 21 resources (CP3): 21 High."
+      ],
+      "approvedEscalations": [],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 24 characterized.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 24 characterized.",
+        "Today, in the official run: 24 characterized."
+      ],
+      "author": {
+        "key": "force-rls-not-set",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "On all 21 High-tier tables examined, row-level security is enabled and FORCE ROW LEVEL SECURITY is not set; the owner is postgres. WP0 found the same on 39 relations. The mechanism rows, on an Attest scratch table, isolate the two exemptions: an owner without BYPASSRLS sees every row when FORCE is off; a role with BYPASSRLS that is neither owner nor superuser sees every row even with FORCE on. postgres holds BYPASSRLS on this instance.",
+      "whyItMatters": "Every policy Arc21 has applies to client roles only. Any code path that runs as the table owner or as a BYPASSRLS role — migrations, SECURITY DEFINER functions owned by postgres, the service role, a leaked server credential — reads and writes past every policy. RUBRIC Part 4.6 records this as cross-cutting evidence, not a per-resource vulnerability.",
+      "contrary": [
+        "This is the Supabase default and is what SECURITY DEFINER functions rely on to do server work. FORCE alone would not restrict a BYPASSRLS role (F7m.305), so it is not a complete fix on its own."
+      ],
+      "limitations": [
+        "Characterization only: WP3 recorded the configuration and demonstrated the mechanism on a scratch table; it did not attempt to misuse a server path against Arc21 data."
+      ],
+      "judgment": [
+        "Accepted as the platform's design (documented), or open (some tables should be FORCED, with definer functions owned by a role that is subject to policy)?"
+      ],
+      "remediation": [
+        {
+          "option": "FORCE row-level security on the highest-integrity tables and move SECURITY DEFINER functions to a dedicated owner role that has explicit policies, instead of postgres.",
+          "tradeoffs": "Significant rework of every definer function's access; each needs policies granting exactly its server operations; migrations become more complex."
+        },
+        {
+          "option": "Accept and document: confine owner and BYPASSRLS use to migrations and reviewed server functions, and keep the service-role key off clients.",
+          "tradeoffs": "No schema change; relies on process and secret handling rather than on the database."
+        }
+      ],
+      "verification": {
+        "mustBecome": "characterized",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation."
+        ],
+        "caveat": "Not confirmable by `verify-finding`. The F7 rows record the configuration: a table that becomes FORCED will report `not_as_predicted` → `characterized` against its frozen prediction (FORCE not set) — a detected change, not a pass — and the F7m mechanism rows run on an Attest scratch table that no Arc21 change affects."
+      }
+    },
+    {
+      "id": "B2",
+      "key": "sprint-standings-names",
+      "part": "informational",
+      "title": "sprint_standings shows every co-entrant's display name, with no block or privacy check",
+      "tier": "High",
+      "tierBasis": "frozen WP2 tier of `public.profiles`",
+      "exposure": "authenticated",
+      "evidenceClass": "characterized",
+      "testIds": [
+        "F5.sprint_standings.255"
+      ],
+      "supportingTestIds": [
+        "F5.sprint_standings.254"
+      ],
+      "bullets": [
+        "1 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 1 characterized.",
+        "`F5.sprint_standings.255` — as `authenticated:alice`: `select * from public.sprint_standings($1)` [\"22220000-0000-4000-8000-000000000002\"] → 2 row(s); met: \"dave's display_name IS returned\" — a row carries display_name 'Dave' → **characterized**",
+        "Holding around it (effective): `F5.sprint_standings.254`.",
+        "Frozen WP2 rating of `public.profiles` (CP3): tier High, impact High (Integrity impact = High); integrity High — \"The `privacy` column is read by profiles_select_visible, so an unauthorized change to it alters who may read that profile — an access-control decision.\"."
+      ],
+      "approvedEscalations": [
+        "a fellow entrant seeing the display_name of an account that has blocked them, or of a private-privacy account, which profiles_select_visible would have withheld"
+      ],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 1 characterized.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 1 characterized.",
+        "Today, in the official run: 1 characterized."
+      ],
+      "author": {
+        "key": "sprint-standings-names",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "Signed in as alice, who has blocked dave, sprint_standings for a tournament both entered returned dave's display name. The function is SECURITY DEFINER and joins public.profiles with no block or privacy filter, as the approved row predicted. A non-entrant is refused (F5.254, effective).",
+      "whyItMatters": "The approved row records it as a characterization — co-entrants seeing each other's names in standings is plainly intended — and names what it would take to matter: a fellow entrant seeing the name of an account that has blocked them, or of a private-privacy account, which profiles_select_visible would have withheld.",
+      "contrary": [],
+      "limitations": [
+        "Exercised with the blocker viewing the blocked player; the reverse direction and a private account were not."
+      ],
+      "judgment": [
+        "Accepted / design-intent (standings must name every entrant), or open (the same question as the leaderboards)?"
+      ],
+      "remediation": [
+        {
+          "option": "If it should respect blocks or privacy: the same shared anonymising helper as the leaderboard item.",
+          "tradeoffs": "A standings table with an unnamed row is harder to follow; a blocked player may still infer who it is."
+        }
+      ],
+      "verification": {
+        "mustBecome": "characterized",
+        "mustObserve": "not_as_predicted",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation."
+        ],
+        "caveat": "A change shows as `not_as_predicted` against the frozen prediction that the name IS returned — a detected change, which is all a characterization can show."
+      }
+    },
+    {
+      "id": "B3",
+      "key": "anonymous-catalogues",
+      "part": "informational",
+      "title": "Four catalogue tables are readable without an account",
+      "tier": "High",
+      "tierBasis": "highest frozen WP2 tier among 4 resources (High: `public.rulesets`)",
+      "exposure": "anonymous",
+      "evidenceClass": "none",
+      "testIds": [],
+      "supportingTestIds": [
+        "F4.public_career_nodes.034",
+        "F4.public_career_nodes.035",
+        "F4.public_cosmetics.039",
+        "F4.public_cosmetics.040",
+        "F4.public_rulesets.200",
+        "F4.public_rulesets.201",
+        "F4.public_tournaments.220",
+        "F4.public_tournaments.221"
+      ],
+      "bullets": [
+        "WP0 inventory (frozen, run `20260922T234324Z-5695a4c3df2d`): 4 resource(s) with `anon_reachable` — `public.career_nodes`, `public.cosmetics`, `public.rulesets`, `public.tournaments`.",
+        "Holding around it (effective): `F4.public_career_nodes.034`, `F4.public_career_nodes.035`, `F4.public_cosmetics.039`, `F4.public_cosmetics.040`, `F4.public_rulesets.200`, `F4.public_rulesets.201`, `F4.public_tournaments.220`, `F4.public_tournaments.221`.",
+        "Frozen WP2 tiers of the 4 resources (CP3): 3 Medium, 1 High."
+      ],
+      "approvedEscalations": [],
+      "drift": [
+        "Traced through the 8 record(s) holding around it:",
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 8 effective.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 8 effective.",
+        "Today, in the official run: 8 effective."
+      ],
+      "author": {
+        "key": "anonymous-catalogues",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "WP0 found anonymous SELECT on public.career_nodes, public.cosmetics, public.rulesets and public.tournaments, each with a policy naming anon. WP3 confirmed the boundary: an anonymous caller reads the active rows and is refused the inactive or cancelled row the policy excludes (eight F4 rows, all effective).",
+      "whyItMatters": "RUBRIC Part 4.4 records these as intentionally readable catalogue data whose risk is integrity, not confidentiality. On all four, anon holds SELECT and no other privilege (WP0 inventory), so no anonymous write reaches them directly.",
+      "contrary": [],
+      "limitations": [
+        "WP3 did not enumerate every column an anonymous caller receives; the rows establish row-level scope only."
+      ],
+      "judgment": [
+        "Accepted / design-intent, as RUBRIC 4.4 already reasons?"
+      ],
+      "remediation": [
+        {
+          "option": "None proposed if accepted. If not: require an account for the catalogue reads.",
+          "tradeoffs": "Signed-out screens (store, career map, tournament list) would stop working."
+        }
+      ],
+      "verification": {
+        "mustBecome": "effective",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation."
+        ],
+        "caveat": "Nothing to confirm: the eight F4 rows already hold, and guard the boundary against drift."
+      }
+    },
+    {
+      "id": "B4",
+      "key": "realtime-latent-anon-grant",
+      "part": "informational",
+      "title": "realtime.messages grants INSERT, SELECT and UPDATE to anon; no policy admits anon today",
+      "tier": "Medium",
+      "tierBasis": "frozen WP2 tier of `realtime.messages`",
+      "exposure": "authenticated",
+      "evidenceClass": "none",
+      "testIds": [],
+      "supportingTestIds": [
+        "F4.realtime_messages.244",
+        "F8.realtime_messages.307",
+        "F8.realtime_messages.308",
+        "F8.realtime_messages.309",
+        "F8.realtime_messages.310",
+        "F8.realtime_messages.311",
+        "F8.realtime_messages.312",
+        "F8i.realtime_messages.313",
+        "F8i.realtime_messages.314",
+        "F8i.realtime_messages.315"
+      ],
+      "bullets": [
+        "WP0 inventory (frozen, run `20260922T234324Z-5695a4c3df2d`): 1 resource(s) with `anon_granted_but_no_policy_admits_it` — `realtime.messages`.",
+        "Holding around it (effective): `F4.realtime_messages.244`, `F8.realtime_messages.307`, `F8.realtime_messages.308`, `F8.realtime_messages.309`, `F8.realtime_messages.310`, `F8.realtime_messages.311`, `F8.realtime_messages.312`, `F8i.realtime_messages.313`, `F8i.realtime_messages.314`, `F8i.realtime_messages.315`.",
+        "Frozen WP2 rating of `realtime.messages` (CP3): tier Medium, impact Medium (Not High; at least one consequence dimension is Medium or High (Data=Medium, Blast=Medium, Integrity=Medium)); data Medium — \"Broadcast transport carrying sanitised PublicGameState and presence. The payload withholds the hole card and future shoe order by construction.\"."
+      ],
+      "approvedEscalations": [],
+      "drift": [
+        "Traced through the 10 record(s) holding around it:",
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 4 effective, 2 deficient, 4 not_measured.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 10 effective.",
+        "Today, in the official run: 10 effective."
+      ],
+      "author": {
+        "key": "realtime-latent-anon-grant",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "WP0 found anon holding INSERT, SELECT and UPDATE on realtime.messages with no policy naming anon or PUBLIC, so row security refuses every such statement today. WP3's anonymous and cross-seat rows on realtime.messages, including the real websocket path, all held (effective).",
+      "whyItMatters": "The grant is latent: it becomes live the moment a permissive policy naming anon or PUBLIC is added, or row security is switched off on that table. The grant belongs to the Supabase platform's defaults rather than to an Arc21 migration (realtime is a platform schema).",
+      "contrary": [],
+      "limitations": [
+        "Whether Arc21 can or should revoke a platform default was not assessed."
+      ],
+      "judgment": [
+        "Accept as a platform default, or ask for the grant to be revoked where the platform allows it?"
+      ],
+      "remediation": [
+        {
+          "option": "Revoke anon's privileges on realtime.messages if the platform permits it, or add a restrictive policy that denies anon explicitly, so a future permissive policy cannot open it.",
+          "tradeoffs": "Platform upgrades may re-grant defaults; a restrictive deny-anon policy is the more durable of the two."
+        }
+      ],
+      "verification": {
+        "mustBecome": "effective",
+        "steps": [
+          "The fix is made in Arc21 by its author, outside Attest. Attest never changes Arc21 (Amendment A1).",
+          "`npm run attest bringup` then `npm run attest seed-extensions` — a fresh build of the changed migrations.",
+          "`npm run attest execute-wp3 -- --confirm` — the whole frozen matrix, not only this item's rows, so a fix that breaks something else is seen.",
+          "`npm run attest validate-wp3 <new run>` — the new run must pass independent validation."
+        ],
+        "caveat": "Nothing to confirm: the realtime rows already hold, and WP4's drift view would flag a new policy that admits anon."
+      }
+    },
+    {
+      "id": "C1",
+      "key": "not-measured-deleted-cascade",
+      "part": "limitation",
+      "title": "Eleven deleted-account attempts have nothing left to target",
+      "tier": "High",
+      "tierBasis": "highest frozen WP2 tier among 11 resources (High: `private.game_commands`, `public.blocks`, `public.friend_requests`, `public.friendships`, …)",
+      "exposure": "authenticated",
+      "evidenceClass": "not_measured",
+      "testIds": [
+        "B.private_game_commands.323",
+        "B.public_blocks.325",
+        "B.public_friend_requests.327",
+        "B.public_friendships.329",
+        "B.public_profiles.335",
+        "B.public_rate_limit_events.336",
+        "B.public_room_members.337",
+        "B.public_rooms.338",
+        "B.public_tournament_entries.340",
+        "B.public_wallet_ledger.342",
+        "B.public_wallets.344"
+      ],
+      "supportingTestIds": [],
+      "bullets": [
+        "11 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 11 not_measured.",
+        "`B.private_game_commands.323` — as `authenticated:dave(deleted)`: `select * from private.game_commands where \"user_id\" = $1` [\"00000000-0000-4000-8000-00000000000d\"] → error 42501; UNMET: \"no error\" — raised: privilege check: permission denied for schema private → **not_measured**",
+        "`B.public_blocks.325` — as `authenticated:dave(deleted)`: `select * from public.blocks where \"blocker_id\" = $1` [\"00000000-0000-4000-8000-00000000000d\"] → 0 row(s); met: \"no data\" — 0 row(s) returned (exactly 0) → **not_measured**",
+        "`B.public_friend_requests.327` — as `authenticated:dave(deleted)`: `select * from public.friend_requests where \"sender_id\" = $1` [\"00000000-0000-4000-8000-00000000000d\"] → 0 row(s); met: \"no data\" — 0 row(s) returned (exactly 0) → **not_measured**",
+        "… and 8 more of the same kind: `B.public_friendships.329`, `B.public_profiles.335`, `B.public_rate_limit_events.336`, `B.public_room_members.337`, `B.public_rooms.338`, `B.public_tournament_entries.340`, `B.public_wallet_ledger.342`, `B.public_wallets.344`.",
+        "Frozen WP2 tiers of the 11 resources (CP3): 11 High."
+      ],
+      "approvedEscalations": [],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 11 not_measured.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 11 not_measured.",
+        "Today, in the official run: 11 not_measured."
+      ],
+      "author": {
+        "key": "not-measured-deleted-cascade",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "For eleven tables, deleting an account removes every row it owned by foreign-key cascade, so a still-valid token of the deleted account has no row of its own left to reach. Registered contradiction C5; at Gate A you kept these not measured rather than manufacture an artificial target. The three tables where rows survive the deletion (a game session's events, seats and metadata) were retargeted and all held (B.331–.333, effective).",
+      "whyItMatters": "The absence of a target is the schema's cascade working as designed; it is not evidence that access was refused.",
+      "contrary": [],
+      "limitations": [],
+      "judgment": [],
+      "remediation": [],
+      "verification": {
+        "mustBecome": "not_measured",
+        "steps": []
+      }
+    },
+    {
+      "id": "C2",
+      "key": "not-measured-grant-before-trigger",
+      "part": "limitation",
+      "title": "Two client attempts on the wallet ledger are refused by the grant before its append-only trigger can be reached",
+      "tier": "High",
+      "tierBasis": "frozen WP2 tier of `public.wallet_ledger`",
+      "exposure": "authenticated",
+      "evidenceClass": "not_measured",
+      "testIds": [
+        "F9.public_wallets.319",
+        "F9.public_wallets.321"
+      ],
+      "supportingTestIds": [
+        "F9.public_wallets.320",
+        "F9.public_wallets.322"
+      ],
+      "bullets": [
+        "2 record(s) in official WP3 run `20260925T014011Z-5695a4c3df2d`: 2 not_measured.",
+        "`F9.public_wallets.319` — as `authenticated:alice`: `update public.wallet_ledger set delta = 1 where user_id = $1` → error 42501; met: \"error\" — privilege check: permission denied for table wallet_ledger → **not_measured**",
+        "`F9.public_wallets.321` — as `authenticated:alice`: `truncate public.wallet_ledger` → error 42501; met: \"error\" — privilege check: permission denied for table wallet_ledger → **not_measured**",
+        "Holding around it (effective): `F9.public_wallets.320`, `F9.public_wallets.322`.",
+        "Frozen WP2 rating of `public.wallet_ledger` (CP3): tier High, impact High (Data criticality = High); data High — \"The append-only chip ledger — authoritative economy history.\"."
+      ],
+      "approvedEscalations": [],
+      "drift": [
+        "`H1-009464c` — Arc21 at 009464c (45 migrations), 2026-08-30 — before Realtime channel authorization: 2 not_measured.",
+        "`H2-4f9f7a6` — Arc21 at 4f9f7a6 (53 migrations), 2026-09-02 — before the least-privilege hardening: 2 not_measured.",
+        "Today, in the official run: 2 not_measured."
+      ],
+      "author": {
+        "key": "not-measured-grant-before-trigger",
+        "narrative": null,
+        "status": null,
+        "provenance": "awaiting_author",
+        "recordedFrom": null
+      },
+      "whatHappened": "As alice, an UPDATE and a TRUNCATE of public.wallet_ledger were refused with 42501 by the table grant, so the append-only trigger these rows were written to examine never ran for a client. Registered contradiction C2-grant-before-trigger; you chose to keep both rows not measured at Gate A. The trigger itself is exercised on the privileged path, where it refuses both (F9.320, F9.322, effective).",
+      "whyItMatters": "Nothing is exposed: the client is refused earlier than planned. The limitation is only that the trigger is not what refused it.",
+      "contrary": [],
+      "limitations": [],
+      "judgment": [],
+      "remediation": [],
+      "verification": {
+        "mustBecome": "not_measured",
+        "steps": []
+      }
+    }
+  ]
+}

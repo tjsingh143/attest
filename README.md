@@ -1,11 +1,12 @@
 # Attest — access control assurance harness
 
-**Status: work in progress. WP0–WP3 of eight are complete; WP4 (drift) and WP5 (findings, risk
-prioritisation and remediation guidance) are in progress toward checkpoint CP4.** CP1, CP2 and CP3
-are approved and the author answered Gate A on 2026-09-24 (`CHECKPOINTS.md`). The approved WP3
-assessment — 345 tests — was executed on 2026-09-25: run `20260925T014011Z-5695a4c3df2d`, which
-passes independent validation (`DECISIONS.md` D3.55). Numbers below are from real runs and are
-reproducible; the project is not finished and nothing here should be read as a completed audit.
+**Status: work in progress — stopped at checkpoint CP4, awaiting the author.** WP0–WP5 of eight are
+done: the approved WP3 assessment (345 tests) was executed and independently validated on
+2026-09-25 (`DECISIONS.md` D3.55); WP4 measured drift across Arc21's own earlier schemas (D3.56); WP5
+ranked the findings with remediation guidance and verification procedures (`FINDINGS.md`, D3.57).
+CP4 is presented in `CP4_PACKET.md` and is **not** approved: the findings narrative is the author's
+and is still blank. CP1–CP3 and Gate A are approved (`CHECKPOINTS.md`). Numbers below are from real
+runs and are reproducible; nothing here should be read as a completed audit.
 
 **Arc21 is a read-only assessment target.** Attest reads it and rebuilds a disposable database
 from its migrations; it never modifies Arc21's code, migrations, policies, grants, tests, seed,
@@ -116,8 +117,17 @@ timestamp and schema version (run `20260925T014011Z-5695a4c3df2d`, validated):
 | deficient | 5 | the control was exercised and did not hold — four leaderboard functions return a private-profile player's name; `register_push_token` reassigns another account's device registration |
 | not measured | 13 | approved rows the schema makes unmeasurable, kept that way by the author's decision at Gate A |
 
-What these mean, how they rank, and what would fix them is WP5's (`FINDINGS.md`). Nothing was
-fixed: Arc21 is a read-only target.
+What these mean, how they rank, and what would fix them is WP5's (`FINDINGS.md`): four findings —
+leaderboards naming private-profile players, no audit trail on 17 High-tier resources, two partial
+trails, and push-token reassignment — four informational items and two limitations, each with its
+evidence, remediation options and tradeoffs, and the exact Test IDs that would verify a future fix.
+Nothing was fixed: Arc21 is a read-only target.
+
+**WP4, drift** (run `20260925T042837Z-wp4`): the same approved questions asked of Arc21 as it was on
+2026-08-30 and 2026-09-02. None went from pass to fail; six went from fail to pass, including the
+author's own 2026-09-04 hardening closing tournament rows to non-participants. A table added with no
+row-level security in an Attest-only scratch copy was reported on the run that added it — and as
+unreachable by client roles today, because Arc21 no longer grants new tables to them by default.
 
 ## How you know the tests are real
 
@@ -152,8 +162,9 @@ The WP3 executor is held to the same standard, one level up (`DECISIONS.md` D3.3
   control surface, services, and Arc21's own fingerprint — before the next probe runs.
 - **Approved rows the system makes unmeasurable are registered, not worked around**, each with a
   live check, and recorded `not_measured` until the author decides.
-- **Every gate is proven by breaking it** (`attest prove-gates`: 73 injected defects and 5 controls,
-  including the independent results validator broken ten ways and the WP4/WP5 checks).
+- **Every gate is proven by breaking it** (`attest prove-gates`: 74 injected defects and 5 controls,
+  including the independent results validator broken ten ways, the WP4 detector, the WP5 grouping
+  and fix-verification checks, and the state-digest comparison).
 - **The results are validated by code that does not trust the executor.** `attest validate-wp3`
   re-derives every observation, verdict and total from the raw records with its own
   re-implementation of the mapping; it refused the first official run for three records that
@@ -191,10 +202,13 @@ These are not caveats added at the end. They bound what the output means.
   It is not a GxP system, not a Part 11 system, and not compliant with anything.
 - **This harness is not a product.** It is one person's tool for one system. It has not been
   validated, is not used by anyone, and has not been qualified as a testing tool.
-- **The harness has produced wrong output nine times, and each is written up rather than
-  quietly fixed** (`DECISIONS.md` D0.9, D0.13, D0.14, D1.5, D1.6, D1.7, D1.13, and two in the
-  first official WP3 run, D3.55: an audit-trail heuristic that mis-judged eleven verdicts, and three
-  records missing their read-back identity). Several
+- **The harness has produced wrong output ten times, and each is written up rather than
+  quietly fixed** (`DECISIONS.md` D0.9, D0.13, D0.14, D1.5, D1.6, D1.7, D1.13; two in the first
+  official WP3 run, D3.55 — an audit-trail heuristic that mis-judged eleven verdicts, and three
+  records missing their read-back identity; and one in WP4, D3.56 — a state guard that compared
+  digests as strings and read a reordering as a change). The last three were caught by the
+  harness's own validation or by reading its output, and every run they affected is kept as it
+  was written. Several
   produced confident, plausible, wrong answers with nothing about the output looking amiss —
   including one that made the validation report contradict itself two paragraphs apart. That
   bears directly on how much weight any single run deserves, and it is the reason a run now
@@ -236,7 +250,6 @@ borrowed from those tools is cited where it is used.
 
 ## Not yet done
 
-**WP4 drift detection** across Arc21's own earlier schema states, **WP5 findings** (ranked by the
-frozen WP2 tiers, with remediation guidance and exact verification procedures — no remediation) and
-checkpoint **CP4**, where the author writes the findings narrative. Then WP6 framework mapping (a
-study exercise), CP5, and WP7 reporting.
+**CP4** — the author's findings narrative, status decisions and approval (`CP4_PACKET.md`). Then WP6
+framework mapping (a study exercise, not compliance), CP5, WP7 reporting (assurance report,
+dashboard, plain-language summary), and the final reproducibility audit.

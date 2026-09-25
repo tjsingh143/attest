@@ -48,9 +48,9 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 | WP3 final preflight | COMPLETE | preflight + prove-gates passed before run 1 |
 | WP3 execution | **COMPLETE** — run 3 `20260925T014011Z-5695a4c3df2d` is the result | run 1 superseded (3 harness defects), run 2 aborted (reset under host load); all kept (D3.55) |
 | WP3 result validation | **PASSED 19/19** (run 3); vs run 1: only the 11 F10 rows differ, all 345 actual outcomes identical | harness `e1164c7d` = tree of `f8cc830` |
-| WP4 drift | IN PROGRESS (code committed; run next) | |
-| WP5 findings / guidance (A1) | code written, previewed (not yet run on final evidence) | |
-| **CP4** | NOT REACHED | |
+| WP4 drift | **COMPLETE** — run `20260925T042837Z-wp4` (all 4 states exit 0) | 2 earlier WP4 runs stopped and kept (host overload; digest-order defect) — D3.56 |
+| WP5 findings / guidance (A1) | **COMPLETE (generated)** — FINDINGS.md, CP4_PACKET.md, evidence/runs/20260925T014011Z-5695a4c3df2d/wp5/ | 4 findings, 4 informational, 2 limitations — D3.57 |
+| **CP4** | **REACHED — presented, awaiting the author (NOT approved)** | CP4_PACKET.md §7 is the response format |
 | WP6 framework mapping | NOT STARTED | |
 | **CP5** | NOT REACHED | |
 | WP7 reporting / dashboard | NOT STARTED | |
@@ -60,8 +60,8 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 
 ## Current phase
 
-Phase 4 — WP3 done and validated; WP4 drift run next (states H1-009464c, H2-4f9f7a6 with probes;
-C-current, T-controlled inventory); then WP5 → CP4 (the next human stop).
+**STOPPED AT CP4 (2026-09-25), waiting for the author's reply.** Nothing past CP4 may start until the
+author answers in the format of `CP4_PACKET.md` §7.
 
 ## Commands and results
 
@@ -97,6 +97,10 @@ C-current, T-controlled inventory); then WP5 → CP4 (the next human stop).
 | 2026-09-25 01:40–02:16 | `execute-wp3 -- --confirm` (**official run 3, the result**) | `20260925T014011Z-5695a4c3df2d`: 345 records; effective 283 / gap 19 / characterized 25 / deficient 5 / not_measured 13; harness `e1164c7d` = tree of `f8cc830`; Arc21 unchanged |
 | 2026-09-25 ~02:17 | `validate-wp3` run 3 | **PASSED 19/19**; vs run 1: exactly the 11 F10 rows differ; all 345 actualSummary identical; F9.316–.318 identities present |
 | 2026-09-25 ~02:25 | `bringup`, `seed-extensions`, `prove-gates` | **73/73** caught, 5/5 controls, restored (new: WP5 grouping ×3, verify-finding ×5, WP4 unreachable-unprotected + RLS-off cases) |
+| 2026-09-25 02:19–03:46 | `wp4` (run 1, `20260925T021927Z-wp4`) | **stopped by hand**: H1 aborted at 310/326 (3 failed resets), H2 reset hung — host load ~128, 8 GB RAM / 14 GB swap; Arc21 verified unchanged; kept; exposed 3 defects (retry rule, TRUNCATE compat, contradiction rows) → fixed `3878095`, prove-gates 73/73 |
+| 2026-09-25 03:50–04:26 | `wp4` (run 2, `20260925T035025Z-wp4`) | **stopped by hand** after H1: 2 false deficients (.262/.268) from digest guards compared as strings (UNION ALL order) → fixed `48084e3` (sorted digests + content comparison), prove-gates 74/74; run 3 WP3 unaffected (only failing guard is .269's row check) |
+| 2026-09-25 04:28–05:40 | `wp4` (run 3, `20260925T042837Z-wp4`) | **COMPLETE**, all exits 0: H1 341/345 answerable, H2 345/345; no pass→fail; 6 fail→pass; T-controlled table caught (no row-level control, not client-reachable); C-current inventory identical to frozen CP3 inventory |
+| 2026-09-25 ~05:41 | `wp5` | 10 items: A1 leaderboards (High, deficient ×4), A2 no audit trail ×17 (High, gap), A3 partial trails ×2 (High, gap), A4 push token (Medium, deficient); B1–B4 informational; C1–C2 limitations; 0 problems; narratives store created blank |
 
 ## Evidence generated in this mission
 
@@ -112,6 +116,9 @@ C-current, T-controlled inventory); then WP5 → CP4 (the next human stop).
 - `50e983b` Gate A packet · `238abd6` Gate A applied · `5163a03` protected checkout vs migration source
 - `e28c0c6` harness fixes from official run 1; WP4 code; run 1 kept as superseded record
 - `f8cc830` reset retry; run 2 (aborted) kept
+- `fbc2318` WP3: execute final access-control assessment (run 3 = the result)
+- `3878095` WP4 run 1 stopped/kept; retry + compatibility fixes
+- `48084e3` digest guards by content; WP4 run 2 stopped/kept
 
 ## Unresolved contradictions / open author decisions
 
@@ -140,11 +147,15 @@ C-current, T-controlled inventory); then WP5 → CP4 (the next human stop).
 
 ## Exact next action
 
-1. Commit the WP3 checkpoint (run 3 evidence, D3.55, CHECKPOINTS, README, WP4/WP5 code) and push.
-2. WP4: `npm run attest wp4 -- --wp3-run=20260925T014011Z-5695a4c3df2d --plan-run=20260924T201920Z-5695a4c3df2d`
-   (~75 min: H1 and H2 with probes); verify C-current schema = 5695a4c3…, T-controlled reports the
-   new table as no row-level control (not reachable: Arc21's default privileges since 0904);
-   then `bringup` + `seed-extensions`; finalize D3.56 (draft in scratch `d356.md`); commit; push.
-3. WP5: `npm run attest wp5 -- --wp3-run=20260925T014011Z-5695a4c3df2d --plan-run=20260924T201920Z-5695a4c3df2d --wp4-run=<wp4 run>`
-   → FINDINGS.md, CP4_PACKET.md, rubric/wp5-author-narratives.json (blank); D3.57 (draft in scratch
-   `d357.md`); CHECKPOINTS CP4 "reached — awaiting the author"; commit; push; **STOP at CP4**.
+**STOPPED AT CP4.** When the author replies (format: `CP4_PACKET.md` §7):
+
+1. Record every narrative VERBATIM in `rubric/wp5-author-narratives.json` (`provenance:
+   user_authored`, `status` as given, `recordedFrom` = the dated reply). Never draft, paraphrase or
+   complete a narrative; a line the author left out stays `awaiting_author`.
+2. Record J1–J14 answers in DECISIONS (a D3.58 "CP4 answered" entry); if J13 changes the ranking
+   rule, implement it in `src/wp5-findings.ts` as the author's decision (never change a frozen tier).
+3. Regenerate: `npm run attest wp5 -- --wp3-run=20260925T014011Z-5695a4c3df2d --plan-run=20260924T201920Z-5695a4c3df2d --wp4-run=20260925T042837Z-wp4`.
+4. CHECKPOINTS: CP4 → approved (dated, from the reply) only if the author wrote "approved".
+5. Then WP6 (framework mapping scaffold: NIST SP 800-53 Rev 5 AC-2/3/6/24, AU-2/3/12, CM-3, SI-7;
+   21 CFR Part 11 §11.10(d)(e)(g), §11.300 — candidate IDs + structure only; rationales are the
+   author's), the ≤1-page CSA limitations note (limitations longer than claims) → CP5 STOP.

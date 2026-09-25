@@ -1,0 +1,9 @@
+{
+  "label": "the current state plus one Attest-only migration adding a table with no row-level security and no policy",
+  "why": "a deliberate, controlled change proving the detector catches a new unprotected resource on the next run, without anyone looking for it",
+  "source": "controlled",
+  "commit": null,
+  "provenance": "a file copy of the protected checkout's supabase/ directory as it stands, uncommitted migration included, plus the Attest-only migration 20260924000000_attest_wp4_unprotected_table.sql",
+  "migrationSetSha256": "b1950d5a590a8df1331376bd4579de002c99008357cbe1574a5197c56a2f284d",
+  "migrationCount": 60
+}

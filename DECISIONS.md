@@ -2485,3 +2485,186 @@ detector cases and the reset-retry classification: **73 of 73 injected defects c
 was re-judged: run 1's records and validation stay exactly as written, including its failing check.
 
 **Run 1 against the result.** Per Test ID, run 3 differs from run 1 in exactly the eleven F10 rows the heuristic had mis-judged (`not_as_predicted` / `characterized` → `as_predicted` / `gap`). The recorded actual outcome of every one of the 345 probes is identical in the two runs, and F9.316–.318 now carry their read-back identities. The fixes changed how evidence is judged and recorded, not what Arc21 did. The WP3 result, by verdict: **283 effective, 19 gap, 25 characterized, 5 deficient, 13 not measured** (run `20260925T014011Z-5695a4c3df2d`, harness `e1164c7d` = the tree of `f8cc830`, 72 files).
+
+---
+
+## WP4 — drift detection
+
+### D3.56 — WP4: real schema states from Arc21's own history, rebuilt without touching Arc21
+
+**The states.** The brief asks for at least three runs "across deliberately different schema
+states, so the diff has something real to show". The honest source of different states is Arc21's
+own history: every commit that changed `supabase/migrations` is a schema the author actually had.
+WP4 uses four:
+
+| State | Source | Migrations | Why |
+|---|---|---:|---|
+| `H1-009464c` | commit `009464c`, 2026-08-30 | 45 | the last state before `20260831120000_realtime_channel_authorization` added Arc21's policies on `realtime.messages` |
+| `H2-4f9f7a6` | commit `4f9f7a6`, 2026-09-02 | 53 | the last state before `20260904120000_least_privilege_and_entry_visibility`, Arc21's own hardening |
+| `C-current` | the working tree | 59 | the state WP3 assessed (one migration is uncommitted) |
+| `T-controlled` | `C-current` + one Attest-only migration | 60 | a table added with no row-level security and no policy — the mistake the brief says drift detection must catch |
+
+*Alternatives.* Synthetic mutations of today's schema (a dropped policy here, a widened grant
+there) would show the detector working but not how Arc21 actually changed; the controlled state
+does that job once, openly labelled, and the rest is history. More historical states would add
+rebuild time without adding a new kind of change.
+
+**Nothing is checked out in Arc21.** A historical state is written with `git archive <commit>
+supabase` into `.wp4-states/` (gitignored, Attest-owned): read-only, no checkout, no worktree, no
+ref, no index refresh (`GIT_OPTIONAL_LOCKS=0`). A run points `ATTEST_SUT_REPO` at that directory;
+the read-only guard still fingerprints the protected checkout (`ARC21_CHECKOUT`, separated in
+`5163a03`) before and after every state, in a child process per state. The controlled migration
+exists only in the scratch copy.
+
+**What counts as a control definition change** (brief §6.1). A policy whose `USING` or
+`WITH CHECK` expression differs, as PostgreSQL itself prints it (`pg_get_expr`), is a *definition*
+change. Anything else about the same control — a policy's command, roles or permissiveness; a
+grant's privileges; RLS enabled or forced; a trigger's events; a function's grantees or definer
+flag — is an *attributes* change. A control id present on one side only is *added* or *removed*.
+A resource present only in the later state is *new*, and *new with no control* when it has no
+row-level control: a table with row-level security off, or a view that does not run as its
+invoker. Whether a client role can reach it now is reported beside that, never instead of it. The
+distinction is not academic here: since `20260904120000_least_privilege_and_entry_visibility`,
+Arc21's default privileges no longer grant a new `postgres`-owned table to `anon` or
+`authenticated`, so a table a developer forgets to protect is unreachable today and one `GRANT`
+from exposed. The first version of the detector counted only *reachable* unprotected tables and
+would have called that table controlled; it was corrected before WP4 ran, and `prove-gates` now
+adds a table with no row-level security and no grant and requires it to be reported. An existing
+resource that loses its row-level control, or gains an unprotected observation (reachable with
+row-level security off, anonymous reach), is *newly exposed*.
+
+**Results across states are today's questions asked of yesterday's schema.** The historical
+states run the APPROVED WP3 probes from the current planning run — a historical plan would be a
+different set of questions. A probe runs in a state only if that state can answer it as approved:
+its baseline fixtures apply and verify, its statement and every admin read compile (`PREPARE`), its
+probe-scoped setup applies and every premise holds, all inside a transaction that is always rolled
+back. Anything else is recorded as *incompatible* with the reason and is never a pass or a failure.
+The current state's results are the official WP3 run's, linked by run id, not re-executed; the
+controlled state is inventoried only.
+
+**Harness versus schema.** All four inventories in one WP4 run come from the same harness, so an
+inventory difference is a schema difference. Historical results come from the WP4 run's harness
+(the tree of `48084e3`); the current state's from the official WP3 run's (`f8cc830`). Besides the
+WP4 and WP5 modules, the two differ in three executor changes made after the WP3 run: the reset
+retry rule, the fixed key order of state digests, and the content comparison of digest guards
+(below). None can change a WP3 verdict: the retry only decides whether a failed rebuild is tried
+again, and the digest changes only stop identical states reading as different — no digest guard
+failed in the WP3 run. Both hashes are recorded.
+
+**The first WP4 run was stopped, and kept.** Run `20260925T021927Z-wp4` lost its first state at
+310 of 326 records to three failed resets, and the second state's reset then hung for thirty
+minutes: the host — 8 GB of RAM with 14 GB of swap in use while other applications were active —
+had reached a load average of ~128. It was stopped by hand, Arc21's fingerprint was verified
+unchanged, and its partial evidence is committed as written. It exposed three Attest defects, fixed
+before the second run: the reset retry refused to retry a failure during schema initialisation
+(now only a migration's SQL error is final; three retries at 30, 60 and 120 s); `TRUNCATE` cannot be
+`PREPARE`d, so four answerable F10 probes had been marked incompatible (a `TRUNCATE` is now checked by
+its relation's existence); and the eleven registered-contradiction rows had been dropped for failing
+the very premise that is their contradiction (they now run and record `not_measured`, as in WP3).
+
+**The second WP4 run was stopped too, and kept.** Run `20260925T035025Z-wp4` completed its first
+state cleanly and was stopped during its second, because that state's evidence showed a harness
+defect: `F5.remove_friend.262` and `F5.retire_push_token.268` came back `deficient` with a "no
+effect" guard reporting "changed:" and naming nothing, while the executor's own post-probe
+comparison found no relation changed. A database or table-set digest was serialized in the row
+order of a `UNION ALL` — which PostgreSQL does not guarantee — and the guard compared the
+serialized strings, so identical content written in another order read as a change. The defect
+can only make identical states look different, never the reverse: it cannot produce a false
+`effective`, and in the official WP3 run no digest guard failed at all (the only failing guard is
+`F5.269`'s row-level check), so no WP3 verdict is affected. Fixed in `48084e3`: `stateDigest`
+returns its keys in a fixed order and digest snapshots are compared by content; `prove-gates` now
+requires the same digest written in reverse order to compare equal and one changed value not to.
+
+**Results.** Run `20260925T042837Z-wp4` (harness: the tree of `48084e3`); all four states and the final
+restore exited 0.
+
+| Compared | added | removed | definition changed | attributes changed | new, no row-level control | pass → fail | fail → pass |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| H1 → H2 | 23 | 8 | 0 | 0 | 0 | 0 | 4 |
+| H2 → C | 0 | 1 | 4 | 4 | 0 | 0 | 2 |
+| C → T | 2 | 0 | 0 | 0 | **1** | — | — |
+| H1 → C | 23 | 9 | 4 | 4 | 0 | 0 | 6 |
+
+- **The brief's test passes.** The Attest-only table was reported on the run that added it, as a new
+  resource with no control — and, correctly, as not reachable by any client role today, one `GRANT`
+  from exposed.
+- **Not one of today's 345 approved questions went from pass to fail across Arc21's history.** Six
+  went from fail to pass: Arc21's 2026-09-04 hardening stopped non-participants reading tournament
+  entries and matches (`F1.205`, `F1.213`); private Realtime channels, which before 2026-08-31
+  refused everyone including the channel's own members, now admit them (`F8.307`, `F8i.313`); and
+  two refusals are now raised where the approved rows expect them, `PT404` rather than `P0002`
+  (`F5.246`, `F5.259`) — refused in both states, so no access decision changed there.
+- **All four current findings were already present in both historical states** (WP5 shows each
+  item's history).
+- **The current state's inventory is identical to the frozen CP1/CP3 inventory** in every drift
+  class — the same schema read three days apart by two harness versions.
+- H1 could not be asked 4 of the 345 questions (the functions did not exist yet); H2 all 345.
+
+---
+
+## WP5 — findings, risk prioritisation and remediation guidance
+
+### D3.57 — How WP5 consolidates, ranks and hands the findings to the author
+
+**Decided.** `npm run attest wp5` builds the WP5 package from persisted evidence only — the
+official WP3 run (which must have passed `validate-wp3`), the frozen CP3 tiers and WP0 inventory
+(run `20260922T234324Z`), the planning run, and the WP4 drift run — and writes `FINDINGS.md`,
+`CP4_PACKET.md` and a copy under `evidence/runs/<wp3 run>/wp5/`. It is regenerated, never edited.
+
+**Grouping is drafted; it is checked against the evidence.** Which records form one finding is a
+presentation choice, so it is written down (`src/wp5-guidance.ts`) rather than inferred. The
+command refuses to write anything unless every record that is not `effective` belongs to exactly
+one item, each item selects exactly the number of records it was written for, each carries the
+verdict its prose assumes, and every record an item calls "holding" is `effective`. Prose that
+outlived its evidence would be a fabricated finding; this makes that impossible to do silently.
+The dry run against run 1 showed it working — it refused, naming the eleven F10 rows the heuristic
+defect had mis-judged — and it caught two mistakes in the drafted selectors on the way (`"F10…"`
+matching a prefix meant for F1, and an Attest scratch-table row given a resource tier). Against the
+result it reports nothing: all 62 non-effective records belong to exactly one item.
+
+**The ranking rule** (the brief: "ordered by the WP2 risk tier"; Amendment A1: "using the frozen WP2
+risk context and the observed evidence"):
+
+1. *Part:* findings (a WP3 failure or gap) before informational items (characterizations and WP0
+   structural observations) before limitations.
+2. *Frozen WP2 tier of the resource at risk* — the table whose data or integrity the observed
+   behaviour affects. For a `SECURITY DEFINER` function that is the table it exposes or changes.
+   Every F5 test row is "High" by a planning rule about test depth; that is not a risk rating, and
+   using it would have ranked a Medium-tier table's problem as High.
+3. *Evidence class:* `deficient` before `gap` before `characterized`.
+4. *Most exposed path* in the frozen rating: anonymous, authenticated, server-only.
+5. More Test IDs, then the item's name.
+
+*Alternatives.* Ranking by the test row's tier (every F5 finding High), or by a severity invented
+at WP5 (the brief forbids tuning risk after seeing results, §7). *What would change:* under the
+test-row rule the push-token finding would outrank the audit-trail gaps. The author may state a
+different rule at CP4 (J-question in the packet); it would be recorded as the author's decision
+and would never alter a frozen tier.
+
+**Provenance is on the page.** Titles, "what happened", "why it matters", limitations, remediation
+options and tradeoffs are AI-drafted and labelled so. Evidence bullets are generated from the
+records. "Why it matters" quotes the approved matrix's own "Escalation would be" text and the
+frozen ratings where they exist. Where the evidence points both ways the item says so: the
+leaderboard finding carries Arc21's own test file stating that a private profile deliberately stays
+on leaderboards, beside the approved WP3 expectation that it should not.
+
+**History is shown, not judged.** When a WP4 run is given, each item traces its own Test IDs
+through every historical state — how many were deficient, effective, or could not be asked of that
+schema — beside today's result. It says how long a condition has existed; it does not change a
+rank.
+
+**The narrative is the author's.** Every item except the limitations carries
+`AUTHOR NARRATIVE: ______`. `rubric/wp5-author-narratives.json` is created blank and is never
+overwritten by the tool; each entry records the author's words verbatim, the author's status
+decision (open / accepted-design-intent / informational) and the dated reply it came from.
+
+**Verification is a command.** `npm run attest verify-finding <item> --official=<run>
+--candidate=<run>` confirms a future fix only if the candidate run passed validation, each of the
+item's Test IDs reached the stated verdict, and no Test ID that was `effective` in the official run
+is anything else. It refuses items whose frozen rows cannot confirm a fix — the partial audit
+trails, whose approved expectations would still read `gap` after one — and says so in the item
+itself. `prove-gates` proves it on the official run: unchanged → not confirmed; the leaderboard
+rows flipped → confirmed; the same with one regression → refused; unvalidated → refused.
+
+**Stated plainly, as A1 requires:** no remediation was implemented and none was independently
+verified, because Arc21 is a read-only target. Every "fix" in WP5 is a recommendation.

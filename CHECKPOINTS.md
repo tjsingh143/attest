@@ -38,7 +38,7 @@ detect.
 | — | WP3 **planning**: the 345-row test matrix | **approved** | reaffirmed 2026-09-22 |
 | — | **Gate A** — every author decision before WP3 execution | **answered by the author 2026-09-24 (~20:00 UTC) and applied** (D3.54; `rubric/wp3-gate-a-decisions.json`) | 2026-09-24 |
 | — | WP3 **execution**: running the 345 tests | **executed** — run `20260925T014011Z-5695a4c3df2d` is the result; two earlier runs kept as superseded / aborted records (D3.55) | 2026-09-25 |
-| **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | not reached | — |
+| **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | **reached — presented in `CP4_PACKET.md`, awaiting the author's reply; not approved** | 2026-09-25 |
 | **CP5** | after WP6 — framework mapping and limitations | not reached | — |
 
 WP3 planning is not one of the brief's five checkpoints. It is recorded here because the
@@ -214,6 +214,24 @@ unedited, and only the third is the result (`DECISIONS.md` D3.55).
 
 The result, by verdict: **283 effective, 19 gap, 25 characterized, 5 deficient, 13 not measured**. Arc21's fingerprint `13569cf0e2dd36c1…` was identical before
 and after every run. The findings, ranking and remediation guidance are WP5's (`FINDINGS.md`).
+
+## 2026-09-25 — CP4 reached: presented, awaiting the author
+
+WP4 ran Arc21's own earlier schemas against today's approved questions (run `20260925T042837Z-wp4`, D3.56), and
+WP5 turned the validated WP3 result into ranked findings with remediation guidance and verification
+procedures (`FINDINGS.md`, D3.57). **The CP4 packet is `CP4_PACKET.md`.**
+
+| | |
+|---|---|
+| WP3 result | run `20260925T014011Z-5695a4c3df2d`, validation passes 19/19 — 283 effective, 19 gap, 25 characterized, 5 deficient, 13 not measured |
+| WP4 | run `20260925T042837Z-wp4`: four states (Arc21 at 2026-08-30 and 2026-09-02, today, and today plus one Attest-only table); no pass → fail anywhere in Arc21's history, six fail → pass; the unprotected test table caught on the run that added it; two earlier WP4 runs stopped and kept (D3.56) |
+| WP5 | 4 findings (A1–A4), 4 informational items (B1–B4), 2 limitations (C1–C2); every one of the 62 non-effective records belongs to exactly one |
+| Awaiting the author | 8 status decisions, 8 narratives, 14 judgments, and the CP4 approval itself |
+
+**Nothing is approved on the author's behalf.** Every status, every narrative and the approval are
+blank until the author answers in the format of `CP4_PACKET.md` §7; the narrative store
+(`rubric/wp5-author-narratives.json`) is created with every entry `awaiting_author`. No finding was
+remediated and none is closed: Arc21 is a read-only target.
 
 ## Candidate findings on the table (smoke, not WP3 results) — superseded by the WP3 result
 
