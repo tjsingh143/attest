@@ -2806,3 +2806,91 @@ a truncate guard, and server-role DELETE permitted by design.
 
 **Stated plainly, as A1 requires:** CP4's approval does not mean Arc21 was remediated, a finding was
 fixed or closed, or any remediation was independently verified. None was.
+
+---
+
+## WP6 — framework mapping (a study exercise)
+
+### D3.60 — The mapping is built from the evidence, quotes its sources verbatim, and is held to rules that stop it overclaiming
+
+**What it is, and is not.** A study / control-mapping exercise: which Attest evidence bears on which
+NIST SP 800-53 Rev. 5 control and which of four 21 CFR Part 11 provisions, what it shows, and — at
+greater length — what it does not. It is not compliance, FDA validation, GxP validation or CSV,
+Part 11 compliance, certification, or an independent audit; Arc21 is a personal application, not a
+regulated system, and keeps no electronic record under an FDA predicate rule. Every output says so
+in its first lines, and a lint (`src/claims-lint.ts`) refuses any sentence that makes a compliance,
+validation, certification or independence claim without negating it in the same sentence.
+
+**Provenance (Amendment A2).** Every rationale, "demonstrates", "does not demonstrate", limitation
+and "arguable" note is AI-drafted (Claude) and labelled so, entry by entry. The brief originally
+reserved the rationales to the author (§1.1, WP6); A2 withdrew that prospectively. None of it is the
+author's writing, and the record says so rather than leaving it to be assumed.
+
+**What is not drafted.**
+
+- *The framework texts* come from the primary sources, fetched by `npm run attest framework-sources`
+  on 2026-09-25 into `rubric/framework-sources.json` with the sha256 of each downloaded file: NIST's
+  own OSCAL catalog of SP 800-53 Rev. 5 (release 5.2.0, last modified 2026-05-11) and the eCFR's XML
+  for 21 CFR Part 11 (as of 2026-09-22; §11.10 and §11.300 have one version on record, 2016-12-29 —
+  unchanged). The FDA CSA guidance (final, issued 2026-02-03, superseding the 2025-09-24 guidance;
+  docket FDA-2022-D-0795) is a PDF: its identifying details and section headings are recorded, and the
+  CSA note cites its sections rather than quoting it. A mapping whose quoted statement or title
+  differs from the snapshot by a byte is refused.
+- *Every number* is computed from the official evidence (`src/evidence-facts.ts`); every cited Test ID
+  resolves to a record of the official run; records are selected by what they test (family, control
+  id, Test ID), never by verdict.
+
+**Support levels, and the rules that bind them.** *Evidenced (tested paths only)*: the tested
+behaviour is what the statement describes and every cited record held — no deficient, no gap.
+*Partial*: the evidence bears on part of the statement, or includes deficient or gap results, or is
+an analogy. *Not mapped*: nothing is cited. Two caps are rules, not judgments: a Part 11 provision is
+never more than partial (Arc21 keeps no Part 11 record), and neither is an activity of Attest itself.
+Result: **1 evidenced** (AC-3, 207 records, all effective), **14 partial**, **1 not mapped**
+(§11.300).
+
+**Which controls.** The brief's minimum list (AC-2, AC-3, AC-6, AC-24, AU-2, AU-3, AU-12, CM-3, SI-7;
+§11.10(d), (e), (g), §11.300), plus three the evidence bears on directly: **AU-9** (the audit-trail
+immutability rows and the ledger's privileged-path refusals test exactly its subject), **CA-2** (it
+describes the assessment itself — and names its independence enhancement, which is not met) and
+**CA-7** (the brief calls drift detection the step to continuous control monitoring). CA-2 and CA-7
+are marked as activities of Attest, not controls of Arc21. *Rejected:* RA-3 (the rubric is an
+assurance-priority tier, not a risk assessment of an organization — RUBRIC Part 7), IA-2/IA-5
+(authentication is out of scope), AU-6 and AU-11 (nothing reviews or retains logs to assess).
+
+**Every arguable mapping** (brief §6.1), each stated in the entry itself:
+
+| Mapping | Why it could go another way | Decided |
+|---|---|---|
+| F1–F4, F6, F8 → AC-3 | RLS decides and enforces in one mechanism (AC-24); column grants are also least privilege (AC-6) | enforcement is AC-3; the column family is listed under both AC-3 and AC-6 |
+| F5 → AC-6 (not AC-3) | a definer function's refusal is enforcement too | its privilege is its owner's, so the question is whether it stays within the caller's authority — least privilege for a process acting for a user; A4 is where it does not |
+| F1, F3 and the leaderboard/standings rows → AC-24 | the same records could count as AC-3 | listed for what they add: decision expressions read from the catalog, and a path on which the table's decision is not applied |
+| F10 → AU-2 and AU-12 | one set of records | AU-2 is the selection (with the author's J3 rule as its written rationale); AU-12 is whether records are generated |
+| F9 → SI-7 | SI-7 is about detecting unauthorized change; F9 tests integrity-preserving design | kept, as **partial**, with the mismatch stated rather than forced |
+| WP4 → CM-3 and CA-7 | monitoring half of change control, ongoing-assessment half of continuous monitoring | listed under both; neither is met as a process |
+| Reach-and-read families → §11.10(d); write, WITH CHECK, column and definer families → §11.10(g) | (d) and (g) overlap | (d) is who can reach the data; (g) is whether a user may alter a record or perform an operation |
+| Boundary cases → §11.300 | they touch session tokens | **not mapped**: token validity is not an identification-code or password control; named as adjacent results so they are not mistaken for evidence |
+
+**Checked twice, by different code.** `attest wp6` refuses to write unless every check holds
+(`checkMappings`, `checkCsaNote`). `attest validate-wp6` then re-reads the written files and the raw
+records with its own selection and counting — not the generator's — and re-derives 1,133 citations,
+every count, the support rules, the verbatim quotes, the claims lint and the CSA note's shape: **9 of
+9 checks passed**. `prove-gates` breaks the generator eight ways, the CSA note once, the validator six
+ways and the lint ten times: **80/80 injected defects caught, 7/7 controls held**.
+
+**The CSA note** (`CSA_NOTE.md`, one page, AI-drafted): what the output could serve as under the
+guidance's framework (V.A(2), (4), (6): risk-proportionate scripted testing with a digital record,
+independently re-derived) — 137 words — and what it would not cover — 275 words: no intended use,
+no supplier assessment, no change-control process, no qualification of the harness as a validated
+tool (the four gaps the brief names), no independent review or signed approval, no conclusion of
+acceptability with issues unresolved, the narrow scope, and Part 11's inapplicability. The length
+rule (limitations longer than claims) and the four named gaps are checked mechanically.
+
+**CP5.** Superseded by Amendment A2: the separate author interaction is waived prospectively, the
+package above was generated and validated, and `CP5_RECORD.md` records it as superseded — not as
+approved. It also carries the answers CP5 would have asked the author for (why AC-3 rather than AC-6;
+what the exercise is not), supplied by AI-drafted text and labelled so.
+
+**What would change.** Under the minimum list only, AU-9's direct evidence would go unmapped and the
+independence gap would be stated only in prose. Without the Part 11 cap, §11.10(d) would read
+"evidenced" on the strength of a system Part 11 does not apply to. Mapping §11.300 through the
+boundary cases would have presented token-expiry behaviour as password-control evidence.

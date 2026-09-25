@@ -1,0 +1,51 @@
+{
+  "wp3RunId": "20260925T014011Z-5695a4c3df2d",
+  "passed": true,
+  "checks": [
+    {
+      "name": "the mapping says what it is: a study exercise, AI-drafted rationale",
+      "passed": true,
+      "detail": "16 entries, all labelled ai_drafted"
+    },
+    {
+      "name": "every provision in the brief's minimum list is present (mapped or explicitly not mapped)",
+      "passed": true,
+      "detail": "13 of 13"
+    },
+    {
+      "name": "every quoted statement and title is the pinned source text, verbatim",
+      "passed": true,
+      "detail": "all verbatim"
+    },
+    {
+      "name": "every cited Test ID is in the official run, and every count is recomputed from the raw records",
+      "passed": true,
+      "detail": "1133 citations re-derived"
+    },
+    {
+      "name": "support levels follow the rules (evidenced only with no deficient or gap record; Part 11 and Attest's activities at most partial; not mapped cites nothing)",
+      "passed": true,
+      "detail": "all within the rules"
+    },
+    {
+      "name": "no mapping text claims compliance, validation, certification or independence",
+      "passed": true,
+      "detail": "clean"
+    },
+    {
+      "name": "every Test ID named in the prose exists in the official run",
+      "passed": true,
+      "detail": "all resolve"
+    },
+    {
+      "name": "the CSA note is one page, names the four gaps, and its limitations are longer than its claims",
+      "passed": true,
+      "detail": "claims 137 words, limitations 275, total 520"
+    },
+    {
+      "name": "every record carries a known verdict (not_measured is never counted as effective)",
+      "passed": true,
+      "detail": "345 records"
+    }
+  ]
+}

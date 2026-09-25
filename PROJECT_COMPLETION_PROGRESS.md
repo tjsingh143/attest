@@ -58,8 +58,8 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 | WP5 findings / guidance (A1) | **COMPLETE (generated)** — FINDINGS.md, CP4_PACKET.md, evidence/runs/20260925T014011Z-5695a4c3df2d/wp5/ | 4 findings, 4 informational, 2 limitations — D3.57 |
 | **CP4** | **APPROVED by the author 2026-09-25** (reply recorded verbatim, `rubric/cp4-author-response.json`; D3.59) | narratives `user_reviewed_ai_draft` (A2); J3 applied: 13 in scope / 3 excluded / wallets conditional |
 | Amendment A2 | **RECORDED** (brief, D3.58, CHECKPOINTS) | prospective; CP5 separate interaction waived |
-| WP6 framework mapping | IN PROGRESS | |
-| **CP5** | to be recorded as SUPERSEDED by A2 (never "approved") | |
+| WP6 framework mapping | **COMPLETE** — study exercise; 16 entries (1 evidenced, 14 partial, 1 not mapped); `validate-wp6` 9/9 | D3.60; sources pinned in `rubric/framework-sources.json` |
+| **CP5** | **SUPERSEDED by Amendment A2** (not approved; `CP5_RECORD.md`) | separate author interaction waived prospectively |
 | WP7 reporting / dashboard | NOT STARTED | |
 | Reproducibility audit | NOT STARTED | |
 | Adversarial review | NOT STARTED | |
@@ -67,7 +67,7 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 
 ## Current phase
 
-**CP4 answered and approved (2026-09-25); Amendment A2 recorded; WP6 in progress.** No further
+**CP4 approved (2026-09-25); A2 recorded; WP6 complete; CP5 superseded by A2; WP7 in progress.** No further
 routine stops (A2). The CP4 stop that stood here is kept below as history.
 
 ## Commands and results
@@ -112,6 +112,10 @@ routine stops (A2). The CP4 stop that stood here is kept below as history.
 | 2026-09-25 | A2 recorded (brief + D3.58); reply recorded verbatim (`rubric/cp4-author-response.json`); narratives copied programmatically (`user_reviewed_ai_draft`); J14 → `rubric/official-runs.json`; J3/J4 applied per resource → `rubric/wp5-audit-scope.json` (catalog reads: ledger DELETE allowed for server roles; commands cascade on account deletion) | D3.59 |
 | 2026-09-25 | `wp5` (new checks `checkCp4Record`, `checkAuditScope`) | written, 0 problems; same ranking A1–C2; FINDINGS.md + CP4 record byte-identical across two regenerations |
 | 2026-09-25 ~22:03 UTC | DB re-checked (unchanged, no foreign sessions) → `bringup` (47.6 s), `seed-extensions` (37/37), `prove-gates` | **76/76** caught, **6/6** controls, restored (new: CP4 record ×6, audit scope ×4, control: real store) |
+| 2026-09-25 | commit `7da6262` pushed (CP4 applied, A2 recorded) | HEAD = origin/main |
+| 2026-09-25 | `framework-sources` (network: NIST OSCAL 5.2.0, eCFR as of 2026-09-22, FDA CSA PDF) | verbatim texts + sha256 in `rubric/framework-sources.json` |
+| 2026-09-25 | `wp6` | 16 entries written; independent `validate-wp6` **9/9**; CSA note 520 words (claims 137 < limitations 275); `CP5_RECORD.md` = superseded |
+| 2026-09-25 | `prove-gates` | **80/80** caught, **7/7** controls, restored (new: WP6 mapping ×8, CSA note, validate-wp6 ×6, claims lint ×10) |
 
 ## Evidence generated in this mission
 

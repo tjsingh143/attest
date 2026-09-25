@@ -370,6 +370,29 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       if (!r.ok) process.exitCode = 1;
       break;
     }
+    case "wp6": {
+      // WP6: the framework mapping (a study exercise), the CSA note and the CP5 record (D3.60).
+      console.log("WP6 — framework mapping, a study / control-mapping exercise (not compliance, validation or audit)");
+      const { runWp6 } = await import("./wp6-run.ts");
+      if (!(await runWp6((m) => console.log(m))).ok) process.exitCode = 1;
+      break;
+    }
+    case "validate-wp6": {
+      const { validateWp6 } = await import("./wp6-validate.ts");
+      const { loadOfficialRuns } = await import("./wp5-run.ts");
+      const v = await validateWp6((await loadOfficialRuns()).wp3);
+      for (const c of v.checks) console.log(`  ${c.passed ? "ok  " : "FAIL"} ${c.name}\n       ${c.detail.slice(0, 300)}`);
+      console.log(`\n  VALIDATION ${v.passed ? "PASSED" : "FAILED"} — ${v.checks.filter((c) => c.passed).length} of ${v.checks.length}`);
+      if (!v.passed) process.exitCode = 1;
+      break;
+    }
+    case "framework-sources": {
+      // WP6's quoted framework texts, fetched from NIST's OSCAL catalog and the eCFR (D3.60).
+      console.log("framework sources (network: NIST, eCFR, FDA) → rubric/framework-sources.json");
+      const { writeFrameworkSources } = await import("./framework-sources.ts");
+      await writeFrameworkSources((m) => console.log(m));
+      break;
+    }
     case "verify-finding": {
       // The mechanical re-verification of one WP5 item against a future run (D3.57).
       const key = process.argv.slice(3).find((a) => !a.startsWith("--"));

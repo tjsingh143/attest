@@ -70,10 +70,14 @@ import { loadValidationInputs, validateLoaded } from "./wp3-validate-results.ts"
 import { resetFailurePhase } from "./bringup.ts";
 import { buildWp5, checkAuditScope, checkCp4Record, checkGrouping, loadAuditScope, loadCp4Response, loadNarratives, verifyItem } from "./wp5-findings.ts";
 import { loadOfficialRuns } from "./wp5-run.ts";
+import { computeFacts, loadEvidence } from "./evidence-facts.ts";
+import { buildCsaNote, buildEntries, checkCsaNote, checkMappings, loadSources } from "./wp6-mapping.ts";
+import { validateWp6Loaded } from "./wp6-validate.ts";
+import { lintClaims } from "./claims-lint.ts";
 import { WP5_ITEMS } from "./wp5-guidance.ts";
 import type { Inventory } from "./inventory.ts";
 import { readdir, readFile } from "node:fs/promises";
-import { RUNS_ROOT } from "./config.ts";
+import { ATTEST_ROOT, RUNS_ROOT } from "./config.ts";
 import { FIXTURES } from "../rubric/fixtures.ts";
 
 const run = promisify(execFile);
@@ -1237,6 +1241,104 @@ export async function runInjections(
         });
       }
     }
+  }
+
+  // ------------------------------------------------------------------
+  // 7e-ter. WP6 (D3.60): the framework mapping is held to the evidence, the
+  //     pinned source texts and the overclaiming rules — by the generator's
+  //     checks and, separately, by the independent validator
+  // ------------------------------------------------------------------
+  {
+    const ev6 = await loadEvidence();
+    const f6 = computeFacts(ev6);
+    const src6 = await loadSources();
+    const entries = buildEntries(ev6, f6, src6);
+    const real = checkMappings(entries, ev6.records, src6);
+    push({
+      defect: "(control) the real framework mapping against the official evidence and the pinned sources",
+      gate: "wp6: every mapping is borne out by its evidence",
+      caught: real.length === 0,
+      firedCheck: real.length === 0 ? "no problem" : `FALSE ALARM: ${real[0]}`,
+      consequence: real.length === 0 ? "the mapping is written" : "a false alarm would block WP6",
+      control: true,
+    });
+    type E = (typeof entries)[number];
+    const w = (key: string, f: (e: Record<string, any>) => void): string[] => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const copy = clone(entries) as unknown as Record<string, any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+      f(copy.find((e) => e.key === key)!);
+      return checkMappings(copy as unknown as E[], ev6.records, src6);
+    };
+    const cases: [string, string[]][] = [
+      ["AC-3 cites a Test ID that is not in the run", w("NIST:AC-3", (e) => { e.evidence.testIds = [...e.evidence.testIds, "F1.public_blocks.999"]; })],
+      ["AC-6, which cites 5 deficient records, raised to evidenced", w("NIST:AC-6", (e) => { e.support = "evidenced"; })],
+      ["a Part 11 provision raised to evidenced", w("P11:11.10(d)", (e) => { e.support = "evidenced"; })],
+      ["§11.300 (not mapped) given evidence", w("P11:11.300", (e) => { e.evidence.artifacts = [{ artifact: "wp1-validation", summary: "x" }]; })],
+      ["one word of AC-3's quoted control statement changed", w("NIST:AC-3", (e) => { e.statement = [String(e.statement[0]).replace("Enforce", "Encourage")]; })],
+      ["AC-3's verdict counts altered by one", w("NIST:AC-3", (e) => { e.evidence.counts = { ...e.evidence.counts, effective: e.evidence.counts.effective + 1 }; })],
+      ["\"Arc21 is compliant with AC-3.\" added to AC-3's rationale", w("NIST:AC-3", (e) => { e.demonstrates = [...e.demonstrates, "Arc21 is compliant with AC-3."]; })],
+      ["a rationale relabelled as the author's", w("NIST:AU-2", (e) => { e.provenance = "user_authored"; })],
+    ];
+    push({
+      defect: `the WP6 mapping broken eight ways: ${cases.map((c) => c[0]).join("; ")}`,
+      gate: "wp6: citations exist, counts are the records', support follows the rules, quotes are verbatim, no overclaiming, rationale labelled AI-drafted",
+      caught: cases.every(([, f]) => f.length > 0),
+      firedCheck: cases.map(([what, f]) => `${what}: ${f.length ? `refused (${f[0]!.slice(0, 70)})` : "NOT REFUSED"}`).join("; "),
+      consequence: "WP6 REFUSED → exit 1; nothing is written",
+    });
+    const note = buildCsaNote(f6, src6);
+    const shortened = { ...note, limitations: note.limitations.split("\n").slice(0, 2).join("\n") };
+    const noteReal = checkCsaNote(note), noteBad = checkCsaNote({ ...shortened, markdown: note.markdown.replace(note.limitations, shortened.limitations) });
+    push({
+      defect: "the CSA note with its limitations cut to two items (shorter than its claims, gaps unnamed); control: the real note",
+      gate: "wp6: the CSA note is one page, names the four gaps, and its limitations are longer than its claims",
+      caught: noteReal.length === 0 && noteBad.length > 0,
+      firedCheck: `real note: ${noteReal.length ? `FALSE ALARM (${noteReal[0]})` : "no problem"}; shortened: ${noteBad.length ? `refused (${noteBad[0]!.slice(0, 90)})` : "NOT REFUSED"}`,
+      consequence: "WP6 REFUSED → exit 1",
+    });
+
+    // The independent validator, on the written files and on tampered copies of them.
+    let mapping: Record<string, any> | null = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+    let noteMd = "";
+    try {
+      mapping = JSON.parse(await readFile(join(ATTEST_ROOT, "framework-mapping.json"), "utf8"));
+      noteMd = await readFile(join(ATTEST_ROOT, "CSA_NOTE.md"), "utf8");
+    } catch { /* not generated yet */ }
+    const srcRaw = JSON.parse(await readFile(join(ATTEST_ROOT, "rubric", "framework-sources.json"), "utf8"));
+    if (!mapping) {
+      push({ defect: "validate-wp6 on the written mapping", gate: "validate-wp6", caught: false, firedCheck: "NO WRITTEN MAPPING TO TEST — run attest wp6 first", consequence: "unproven" });
+    } else {
+      const vReal = validateWp6Loaded(mapping, noteMd, srcRaw, ev6.records);
+      const tam = (f: (m: Record<string, any>) => void, n = noteMd) => { const m2 = clone(mapping!); f(m2); return validateWp6Loaded(m2, n, srcRaw, ev6.records); }; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const at = (m: Record<string, any>, key: string) => (m.mappings as Record<string, any>[]).find((e) => e.key === key)!; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const vCases: [string, { passed: boolean; checks: readonly { passed: boolean; name: string }[] }][] = [
+        ["a selector's Test ID list padded with a record of another family", tam((m) => { at(m, "NIST:AU-3").evidence.selectors[0].testIds.push("F1.public_blocks.022"); })],
+        ["AC-24 counts one deficient record fewer", tam((m) => { const e = at(m, "NIST:AC-24"); e.evidence.counts.deficient -= 1; e.evidence.counts.effective += 1; })],
+        ["SI-7 raised to evidenced", tam((m) => { at(m, "NIST:SI-7").support = "evidenced"; at(m, "NIST:SI-7").evidence.counts.not_measured = 0; })],
+        ["a quoted Part 11 paragraph reworded", tam((m) => { at(m, "P11:11.10(e)").statement = ["(e) Use of audit trails."]; })],
+        ["AU-9 says \"the harness is a validated tool\"", tam((m) => { at(m, "NIST:AU-9").limitations.push("The harness is a validated tool."); })],
+        ["the CSA note's limitations reduced to one line", tam(() => undefined, noteMd.replace(/## What it would not cover[\s\S]*$/, "## What it would not cover\n\n1. Scope.\n"))],
+      ];
+      push({
+        defect: `validate-wp6: control (the written files), then tampered six ways: ${vCases.map((c) => c[0]).join("; ")}`,
+        gate: "validate-wp6 re-derives every citation and count from the raw records, and checks quotes, support rules, claims and the CSA note itself",
+        caught: vReal.passed && vCases.every(([, v]) => !v.passed),
+        firedCheck: `written files: ${vReal.passed ? "passed" : `FALSE ALARM (${vReal.checks.find((c) => !c.passed)?.name})`}; ` + vCases.map(([what, v]) => `${what}: ${v.passed ? "NOT REFUSED" : `refused by "${v.checks.find((c) => !c.passed)!.name.slice(0, 60)}"`}`).join("; "),
+        consequence: "validate-wp6 exits 1; CP5 is recorded as NOT validated",
+      });
+    }
+
+    // The overclaiming lint itself.
+    const refuse = ["Arc21 is Part 11 compliant.", "The harness is a validated tool.", "This was an independent audit of Arc21.", "The author has GxP experience.", "Arc21 meets AC-3 in full."];
+    const allow = ["This is not regulatory compliance.", "It is not an independent audit.", "validate-wp3 passed 19 of 19 checks.", "No statement here claims that Arc21 meets any control.", "Harness validation (WP1) detected 5 of 5 breaks."];
+    const refused = refuse.filter((x) => lintClaims(x, "probe").length > 0).length;
+    const allowed = allow.filter((x) => lintClaims(x, "probe").length === 0).length;
+    push({
+      defect: `the overclaiming lint given ${refuse.length} claims it must refuse and ${allow.length} honest sentences it must let through`,
+      gate: "claims lint (brief §7): a compliance, validation, certification or independence claim needs a negation in the same sentence",
+      caught: refused === refuse.length && allowed === allow.length,
+      firedCheck: `refused ${refused} of ${refuse.length}; let through ${allowed} of ${allow.length}`,
+      consequence: "an overclaiming sentence stops WP6 and WP7",
+    });
   }
 
   // ------------------------------------------------------------------

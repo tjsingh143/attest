@@ -45,7 +45,7 @@ detect.
 | — | **Gate A** — every author decision before WP3 execution | **answered by the author 2026-09-24 (~20:00 UTC) and applied** (D3.54; `rubric/wp3-gate-a-decisions.json`) | 2026-09-24 |
 | — | WP3 **execution**: running the 345 tests | **executed** — run `20260925T014011Z-5695a4c3df2d` is the result; two earlier runs kept as superseded / aborted records (D3.55) | 2026-09-25 |
 | **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | **approved by the author** — the author's CP4 reply, recorded verbatim in `rubric/cp4-author-response.json` (D3.59). The narratives in it are AI-assisted wording the author reviewed and adopted (Amendment A2), not the author's independent composition | 2026-09-25 (presented; answered the same day) |
-| **CP5** | after WP6 — framework mapping and limitations | not reached — **its separate author interaction is waived prospectively by Amendment A2** (below); it will be recorded as superseded, never as approved | — |
+| **CP5** | after WP6 — framework mapping and limitations | **superseded by Amendment A2** — separate human-authorship and approval interaction waived prospectively by the author; framework mapping and limitations generated and independently validated (9 of 9) with explicit AI-assisted provenance (`CP5_RECORD.md`, D3.60). **Not approved by the author** — the author did not separately review this package | 2026-09-25 |
 
 WP3 planning is not one of the brief's five checkpoints. It is recorded here because the
 matrix is frozen in the same sense the tiers are: the executor implements it rather than
@@ -275,6 +275,27 @@ The author answered CP4 on 2026-09-25 (about 17:30 UTC) in the format of `CP4_PA
 
 **What the approval does not mean** — in the author's words: Arc21 was remediated; findings were
 fixed; findings were closed; remediation was independently verified. None of those happened.
+
+## 2026-09-25 — WP6 generated; CP5 superseded by Amendment A2
+
+WP6 mapped the evidence to NIST SP 800-53 Rev. 5 and four 21 CFR Part 11 provisions **as a study
+exercise** (`FRAMEWORK_MAPPING.md`, `framework-mapping.json`, `CSA_NOTE.md`; D3.60). Quoted texts come
+verbatim from the primary sources (NIST's OSCAL catalog, the eCFR); every rationale is AI-drafted and
+labelled so; every count is computed from the official run.
+
+| | |
+|---|---|
+| Entries | 16 — 13 from the brief's list and 3 added (AU-9, CA-2, CA-7); **1 evidenced** (AC-3, tested paths only), **14 partial**, **1 not mapped** (§11.300) |
+| CSA note | one page; limitations (275 words) longer than claims (137); the brief's four gaps named |
+| Independent validation | `validate-wp6`: **9 of 9** |
+| prove-gates | **80/80** injected defects caught, 7/7 controls held |
+| CP5 | **superseded by Amendment A2** — not approved; `CP5_RECORD.md` |
+
+**Why CP5 differs from the brief's workflow.** The brief made CP5 a stop at which the author would
+explain the mapping in their own words and approve it. Amendment A2 (the author, 2026-09-25) waived
+that interaction prospectively and permitted AI-drafted rationale with honest labels. So the package
+was generated and validated without a stop, and the checkpoint is recorded as *superseded*. Writing
+"approved" here would record a decision the author never made.
 
 ## Candidate findings on the table (smoke, not WP3 results) — superseded by the WP3 result
 
