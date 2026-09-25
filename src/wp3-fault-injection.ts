@@ -68,6 +68,8 @@ import { readAppliedState, readSchemaVersion, unbuiltInstanceReason } from "./sc
 import { diffInventories, diffResults, type ResultPoint } from "./wp4-drift.ts";
 import { loadValidationInputs, validateLoaded } from "./wp3-validate-results.ts";
 import { resetFailurePhase } from "./bringup.ts";
+import { checkGrouping, verifyItem } from "./wp5-findings.ts";
+import { WP5_ITEMS } from "./wp5-guidance.ts";
 import type { Inventory } from "./inventory.ts";
 import { readdir, readFile } from "node:fs/promises";
 import { RUNS_ROOT } from "./config.ts";
@@ -241,7 +243,7 @@ export async function runInjections(
   await planGate("one Test ID bundles two probes (delete, then truncate)", "semantic validator: one probe per row",
     /semantic/, (p) => { tests(p)[0] = { ...p.tests[0]!, operation: "delete from public.wallets, then truncate public.wallet_ledger" }; });
   await planGate("one Test ID names two execution identities", "semantic validator: one identity per row; identity consistency",
-    /semantic|identity agrees/, (p) => { const i = idx(p, (t) => t.identity === "authenticated:carol" && t.family.startsWith("F1")); tests(p)[i] = { ...p.tests[i]!, identity: "authenticated:carol and as authenticated:bob" }; });
+    /semantic|identity agrees/, (p) => { const i = idx(p, (t) => t.identity === "authenticated:carol" && t.family.startsWith("F1 ")); tests(p)[i] = { ...p.tests[i]!, identity: "authenticated:carol and as authenticated:bob" }; });
   await planGate("an F5 row's caller metadata reverts to alice while its operation names carol (the C1 defect)", "preflight: identity agrees with operation / expected / executor (C1); identities match the manifest",
     /identity agrees|C1|identities and fixtures/, (p) => { const i = idx(p, (t) => t.testId.startsWith("F5.get_room_state")); tests(p)[i] = { ...p.tests[i]!, identity: "authenticated:alice" }; });
   await planGate("a row names a fixture that does not exist", "preflight: implemented Test IDs equal planned Test IDs (derivation)",
@@ -250,7 +252,7 @@ export async function runInjections(
       tests(p)[i] = { ...p.tests[i]!, operation: p.tests[i]!.operation.replace("fixtures.bob.id", "fixtures.nosuchfixture.id") };
     });
   await planGate("an approved expectation no claim template covers (an unknown custom expectation)", "preflight: [R1] every claim has an evaluator; every row binds",
-    /\[R1\]|binds/, (p) => { const i = idx(p, (t) => t.polarity === "negative" && t.family.startsWith("F1")); tests(p)[i] = { ...p.tests[i]!, expected: "the attacker is politely discouraged" }; });
+    /\[R1\]|binds/, (p) => { const i = idx(p, (t) => t.polarity === "negative" && t.family.startsWith("F1 ")); tests(p)[i] = { ...p.tests[i]!, expected: "the attacker is politely discouraged" }; });
   await planGate("a required fixture has no implementation (tournament_alice_bob_match removed)", "preflight: every required seed extension has an implementation",
     /seed extension/, () => {}, SEED_EXTENSION_IMPLS.filter((i) => i.key !== "tournament_alice_bob_match"));
   await planGate("a required fixture is implemented with the wrong scope (a probe-scoped setup made baseline)", "preflight: every required seed extension has an implementation of the same scope",
@@ -428,13 +430,13 @@ export async function runInjections(
     });
   };
   {
-    const p = findP((x) => x.spec.kind === "sql" && x.t.polarity === "negative" && x.t.family.startsWith("F1") && x.binding.premises.some((c) => c.id === "subject") && /career_attempts/.test(x.t.resource), "an F1 career_attempts negative");
+    const p = findP((x) => x.spec.kind === "sql" && x.t.polarity === "negative" && x.t.family.startsWith("F1 ") && x.binding.premises.some((c) => c.id === "subject") && /career_attempts/.test(x.t.resource), "an F1 career_attempts negative");
     const sub = p.binding.premises.find((c) => c.id === "subject")!;
     await liveGate(`${p.t.testId}: the rows the negative probes are absent (a vacuous "no data")`, "preflight: [R5/R2 live] every subject premise holds", [p],
       async (a) => { await a.query(`delete from public.career_attempts where user_id <> $1`, [A]); void sub; }, "premises");
   }
   {
-    const p = findP((x) => x.t.family.startsWith("F1") && x.t.polarity === "positive" && x.binding.premises.some((c) => /alice's live seat/.test(c.describe)), "an F1 positive resting on alice's live seat");
+    const p = findP((x) => x.t.family.startsWith("F1 ") && x.t.polarity === "positive" && x.binding.premises.some((c) => /alice's live seat/.test(c.describe)), "an F1 positive resting on alice's live seat");
     await liveGate(`${p.t.testId}: a positive's prerequisite is invalid (alice's seat has been left)`, "preflight: [R5] every positive's premise holds", [p],
       async (a) => { await a.query(`update public.game_session_seats set status = 'left' where user_id = $1 and game_session_id = $2`, [A, FIXTURES.session.value]); }, "premises");
   }
@@ -983,7 +985,14 @@ export async function runInjections(
         inv.resources.push({ resource: "public.attest_injected", schema: "public", name: "attest_injected", kind: "table", owner: "postgres", rlsEnabled: false, rlsForced: false, policyCount: 0, reachableBy: { anon: ["SELECT"] }, columnReachableBy: {}, writeGuards: [] });
         inv.controls.push({ resource: "public.attest_injected", resourceKind: "table", controlKind: "rls_enabled", controlId: "public.attest_injected#rls_enabled", present: false, detail: { rls_enabled: false }, declaredIntent: null });
         inv.observations.push({ resource: "public.attest_injected", kind: "rls_disabled_and_reachable", detail: "injected" });
-      }, (d) => d.counts.newUnprotectedResources === 1 && d.newResources[0]?.resource === "public.attest_injected"],
+      }, (d) => d.counts.newUnprotectedResources === 1 && d.counts.newUnprotectedReachable === 1 && d.newResources[0]?.resource === "public.attest_injected"],
+      ["a table added with row-level security off and NO client grant (Arc21's default privileges since 2026-09-04)", (inv) => {
+        inv.resources.push({ resource: "public.attest_injected_ungranted", schema: "public", name: "attest_injected_ungranted", kind: "table", owner: "postgres", rlsEnabled: false, rlsForced: false, policyCount: 0, viewSecurityInvoker: null, reachableBy: {}, columnReachableBy: {}, writeGuards: [] });
+      }, (d) => d.counts.newUnprotectedResources === 1 && d.counts.newUnprotectedReachable === 0 && d.newResources[0]?.clientReachable === false],
+      ["an existing table's row-level security switched off", (inv) => {
+        const r = inv.resources.find((x) => x.kind === "table" && x.rlsEnabled === true)!;
+        r.rlsEnabled = false;
+      }, (d) => d.newlyExposed.length === 1 && d.newlyExposed[0]!.lostRowControl === true],
       ["a policy's USING expression replaced with true", (inv) => {
         const c = inv.controls.find((x) => x.controlKind === "policy")!;
         c.detail = { ...(c.detail as Record<string, unknown>), using_expr: "true" };
@@ -1008,7 +1017,7 @@ export async function runInjections(
     const tr = diffResults(pts([["T.1", "effective"], ["T.2", "deficient"], ["T.3", "effective"], ["T.4", "effective"]]), pts([["T.1", "deficient"], ["T.2", "effective"], ["T.3", "effective"], ["T.5", "effective"]]));
     const trOk = tr.counts["pass → fail"] === 1 && tr.counts["fail → pass"] === 1 && tr.counts["unchanged"] === 1 && tr.counts["only in the earlier run"] === 1 && tr.counts["only in the later run"] === 1;
     push({
-      defect: "WP4: a table added with no control, a policy's USING replaced with true, a policy removed, a grant widened — and one pass→fail, one fail→pass, and a probe incompatible with one state",
+      defect: "WP4: a table added with no control (reachable, and unreachable), an existing table's RLS switched off, a policy's USING replaced with true, a policy removed, a grant widened — and one pass→fail, one fail→pass, and a probe incompatible with one state",
       gate: "wp4 drift: each change lands in exactly its class; a probe a state could not run is never a pass or a failure",
       caught: got.every((g) => g.ok) && trOk,
       firedCheck: `${got.map((g) => `${g.what}: ${g.ok ? "classified" : `MISCLASSIFIED ${JSON.stringify(g.counts)}`}`).join("; ")}; transitions ${JSON.stringify(tr.counts)}`,
@@ -1103,6 +1112,59 @@ export async function runInjections(
       firedCheck: `migration failure → ${a.retryable ? "RETRIED" : "not retried"} (${a.phase}); restart failure → ${b.retryable ? "retried" : "NOT RETRIED"} (${b.phase})`,
       consequence: "a broken migration stops the run at once; a slow container is retried at most twice",
     });
+  }
+
+  // ------------------------------------------------------------------
+  // 7e. WP5 (D3.57): the AI-drafted items are held to the evidence, and a
+  //     future fix is confirmed only by the right verdicts with no regression
+  // ------------------------------------------------------------------
+  {
+    let official: Record<string, any>[] | null = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+    let officialRun = "";
+    for (const d of (await readdir(RUNS_ROOT)).sort().reverse()) {
+      try {
+        const f = JSON.parse(await readFile(join(RUNS_ROOT, d, "wp3-results.json"), "utf8")) as { meta?: { aborted?: unknown }; records?: Record<string, unknown>[] };
+        if (!f.meta?.aborted && (f.records?.length ?? 0) === ctx.manifest.rows.length) { official = f.records as Record<string, any>[]; officialRun = d; break; } // eslint-disable-line @typescript-eslint/no-explicit-any
+      } catch { /* next */ }
+    }
+    const inv = JSON.parse(await readFile(join(RUNS_ROOT, "20260922T234324Z-5695a4c3df2d", "inventory.json"), "utf8")) as { observations: Record<string, unknown>[] };
+    if (!official) {
+      push({ defect: "WP5 grouping and verify-finding", gate: "wp5", caught: false, firedCheck: "NO COMPLETE WP3 RUN TO TEST AGAINST", consequence: "unproven" });
+    } else {
+      const base = new Set(checkGrouping(WP5_ITEMS, official, inv.observations));
+      const fresh = (recs: Record<string, unknown>[]) => checkGrouping(WP5_ITEMS, recs, inv.observations).filter((x) => !base.has(x));
+      const lb = official.findIndex((r) => r.testId === "F5.leaderboard_weekly_xp.271");
+      const eff = official.findIndex((r) => r.verdict === "effective" && String(r.testId).startsWith("F1."));
+      const cases: [string, (rs: Record<string, any>[]) => void][] = [ // eslint-disable-line @typescript-eslint/no-explicit-any
+        ["an effective record turned deficient, belonging to no item", (rs) => { rs[eff] = { ...rs[eff], verdict: "deficient", observation: "not_as_predicted" }; }],
+        ["a leaderboard record the item calls deficient turned effective", (rs) => { rs[lb] = { ...rs[lb], verdict: "effective", observation: "as_predicted" }; }],
+        ["a supporting record (anonymous leaderboard call) turned deficient", (rs) => { const i = rs.findIndex((r) => r.testId === "F5.leaderboard_weekly_xp.272"); rs[i] = { ...rs[i], verdict: "deficient" }; }],
+      ];
+      const got = cases.map(([what, mutate]) => { const rs = clone(official!); mutate(rs); const f = fresh(rs); return { what, ok: f.length > 0, f }; });
+      push({
+        defect: `WP5 over the newest complete run (${officialRun}), broken three ways: ${cases.map((c) => c[0]).join("; ")}`,
+        gate: "wp5: every non-effective record belongs to exactly one item, with the verdict its prose assumes, and the records it calls holding hold",
+        caught: got.every((g) => g.ok),
+        firedCheck: got.map((g) => `${g.what}: ${g.ok ? `refused (${g.f[0]!.slice(0, 90)})` : "NOT REFUSED"}`).join("; "),
+        consequence: "WP5 REFUSED → exit 1; FINDINGS.md is not written",
+      });
+      const spec = WP5_ITEMS.find((s) => s.key === "leaderboards-private-identity")!;
+      const same = verifyItem(spec, official, official, true);
+      const fixed = clone(official).map((r) => (spec.select({ testId: String(r.testId), family: String(r.family), resource: String(r.resource), controlId: String(r.controlId), polarity: String(r.polarity), verdict: String(r.verdict), observation: String(r.observation) }) ? { ...r, verdict: "effective" } : r));
+      const good = verifyItem(spec, official, fixed, true);
+      const regressed = clone(fixed); regressed[eff] = { ...regressed[eff], verdict: "deficient" };
+      const bad = verifyItem(spec, official, regressed, true);
+      const unvalidated = verifyItem(spec, official, fixed, false);
+      const partial = verifyItem(WP5_ITEMS.find((s) => s.key === "audit-trail-partial")!, official, official, true);
+      const ok = !same.verified && good.verified && !bad.verified && !unvalidated.verified && !partial.verified;
+      push({
+        defect: "verify-finding given: the official run itself; a candidate with the leaderboard rows effective; the same with one regression; the same unvalidated; and an item its frozen rows cannot confirm",
+        gate: "verify-finding: a fix is confirmed only by the stated verdicts, on a validated run, with no regression",
+        caught: ok,
+        firedCheck: `unchanged → ${same.verified ? "CONFIRMED" : "not confirmed"}; fixed → ${good.verified ? "confirmed" : "NOT CONFIRMED"}; fixed + regression → ${bad.verified ? "CONFIRMED" : "refused"}; unvalidated → ${unvalidated.verified ? "CONFIRMED" : "refused"}; partial-trail item → ${partial.verified ? "CONFIRMED" : "refused (frozen rows cannot confirm)"}`,
+        consequence: "a future fix is confirmed only by evidence",
+      });
+    }
   }
 
   // ------------------------------------------------------------------

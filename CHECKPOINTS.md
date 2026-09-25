@@ -37,7 +37,7 @@ detect.
 | **CP3** | after WP2 — rubric and tier assignments | **approved** | reaffirmed 2026-09-22 |
 | — | WP3 **planning**: the 345-row test matrix | **approved** | reaffirmed 2026-09-22 |
 | — | **Gate A** — every author decision before WP3 execution | **answered by the author 2026-09-24 (~20:00 UTC) and applied** (D3.54; `rubric/wp3-gate-a-decisions.json`) | 2026-09-24 |
-| — | WP3 **execution**: running the 345 tests | **authorised by the author's Gate A reply, once every gate passes** | 2026-09-24 |
+| — | WP3 **execution**: running the 345 tests | **executed** — run `20260925T014011Z-5695a4c3df2d` is the result; two earlier runs kept as superseded / aborted records (D3.55) | 2026-09-25 |
 | **CP4** | after WP5 — ranked findings, remediation guidance and verification procedures *(gate description amended 2026-09-22 by the scope change below; originally "ranked findings and remediation")* | not reached | — |
 | **CP5** | after WP6 — framework mapping and limitations | not reached | — |
 
@@ -201,7 +201,27 @@ execution once every gate passes; the next human stop is CP4, after WP5. Applied
 | `F5.register_push_token.269` | `covers` corrected to the direction the function body establishes; verdict not prejudged |
 | Gates after applying | semantic validation clean; draft quality clean; planning preflight passes (241 premises); `prove-gates` 67/67 caught, 3/3 controls held |
 
-## Candidate findings on the table (smoke, not WP3 results)
+## 2026-09-25 — WP3 executed
+
+The authorised assessment ran three times from clean committed trees; all three runs are kept,
+unedited, and only the third is the result (`DECISIONS.md` D3.55).
+
+| Run | Records | Validation | Disposition |
+|---|---:|---|---|
+| `20260924T203033Z-5695a4c3df2d` | 345 | fails 1 of 19 checks | **superseded**: three F9 records carried no read-back identity, and a heuristic defect mis-judged eleven F10 audit absences |
+| `20260925T010904Z-5695a4c3df2d` | 55 | fails (aborted) | **aborted**: a `supabase db reset` failed while the CLI restarted containers on an overloaded host |
+| `20260925T014011Z-5695a4c3df2d` | 345 | **passes all 19 checks** | **the WP3 result** |
+
+The result, by verdict: **283 effective, 19 gap, 25 characterized, 5 deficient, 13 not measured**. Arc21's fingerprint `13569cf0e2dd36c1…` was identical before
+and after every run. The findings, ranking and remediation guidance are WP5's (`FINDINGS.md`).
+
+## Candidate findings on the table (smoke, not WP3 results) — superseded by the WP3 result
+
+> **2026-09-25.** The official run settles what the smoke could only suggest: `F5.register_push_token.269`
+> and `F5.leaderboard_weekly_xp.271` are `deficient`, as are three more leaderboard functions
+> (`.273`, `.274`, `.275`); `F5.delete_own_account.283` is `effective` under the invariant the author
+> defined at Gate A. What they mean, their rank and the remediation guidance are WP5's (`FINDINGS.md`).
+> The text below is kept as it was written.
 
 > **Updated 2026-09-23.** The hardened executor's smoke reproduced the candidate below and
 > surfaced two more; D3.49 has the records. `F5.leaderboard_weekly_xp.271`: the weekly XP board

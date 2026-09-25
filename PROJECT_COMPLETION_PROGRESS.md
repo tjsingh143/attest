@@ -45,11 +45,11 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 | WP3 planning | COMPLETE, approved, frozen (345 = 63/240/42) | |
 | WP3 implementation / hardening | COMPLETE | prove-gates 64/64 at a8d8cfc |
 | **Gate A — author decisions before WP3 execution** | **COMPLETE** — answered by the author 2026-09-24 ~20:00 UTC; applied (D3.54) | 240/240 intents `user_reviewed_ai_draft`/approved; 51 frozen corrections; 13 Test IDs kept `not_measured` (C2-grant-before-trigger ×2, C5 ×11) |
-| WP3 final preflight | IN PROGRESS | |
-| WP3 execution | NOT STARTED | |
-| WP3 result validation | NOT STARTED | |
-| WP4 drift | NOT STARTED | |
-| WP5 findings / guidance (A1) | NOT STARTED | |
+| WP3 final preflight | COMPLETE | preflight + prove-gates passed before run 1 |
+| WP3 execution | **COMPLETE** — run 3 `20260925T014011Z-5695a4c3df2d` is the result | run 1 superseded (3 harness defects), run 2 aborted (reset under host load); all kept (D3.55) |
+| WP3 result validation | **PASSED 19/19** (run 3); vs run 1: only the 11 F10 rows differ, all 345 actual outcomes identical | harness `e1164c7d` = tree of `f8cc830` |
+| WP4 drift | IN PROGRESS (code committed; run next) | |
+| WP5 findings / guidance (A1) | code written, previewed (not yet run on final evidence) | |
 | **CP4** | NOT REACHED | |
 | WP6 framework mapping | NOT STARTED | |
 | **CP5** | NOT REACHED | |
@@ -60,8 +60,8 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 
 ## Current phase
 
-Phase 2 — final WP3 preflight after applying Gate A (the author's reply of 2026-09-24 authorises
-execution once every gate passes; the next human stop is CP4, after WP5).
+Phase 4 — WP3 done and validated; WP4 drift run next (states H1-009464c, H2-4f9f7a6 with probes;
+C-current, T-controlled inventory); then WP5 → CP4 (the next human stop).
 
 ## Commands and results
 
@@ -87,15 +87,31 @@ execution once every gate passes; the next human stop is CP4, after WP5).
 | 2026-09-24 ~20:21 | `preflight-wp3` (planning) | PASSED: 241 premises; 2 registrations / 13 Test IDs holding |
 | 2026-09-24 ~20:30 | `prove-gates` | first 64/66 — two injections relied on the store BEING all AI drafts (D3.37 class); fixed to inject; then **67/67** caught, 3/3 controls, state restored |
 | 2026-09-24 ~20:23–20:29 | `smoke-wp3` × 17 changed rows (NOT evidence, `.smoke/`) | 14 as_predicted, 2 blocked_contradiction (F9.321, B.344 — kept), 1 not_as_predicted (F5.269 — the candidate reproduces); `.283` classifier: 1 documented reassignment (ATSTAB → bob), 3 rows involving alice removed, 25 caller-owned rows; `.331` pre-check: live dave read 3 seats, stale token 0 |
+| 2026-09-24 20:30–21:04 | `execute-wp3 -- --confirm` (**official run 1**) | `20260924T203033Z-5695a4c3df2d`: 345 records, harness `1eda5eef` (= tree of 5163a03, 64 files), Arc21 unchanged. effective 283 / characterized 36 / gap 8 / deficient 5 / not_measured 13. Deficient: F5.269 (push token), F5.271/.273/.274/.275 (leaderboards return private account erin). 11 F10 absence rows `not_as_predicted` — Attest heuristic defect |
+| 2026-09-25 ~01:00 | `validate-wp3` run 1 | **FAILED 1 check**: F9.316/.317/.318 carry no read-back identity (executor defect). All other 18 checks pass |
+| 2026-09-25 | catalog read (read-only) | every DELETE trigger in public/private is a refusing guard (none writes a record); exactly the 11 affected resources carry one |
+| 2026-09-25 ~01:06 | `bringup`, `seed-extensions` | fresh baseline (the first prove-gates attempt failed one injection only because the DB was in post-run state after the UTC date rolled over) |
+| 2026-09-25 ~01:10 | `prove-gates` | **70/70** caught, 5/5 controls, state restored (new: F10 guard-vs-archive; WP4 detector; validator broken 10 ways) |
+| 2026-09-25 ~01:11 | commit `e28c0c6`, pushed | F9 identity fix, F10 heuristic fix, harness hash covers rubric/*.ts, validator split + injections, WP4 code, run 1 kept |
+| 2026-09-25 01:09–01:31 | `execute-wp3 -- --confirm` (official run 2) | **ABORTED** after 55 records: `supabase db reset` failed while restarting containers (host load ~20); stack intact; kept; fix = bounded retry (`f8cc830`), prove-gates 71/71 |
+| 2026-09-25 01:40–02:16 | `execute-wp3 -- --confirm` (**official run 3, the result**) | `20260925T014011Z-5695a4c3df2d`: 345 records; effective 283 / gap 19 / characterized 25 / deficient 5 / not_measured 13; harness `e1164c7d` = tree of `f8cc830`; Arc21 unchanged |
+| 2026-09-25 ~02:17 | `validate-wp3` run 3 | **PASSED 19/19**; vs run 1: exactly the 11 F10 rows differ; all 345 actualSummary identical; F9.316–.318 identities present |
+| 2026-09-25 ~02:25 | `bringup`, `seed-extensions`, `prove-gates` | **73/73** caught, 5/5 controls, restored (new: WP5 grouping ×3, verify-finding ×5, WP4 unreachable-unprotected + RLS-off cases) |
 
 ## Evidence generated in this mission
 
 - `evidence/runs/20260924T174635Z-5695a4c3df2d/` — regenerated AUTHOR INTENT worksheet (drafts only)
 - `evidence/runs/20260924T175203Z-5695a4c3df2d/` — Gate A review table (generated; drafts only)
+- `evidence/runs/20260924T201920Z-5695a4c3df2d/` — the planning run the official runs execute
+- `evidence/runs/20260924T203033Z-5695a4c3df2d/` — official WP3 run 1 (SUPERSEDED; validation FAILED 1 check; kept unedited)
+- `evidence/runs/20260925T010904Z-5695a4c3df2d/` — official WP3 run 2 (ABORTED at 55; kept unedited)
+- `evidence/runs/20260925T014011Z-5695a4c3df2d/` — **official WP3 run 3 — THE WP3 RESULT** (validation PASSED)
 
 ## Checkpoint commits in this mission
 
-(none yet)
+- `50e983b` Gate A packet · `238abd6` Gate A applied · `5163a03` protected checkout vs migration source
+- `e28c0c6` harness fixes from official run 1; WP4 code; run 1 kept as superseded record
+- `f8cc830` reset retry; run 2 (aborted) kept
 
 ## Unresolved contradictions / open author decisions
 
@@ -124,17 +140,11 @@ execution once every gate passes; the next human stop is CP4, after WP5).
 
 ## Exact next action
 
-**STOPPED at Gate A (2026-09-24), waiting for the author.** When the author answers:
-
-1. Record the answer in `rubric/wp3-gate-a-decisions.json` with `recordedFrom` (never a decision
-   the author did not make).
-2. Apply intent decisions to `rubric/author-intents.json`: accepted drafts → `user_reviewed_ai_draft`
-   / `approved`; the author's own sentences → `user_authored` / `approved`; undecided stay `ai_draft`.
-3. For each authorised contradiction correction: change the planner's emitted field, widen
-   `ApprovedCorrection.field` to the frozen field changed, list the correction in
-   `rubric/wp3-approved-matrix.json` with from/to/reason/decision, retire the registration in
-   `src/wp3-contradictions.ts`, adjust bindings/claims if the expected text changed, regenerate
-   C-category drafts if C4/C5/D-283 changed their probe, and write a DECISIONS entry.
-4. `.283` per the author's reading.
-5. typecheck → `preflight-wp3` → `prove-gates` → `preflight-wp3 --for-execution` (must pass) →
-   `execute-wp3 -- --confirm` (≈ 40–50 min) → Phase 4 validation.
+1. Commit the WP3 checkpoint (run 3 evidence, D3.55, CHECKPOINTS, README, WP4/WP5 code) and push.
+2. WP4: `npm run attest wp4 -- --wp3-run=20260925T014011Z-5695a4c3df2d --plan-run=20260924T201920Z-5695a4c3df2d`
+   (~75 min: H1 and H2 with probes); verify C-current schema = 5695a4c3…, T-controlled reports the
+   new table as no row-level control (not reachable: Arc21's default privileges since 0904);
+   then `bringup` + `seed-extensions`; finalize D3.56 (draft in scratch `d356.md`); commit; push.
+3. WP5: `npm run attest wp5 -- --wp3-run=20260925T014011Z-5695a4c3df2d --plan-run=20260924T201920Z-5695a4c3df2d --wp4-run=<wp4 run>`
+   → FINDINGS.md, CP4_PACKET.md, rubric/wp5-author-narratives.json (blank); D3.57 (draft in scratch
+   `d357.md`); CHECKPOINTS CP4 "reached — awaiting the author"; commit; push; **STOP at CP4**.

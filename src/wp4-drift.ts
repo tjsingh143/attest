@@ -10,11 +10,17 @@
  *                                grant's privileges; RLS enabled or forced; a
  *                                trigger's events or enabled state; a function's
  *                                EXECUTE grantees or definer flag
- *   new resource with no control a resource present only in the later run, which
- *                                the later inventory classifies as reachable with
- *                                row-level security off
- *   newly exposed resource       an existing resource that gains such an
- *                                observation (or anonymous reach)
+ *   new resource with no control a resource present only in the later run that
+ *                                has no row-level control: a table with row-level
+ *                                security off, or a view that does not run as its
+ *                                invoker. Whether a client role can reach it NOW is
+ *                                reported beside it, never instead of it: Arc21's
+ *                                2026-09-04 hardening stopped granting new tables to
+ *                                client roles by default, so a forgotten table may
+ *                                be unreachable today and exposed by one GRANT
+ *   newly exposed resource       an existing resource that loses its row-level
+ *                                control, or gains an unprotected observation
+ *                                (reachable with RLS off, anonymous reach)
  *   result transitions           per Test ID executed in both runs: pass → fail
  *                                (effective → deficient), fail → pass, and every
  *                                change into or out of "measured"
@@ -22,10 +28,26 @@
  * Nothing here is ranked or called a finding; WP5 decides what a change means.
  * "Pass" and "fail" are the evidence's own verdicts, never re-judged here.
  */
-import type { ControlRow, Inventory, Observation } from "./inventory.ts";
+import type { ControlRow, Inventory, Observation, ResourceRow } from "./inventory.ts";
 
 /** Observations that mean "a client can reach this with no row control". */
 export const UNPROTECTED_KINDS: ReadonlySet<string> = new Set(["rls_disabled_and_reachable", "anon_reachable", "public_grant", "view_bypasses_invoker_rls"]);
+
+const TABLE_KINDS: ReadonlySet<string> = new Set(["table", "partitioned_table"]);
+const CLIENT_ROLES: readonly string[] = ["anon", "authenticated"];
+
+/** No row-level control: a table with row-level security off, or a view that does not run as its invoker. */
+export function hasNoRowControl(r: ResourceRow): boolean {
+  if (TABLE_KINDS.has(r.kind)) return r.rlsEnabled === false;
+  if (r.kind === "view" || r.kind === "materialized_view") return r.viewSecurityInvoker !== true;
+  return false;
+}
+
+/** A client role holds a table or column privilege on it (and USAGE on its schema — the inventory's own rule). */
+export function clientReachable(r: ResourceRow): boolean {
+  return CLIENT_ROLES.some((g) => (r.reachableBy[g]?.length ?? 0) > 0) ||
+    Object.keys(r.columnReachableBy).some((k) => CLIENT_ROLES.includes(k.split(":")[0] ?? ""));
+}
 
 export interface ControlChange {
   readonly controlId: string;
@@ -39,7 +61,10 @@ export interface ControlChange {
 
 export interface ResourceDrift {
   readonly resource: string;
+  /** No row-level control (see hasNoRowControl) — the brief's "new resource appearing with no control". */
   readonly unprotected: boolean;
+  /** A client role can reach it now. */
+  readonly clientReachable: boolean;
   readonly observations: readonly Observation[];
 }
 
@@ -49,8 +74,8 @@ export interface InventoryDiff {
   readonly changed: readonly ControlChange[];
   readonly newResources: readonly ResourceDrift[];
   readonly removedResources: readonly string[];
-  /** Resources in both runs whose later observations add an unprotected kind. */
-  readonly newlyExposed: readonly { readonly resource: string; readonly gained: readonly Observation[] }[];
+  /** Resources in both runs that lose row-level control, or whose later observations add an unprotected kind. */
+  readonly newlyExposed: readonly { readonly resource: string; readonly lostRowControl: boolean; readonly gained: readonly Observation[] }[];
   readonly counts: Readonly<Record<string, number>>;
 }
 
@@ -72,18 +97,20 @@ export function diffInventories(a: Inventory, b: Inventory): InventoryDiff {
     const definition = cb.controlKind === "policy" && fields.some((f) => f === "using_expr" || f === "with_check_expr");
     changed.push({ controlId: id, resource: cb.resource, controlKind: cb.controlKind, change: definition ? "definition" : "attributes", fields, before: da, after: db });
   }
-  const resA = new Set(a.resources.map((r) => r.resource));
-  const resB = new Set(b.resources.map((r) => r.resource));
+  const rowA = new Map(a.resources.map((r) => [r.resource, r]));
+  const rowB = new Map(b.resources.map((r) => [r.resource, r]));
   const obsOf = (inv: Inventory, res: string) => inv.observations.filter((o) => o.resource === res);
-  const newResources = [...resB].filter((r) => !resA.has(r)).sort().map((r) => {
+  const newResources = [...rowB.keys()].filter((r) => !rowA.has(r)).sort().map((r) => {
+    const row = rowB.get(r)!;
     const obs = obsOf(b, r);
-    return { resource: r, unprotected: obs.some((o) => UNPROTECTED_KINDS.has(o.kind)), observations: obs };
+    return { resource: r, unprotected: hasNoRowControl(row) || obs.some((o) => UNPROTECTED_KINDS.has(o.kind)), clientReachable: clientReachable(row), observations: obs };
   });
-  const removedResources = [...resA].filter((r) => !resB.has(r)).sort();
-  const newlyExposed = [...resB].filter((r) => resA.has(r)).sort().map((r) => {
+  const removedResources = [...rowA.keys()].filter((r) => !rowB.has(r)).sort();
+  const newlyExposed = [...rowB.keys()].filter((r) => rowA.has(r)).sort().map((r) => {
     const before = new Set(obsOf(a, r).filter((o) => UNPROTECTED_KINDS.has(o.kind)).map((o) => o.kind));
-    return { resource: r, gained: obsOf(b, r).filter((o) => UNPROTECTED_KINDS.has(o.kind) && !before.has(o.kind)) };
-  }).filter((x) => x.gained.length > 0);
+    const lostRowControl = !hasNoRowControl(rowA.get(r)!) && hasNoRowControl(rowB.get(r)!);
+    return { resource: r, lostRowControl, gained: obsOf(b, r).filter((o) => UNPROTECTED_KINDS.has(o.kind) && !before.has(o.kind)) };
+  }).filter((x) => x.lostRowControl || x.gained.length > 0);
   const byKind = (xs: readonly { controlKind: string }[], label: string) =>
     Object.fromEntries(Object.entries(xs.reduce<Record<string, number>>((m, x) => ({ ...m, [x.controlKind]: (m[x.controlKind] ?? 0) + 1 }), {})).map(([k, n]) => [`${label}.${k}`, n]));
   return {
@@ -93,6 +120,7 @@ export function diffInventories(a: Inventory, b: Inventory): InventoryDiff {
       definitionChanged: changed.filter((c) => c.change === "definition").length,
       attributesChanged: changed.filter((c) => c.change === "attributes").length,
       newResources: newResources.length, newUnprotectedResources: newResources.filter((r) => r.unprotected).length,
+      newUnprotectedReachable: newResources.filter((r) => r.unprotected && r.clientReachable).length,
       removedResources: removedResources.length, newlyExposed: newlyExposed.length,
       ...byKind(added, "added"), ...byKind(removed, "removed"), ...byKind(changed, "changed"),
     },

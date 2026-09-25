@@ -348,6 +348,30 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       else if (!r.ok) process.exitCode = 1;
       break;
     }
+    case "wp5": {
+      // WP5 (Amendment A1): findings, risk prioritisation and remediation
+      // guidance, and the CP4 packet (D3.57). Writes only Attest files.
+      const arg = (k: string) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split("=")[1];
+      const wp3 = arg("wp3-run"), planRun = arg("plan-run"), wp4 = arg("wp4-run") ?? null;
+      if (!wp3 || !planRun) { console.error("usage: attest wp5 --wp3-run=<runId> --plan-run=<runId> [--wp4-run=<runId>]"); process.exitCode = 2; break; }
+      const { writeWp5 } = await import("./wp5-run.ts");
+      const r = await writeWp5({ wp3RunId: wp3, planRunId: planRun, wp4RunId: wp4, log: (m) => console.log(m) });
+      if (!r.ok) process.exitCode = 1;
+      break;
+    }
+    case "verify-finding": {
+      // The mechanical re-verification of one WP5 item against a future run (D3.57).
+      const key = process.argv.slice(3).find((a) => !a.startsWith("--"));
+      const arg = (k: string) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split("=")[1];
+      const official = arg("official"), candidate = arg("candidate");
+      if (!key || !official || !candidate) { console.error("usage: attest verify-finding <item key> --official=<runId> --candidate=<runId>"); process.exitCode = 2; break; }
+      const { verifyFindingCommand } = await import("./wp5-run.ts");
+      const v = await verifyFindingCommand(key, official, candidate);
+      for (const l of v.lines) console.log(`  ${l}`);
+      console.log(`\n  ${v.item}: ${v.verified ? "FIX CONFIRMED by the candidate run" : "NOT CONFIRMED"}`);
+      if (!v.verified) process.exitCode = 1;
+      break;
+    }
     case "gate-a-package": {
       // The Gate A review table and decision template (D3.53). Reads and writes
       // only Attest files; never approves anything.
@@ -568,7 +592,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|wp4 --wp3-run= --plan-run=|run]`);
+      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|wp4 --wp3-run= --plan-run=|\n         wp5 --wp3-run= --plan-run= [--wp4-run=]|verify-finding <item> --official= --candidate=|run]`);
       process.exitCode = 2;
   }
 }

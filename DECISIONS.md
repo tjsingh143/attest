@@ -2425,3 +2425,63 @@ INTENT" (it was counting rows that require one) and `draft-intents` called revie
 "author-written"; both now say what they count. Two planning run directories generated minutes
 earlier with the stale wording were deleted and regenerated; they were superseded output, not
 evidence of anything.
+
+---
+
+## WP3 execution
+
+### D3.55 — The official WP3 runs: three Attest-side defects found by the evidence, fixed, proven, and the assessment re-run
+
+**What happened.** The author's Gate A reply authorised execution once every gate passed. Three
+official runs followed, all from a clean committed tree, all against schema `5695a4c3df2d` and the
+same frozen matrix, and all leaving Arc21's fingerprint unchanged. All three are kept, unedited, in
+`evidence/runs/`.
+
+| Run | Harness | Records | Outcome |
+|---|---|---:|---|
+| `20260924T203033Z` | `1eda5eef` (= tree of `5163a03`) | 345 | complete; **superseded** — its own validation fails one check, and eleven verdicts came from a defective heuristic |
+| `20260925T010904Z` | tree of `e28c0c6` | 55 | **aborted** before the 56th Test ID by an infrastructure failure |
+| `20260925T014011Z` | tree of `f8cc830` | 345 | **the WP3 result**; independent validation **passes all 19 checks** |
+
+**Defect 1 — evidence completeness (found by `validate-wp3`).** The three server-side wallet
+integrity probes (`F9.316`, `.317`, `.318`) recorded no read-back session identity: their runner
+opened its own connections and never asked them who they were. The brief requires every record to
+carry the identity it ran as, and the independent validator refused the run for it. Fix: every F9
+connection reads back its identity the way every other probe's does; the concurrency probe records
+both of its connections in the notes and connection A's identity on the record.
+
+**Defect 2 — an evaluation heuristic (found by reading the eleven anomalies).** The audit-absence
+probe counted any trigger that fires on DELETE as a possible trail. Every DELETE trigger in Arc21's
+application schemas is a guard that *refuses* a delete (`*_deny_client_write`,
+`game_sessions_guard_escrow`) — verified by a catalog read on 2026-09-25: 30 such triggers, none of
+whose functions writes a record — so eleven of the seventeen absence rows came back "not as
+predicted" and were characterized instead of reported as the audit gaps they are. Fix: a DELETE
+trigger counts only if its function writes a record (`INSERT INTO`); guards are counted and reported
+separately. *Alternatives rejected:* naming the guard functions (brittle: the next guard would be
+missed) and re-planning the F10 rows (the approved prediction was right; the evaluation was wrong,
+and a planning change needs the author). *Limitation, stated:* a trigger that records by another
+route — calling a function that writes, or NOTIFY to a listener — would still be missed.
+
+**Defect 3 — infrastructure resilience (run 2).** On a host under heavy load (load average ~20;
+rebuilds took ~138 s instead of ~32 s), `supabase db reset` applied all 59 migrations and then
+failed while the CLI health-checked the restarted storage container, although the container came up
+seconds later. A read-only check found the stack intact: 59 migrations applied, no other client, the
+author's other checkout untouched. Fix: a reset that fails *after every migration applied* is
+retried at most twice, logged, and recorded in the run's `meta.resetRetries`; a failure while
+applying migrations is never retried. A retry cannot hide a bad state: every rebuild is then checked
+against the migration files, the fixtures and the canonical digests before a probe runs. *Rejected:*
+raising the CLI's health-check timeout (it lives in Arc21's `config.toml`, which Attest may not
+change) and simply re-running (the harness would stay one slow container away from losing a run).
+
+**Also changed.** The harness hash now covers `rubric/*.ts`, which the planner and executor import
+(fixture ids, F5 specifications, intent drafts, frozen ratings); runs before 2026-09-25 were hashed
+over `src/`, `sql/` and the seed only — for run 1 the rubric files were those committed at
+`5163a03`, because its tree was clean. `validate-wp3` was split into a loader and a pure check so
+`prove-gates` can break it: ten tamperings of a real results file, each refused by the check that
+owns it and naming the record. prove-gates also gained the F10 guard-versus-archive case, the WP4
+detector cases and the reset-retry classification: **73 of 73 injected defects caught, 5 of 5 controls held, real state restored**.
+
+**What did not change.** No approved row, expectation, identity, fixture or intent changed. Nothing
+was re-judged: run 1's records and validation stay exactly as written, including its failing check.
+
+**Run 1 against the result.** Per Test ID, run 3 differs from run 1 in exactly the eleven F10 rows the heuristic had mis-judged (`not_as_predicted` / `characterized` → `as_predicted` / `gap`). The recorded actual outcome of every one of the 345 probes is identical in the two runs, and F9.316–.318 now carry their read-back identities. The fixes changed how evidence is judged and recorded, not what Arc21 did. The WP3 result, by verdict: **283 effective, 19 gap, 25 characterized, 5 deficient, 13 not measured** (run `20260925T014011Z-5695a4c3df2d`, harness `e1164c7d` = the tree of `f8cc830`, 72 files).

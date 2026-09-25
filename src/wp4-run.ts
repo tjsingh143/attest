@@ -97,6 +97,8 @@ export async function checkCompatibility(admin: Session, plan: Wp3Plan, prepared
         for (const ps of p.spec.preStatements ?? []) await compile("a pre-statement", ps.sql);
         await compile("the approved statement", p.spec.statement);
       }
+      // Catalog and audit-absence probes read a relation by name: absent from this schema, they cannot be asked.
+      if (p.spec.assertSql) await compile("the catalog assertion", p.spec.assertSql);
       const b = p.binding;
       for (const c of Object.values(b.catalog)) await compile(`catalog fact ${c.id}`, c.sql);
       for (const [n, g] of Object.entries(b.guards)) {

@@ -1,11 +1,11 @@
 # Attest — access control assurance harness
 
-**Status: work in progress. WP0, WP1 and WP2 of eight are complete; WP3's test matrix is
-planned, approved and fully implemented but has not been executed.** Checkpoints CP1, CP2 and CP3
-are approved — see `CHECKPOINTS.md`. The author answered Gate A on 2026-09-24: every one of the
-240 intent statements is adopted (`user_reviewed_ai_draft`), and the approved-row contradictions
-are decided (`DECISIONS.md` D3.54). Numbers below are from a real run and are reproducible; the
-project is not finished and nothing here should be read as a completed audit.
+**Status: work in progress. WP0–WP3 of eight are complete; WP4 (drift) and WP5 (findings, risk
+prioritisation and remediation guidance) are in progress toward checkpoint CP4.** CP1, CP2 and CP3
+are approved and the author answered Gate A on 2026-09-24 (`CHECKPOINTS.md`). The approved WP3
+assessment — 345 tests — was executed on 2026-09-25: run `20260925T014011Z-5695a4c3df2d`, which
+passes independent validation (`DECISIONS.md` D3.55). Numbers below are from real runs and are
+reproducible; the project is not finished and nothing here should be read as a completed audit.
 
 **Arc21 is a read-only assessment target.** Attest reads it and rebuilds a disposable database
 from its migrations; it never modifies Arc21's code, migrations, policies, grants, tests, seed,
@@ -66,6 +66,9 @@ deterministic seed, and writes a control inventory to `evidence/runs/<run-id>/`.
 | `npm run attest apply-gate-a` | apply the author's recorded Gate A decisions — refuses unless every frozen-field change is authorised and every approval matches the exact text the author read |
 | `npm run attest validate-wp3 <run-id>` | independently re-derive every verdict and total of a WP3 results file from its raw records |
 | `npm run attest execute-wp3 -- --confirm` | run the approved WP3 suite — **refused until `preflight-wp3 --for-execution` passes**, which requires all 240 intent sentences to be the author's |
+| `npm run attest wp4 -- --wp3-run=<id> --plan-run=<id>` | WP4 drift: rebuild Arc21's earlier schema states from its git history (read-only, into `.wp4-states/`), inventory each, run the approved probes each can answer, and diff them |
+| `npm run attest wp5 -- --wp3-run=<id> --plan-run=<id> --wp4-run=<id>` | WP5: the ranked findings, remediation guidance and CP4 packet, from validated evidence only — refuses if any non-effective record would go unreported |
+| `npm run attest verify-finding <item> --official=<id> --candidate=<id>` | would a future run confirm a fix of one finding: its Test IDs at the stated verdict, the run validated, and no regression |
 
 **This is destructive — to the disposable database, and only to it.** `bringup` drops and
 rebuilds the database. The harness refuses to run against anything but a loopback address, and
@@ -101,6 +104,21 @@ scratch roles rather than asserting it against Arc21's own tables.
 Full inventory: `evidence/runs/<run-id>/inventory.md`, with the machine-readable form beside
 it in `inventory.json`.
 
+**WP3, the assessment** — 345 tests across the ten control families and the boundary cases, each
+run under a role-scoped session and recorded with its statement, identity, expectation, outcome,
+timestamp and schema version (run `20260925T014011Z-5695a4c3df2d`, validated):
+
+| Verdict | Tests | Meaning |
+|---|---:|---|
+| effective | 283 | the control held exactly as the approved row predicted |
+| gap | 19 | a control the plan asked about does not exist — 17 High-tier resources with no audit trail, 2 partial trails |
+| characterized | 25 | a recorded fact rather than a pass or fail — chiefly row-level security not forced (21 tables) and its mechanism |
+| deficient | 5 | the control was exercised and did not hold — four leaderboard functions return a private-profile player's name; `register_push_token` reassigns another account's device registration |
+| not measured | 13 | approved rows the schema makes unmeasurable, kept that way by the author's decision at Gate A |
+
+What these mean, how they rank, and what would fix them is WP5's (`FINDINGS.md`). Nothing was
+fixed: Arc21 is a read-only target.
+
 ## How you know the tests are real
 
 Before any result is worth reading, the harness has to show it can tell a working control from
@@ -134,7 +152,12 @@ The WP3 executor is held to the same standard, one level up (`DECISIONS.md` D3.3
   control surface, services, and Arc21's own fingerprint — before the next probe runs.
 - **Approved rows the system makes unmeasurable are registered, not worked around**, each with a
   live check, and recorded `not_measured` until the author decides.
-- **Every gate is proven by breaking it** (`attest prove-gates`, 66 injected defects and 3 controls).
+- **Every gate is proven by breaking it** (`attest prove-gates`: 73 injected defects and 5 controls,
+  including the independent results validator broken ten ways and the WP4/WP5 checks).
+- **The results are validated by code that does not trust the executor.** `attest validate-wp3`
+  re-derives every observation, verdict and total from the raw records with its own
+  re-implementation of the mapping; it refused the first official run for three records that
+  lacked a read-back identity (D3.55).
 - **Nothing is planned from a database that is not a build of the migration files.** The local
   Supabase stack is shared with the author's own Arc21 checkout; the planner reads the applied
   migrations first and refuses a mismatch (D3.50).
@@ -165,8 +188,10 @@ These are not caveats added at the end. They bound what the output means.
   It is not a GxP system, not a Part 11 system, and not compliant with anything.
 - **This harness is not a product.** It is one person's tool for one system. It has not been
   validated, is not used by anyone, and has not been qualified as a testing tool.
-- **The harness has produced wrong output seven times, and each is written up rather than
-  quietly fixed** (`DECISIONS.md` D0.9, D0.13, D0.14, D1.5, D1.6, D1.7, D1.13). Several
+- **The harness has produced wrong output nine times, and each is written up rather than
+  quietly fixed** (`DECISIONS.md` D0.9, D0.13, D0.14, D1.5, D1.6, D1.7, D1.13, and two in the
+  first official WP3 run, D3.55: an audit-trail heuristic that mis-judged eleven verdicts, and three
+  records missing their read-back identity). Several
   produced confident, plausible, wrong answers with nothing about the output looking amiss —
   including one that made the validation report contradict itself two paragraphs apart. That
   bears directly on how much weight any single run deserves, and it is the reason a run now
@@ -208,20 +233,7 @@ borrowed from those tools is cited where it is used.
 
 ## Not yet done
 
-**WP3 execution.** The matrix is planned, approved and frozen — 345 tests across the ten
-control families plus the boundary cases — and every row derives an executable probe with a
-claim-by-claim evaluator, premises, state guards and rebuild isolation. Every structural gate in
-`attest preflight-wp3` passes, and `attest prove-gates` catches 66 of 66 injected defects. It has
-not been run, and `attest execute-wp3` refuses to run it for exactly one reason: the intent
-statement for each of the 240 negative tests is one of the four artifacts the author writes rather
-than the harness (brief §1.1), and all 240 currently hold AI-generated drafts marked `ai_draft` /
-`unreviewed` for the author to review, correct or replace. An independent audit on 2026-09-24
-rewrote 76 of them that were wrong about their own probe (`DECISIONS.md` D3.51); they are still
-drafts.
-
-Ten approved-row contradictions (57 Test IDs) are registered for the author's decision; until
-decided, those probes run as approved and record `not_measured` (`DECISIONS.md` D3.46, D3.52).
-Every decision is collected in one packet: `WP3_AUTHOR_DECISIONS_REQUIRED.md`.
-
-Then WP4 drift detection, WP5 findings, risk prioritization and remediation guidance, WP6
-framework mapping, WP7 reporting.
+**WP4 drift detection** across Arc21's own earlier schema states, **WP5 findings** (ranked by the
+frozen WP2 tiers, with remediation guidance and exact verification procedures — no remediation) and
+checkpoint **CP4**, where the author writes the findings narrative. Then WP6 framework mapping (a
+study exercise), CP5, and WP7 reporting.

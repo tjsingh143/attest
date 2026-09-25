@@ -136,7 +136,8 @@ export function renderDriftReport(s: Summary): string {
     p(`| control definition changed (USING / WITH CHECK) | ${c.definitionChanged} |`);
     p(`| control attributes changed (command, roles, privileges, flags, grantees) | ${c.attributesChanged} |`);
     p(`| new resources | ${c.newResources} |`);
-    p(`| **new resources with no control** | **${c.newUnprotectedResources}** |`);
+    p(`| **new resources with no control** (no row-level security, or a view not run as its invoker) | **${c.newUnprotectedResources}** |`);
+    p(`| … of which a client role can reach now | ${c.newUnprotectedReachable ?? 0} |`);
     p(`| resources removed | ${c.removedResources} |`);
     p(`| existing resources newly exposed | ${c.newlyExposed} |`);
     p();
@@ -144,13 +145,13 @@ export function renderDriftReport(s: Summary): string {
     if (inv.newResources.length) {
       p("**New resources**");
       p();
-      for (const r of inv.newResources) p(`- \`${r.resource}\` — ${r.unprotected ? "**NO CONTROL**: " : "controlled: "}${r.observations.map((o: Summary) => `${o.kind} (${o.detail})`).join("; ") || "no observation"}`);
+      for (const r of inv.newResources) p(`- \`${r.resource}\` — ${r.unprotected ? `**NO ROW-LEVEL CONTROL**, ${r.clientReachable ? "reachable by a client role now" : "not reachable by any client role today (no grant): one GRANT from exposed"}` : "controlled"}${r.observations.length ? `; ${r.observations.map((o: Summary) => `${o.kind} (${o.detail})`).join("; ")}` : ""}`);
       p();
     }
     if (inv.newlyExposed.length) {
       p("**Newly exposed**");
       p();
-      for (const r of inv.newlyExposed) p(`- \`${r.resource}\` — ${r.gained.map((o: Summary) => o.kind).join(", ")}`);
+      for (const r of inv.newlyExposed) p(`- \`${r.resource}\` — ${[...(r.lostRowControl ? ["lost its row-level control"] : []), ...r.gained.map((o: Summary) => o.kind)].join(", ")}`);
       p();
     }
     const list = (title: string, xs: Summary[], f: (x: Summary) => string, max = 40) => {
