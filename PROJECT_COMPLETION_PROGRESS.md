@@ -60,15 +60,16 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 | Amendment A2 | **RECORDED** (brief, D3.58, CHECKPOINTS) | prospective; CP5 separate interaction waived |
 | WP6 framework mapping | **COMPLETE** — study exercise; 16 entries (1 evidenced, 14 partial, 1 not mapped); `validate-wp6` 9/9 | D3.60; sources pinned in `rubric/framework-sources.json` |
 | **CP5** | **SUPERSEDED by Amendment A2** (not approved; `CP5_RECORD.md`) | separate author interaction waived prospectively |
-| WP7 reporting / dashboard | NOT STARTED | |
-| Reproducibility audit | NOT STARTED | |
-| Adversarial review | NOT STARTED | |
-| Final docs / push / resume handoff | NOT STARTED | |
+| WP7 reporting / dashboard | **COMPLETE** (2026-09-26) — `reports` + independent `validate-reports` 22/22 | D3.61; prove-gates 116/116, 9/9 controls |
+| Reproducibility audit | IN PROGRESS — scratch-copy `run` REPRODUCED 6/6; fresh-clone audit after this commit | D3.61, D3.62 |
+| Adversarial review | IN PROGRESS — secrets/history clean; stale-state sweep done | D3.62 |
+| Final docs / push / resume handoff | IN PROGRESS | |
 
 ## Current phase
 
-**CP4 approved (2026-09-25); A2 recorded; WP6 complete (84fec6c); CP5 superseded by A2; WP7 IN PROGRESS — stopped at a usage limit, resumable from this file.** No further
-routine stops (A2). The CP4 stop that stood here is kept below as history.
+**WP7 complete (2026-09-26); fresh-clone reproducibility audit, final docs, push and the résumé handoff
+follow.** No further routine stops (A2). *(History: WP7 had stopped at a usage limit on 2026-09-25 and
+resumed from this file on 2026-09-26 at `75257c0`.)*
 
 ## Commands and results
 
@@ -116,6 +117,18 @@ routine stops (A2). The CP4 stop that stood here is kept below as history.
 | 2026-09-25 | `framework-sources` (network: NIST OSCAL 5.2.0, eCFR as of 2026-09-22, FDA CSA PDF) | verbatim texts + sha256 in `rubric/framework-sources.json` |
 | 2026-09-25 | `wp6` | 16 entries written; independent `validate-wp6` **9/9**; CSA note 520 words (claims 137 < limitations 275); `CP5_RECORD.md` = superseded |
 | 2026-09-25 | `prove-gates` | **80/80** caught, **7/7** controls, restored (new: WP6 mapping ×8, CSA note, validate-wp6 ×6, claims lint ×10) |
+| 2026-09-26 ~19:26 UTC | resumed from disk at `75257c0` (new context) | verified first: HEAD = origin/main; WP3 345 = 283/19/25/5/13 recomputed from the raw records; validate-wp3 19/19; WP4 all exits 0; Arc21 fingerprint `13569cf0…eaf1` unchanged; DB = Attest baseline (59 migrations, 5 Attest accounts, only platform sessions) |
+| 2026-09-26 | `wp5`, `wp6` (unchanged code) | both regenerate byte-identically |
+| 2026-09-26 ~19:35 | `prove-gates` (unchanged code) | **79/80** — one injection's precondition failed, not its gate: two date-bound fixtures stale after the UTC date change. Fixed: prove-gates refuses a stale baseline and names the cause (D3.61) |
+| 2026-09-26 ~19:40 | `bringup` (55 s with seeding), `seed-extensions`, `prove-gates` | **80/80**, 7/7 |
+| 2026-09-26 ~19:58–20:05 | `prove-gates` with the WP7 injections | 114/116 (two gaps in the validator) → fixed → 114/116, 8/9 (baseline was the stale disk) → fixed → **116/116, 9/9** (D3.61) |
+| 2026-09-26 | `reports` | `validate-reports` **22/22** |
+| 2026-09-26 | dashboard reviewed in Chrome (served on 127.0.0.1) and in headless Chrome from `file://` | fixed: Part 11 titles cut at a comma, intent provenance unlabelled, WP0 rows with a dead button, drift transitions shown as summaries, repeated labels, card layout; no page error; no horizontal scroll at 390 px; opens from disk |
+| 2026-09-26 | `.local-backups/` dumps restored into a scratch container of the same image (`attest-restore-check`, no host port) | both: exit 0, 0 errors once the two platform roles exist; container removed; shared DB untouched — `LOCAL_DATABASE.md` |
+| 2026-09-26 | secret and history scan | nothing sensitive tracked or ever added; no JWT-shaped string in history; largest blobs are evidence (≤ 1.9 MB) |
+| 2026-09-26 20:12 | `run` from a scratch copy of the working tree | **REPRODUCED** 6/6 comparisons; prove-gates 116/116; validate-reports 22/22; 53 s end to end |
+| 2026-09-26 | `validate-wp3` of the official run (scratch copy) | the committed `wp3-validation.{json,md}` reproduced byte for byte |
+| 2026-09-26 20:18 | final `prove-gates` + `reports` on the code committed next | **116/116, 9/9**; validate-reports **22/22** |
 
 ## Evidence generated in this mission
 
@@ -162,40 +175,13 @@ routine stops (A2). The CP4 stop that stood here is kept below as history.
 
 ## Exact next action
 
-*(History: CP4 applied `7da6262`; WP6 + CP5-superseded `84fec6c`, both pushed.)*
+*(History: WP7 generators were written on 2026-09-25 and left unvalidated at a usage limit; finished
+2026-09-26.)*
 
-**WP7 is in progress. Done:** generators `src/wp7-report.ts` (assurance report, one section per tier,
-all 397 controls), `src/wp7-summary.ts` (plain-language, AI-drafted, jargon list), `src/wp7-dashboard.ts`
-+ `src/dashboard/app.{css,js}` (self-contained local HTML; palette validated with the dataviz
-validator: ordinal ramp passes both modes; sub-3:1 status colours carry icon + label + table view),
-`src/wp7-readme.ts` (README generated block + splice), `src/evidence-facts.ts` (shared counts), and a
-first `npm run attest reports` that writes ASSURANCE_REPORT.md, SUMMARY.md, dashboard/index.html.
-Those three outputs were generated once and are **not yet reviewed, validated or committed**.
-
-**Remaining, in order:**
-1. `attest reports` must also chain `wp5` and `wp6` and splice the README block (add the markers
-   when rewriting README.md: status, commands incl. `framework-sources`/`wp6`/`validate-wp6`/`reports`,
-   layout, limitations, "not yet done" → done; A2 provenance statement).
-2. `src/wp7-validate.ts` + `attest validate-reports`: independent re-derivation (own counting code) of
-   every headline number in ASSURANCE_REPORT.md, SUMMARY.md, dashboard JSON and README block; claims
-   lint over every generated doc; SUMMARY jargon check (exempt the cross-reference line) and ≤ 650
-   words; regeneration byte-identical to disk.
-3. Review the three outputs by eye; render the dashboard (serve on 127.0.0.1 or open the file) and
-   look at it; fix what is wrong.
-4. prove-gates injections for validate-reports (tampered numbers, jargon, overclaiming, hand edit),
-   then `prove-gates` (DB must be at baseline: `bringup` + `seed-extensions` if in doubt).
-5. Extend `run`: fast path (bringup → inventory → WP1 → risk inputs → score → seed-extensions →
-   plan must equal the frozen matrix → compare inventory/tiers with frozen → `reports`); `--confirm`
-   adds execute-wp3 → validate-wp3 → wp4 → per-Test-ID comparison with the official run. Fix the
-   stale "WP3 is planned … NOT executed" message in `run`.
-6. D3.61 (WP7 decisions, coverage method: 222 named / 137 resource-only / 38 not exercised), CHECKPOINTS,
-   README; run the fast `run` as the reproducibility audit; fresh-clone regeneration check
-   (`ATTEST_ARC21_CHECKOUT` pointing at the protected checkout).
-7. Adversarial review (stale numbers, run ids, provenance labels, overclaiming, hashes, secrets —
-   `src/jwt.ts` holds only the Supabase CLI's documented local default, loopback only), git hygiene,
-   commit, push (no force), HEAD == origin/main.
-8. Local DB: currently an Attest baseline build (59 migrations, 5 Attest accounts, no foreign
-   sessions at 22:03 UTC). No verified restore procedure exists in the repo → leave both backups in
-   `.local-backups/` untouched and document path + state + a safe restore procedure (restore into a
-   scratch database first to verify; never over the shared DB without the author).
-9. Refresh the untracked `Attest RESUME_HANDOFF.md` with final facts; final report.
+1. Commit the WP7 work (code, generated outputs, the prove-gates record, D3.61) and push.
+2. Fresh clone of origin/main into the scratchpad: `npm ci`, typecheck, `reports` (must leave the
+   clone unchanged), `validate-reports`, then `run` with `ATTEST_ARC21_CHECKOUT` at the protected
+   checkout; copy the clone's run directory into `evidence/runs/` as the audit record.
+3. D3.62 (audit + adversarial review results), CHECKPOINTS final section, this file final; final
+   `prove-gates` / `reports` if any code changed; commit, push, HEAD == origin/main.
+4. Rewrite the untracked `Attest RESUME_HANDOFF.md` from final truth.

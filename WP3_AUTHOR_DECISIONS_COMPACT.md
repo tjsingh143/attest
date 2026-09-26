@@ -1,5 +1,10 @@
 # Gate A — compact decision sheet
 
+> **Historical — the Gate A packet as the author read it on 2026-09-24.** The author answered it the
+> same day and the decisions were applied exactly (`DECISIONS.md` D3.54); the WP3 assessment was then
+> executed on 2026-09-25 — run `20260925T014011Z-5695a4c3df2d` is the result (D3.55). The text below
+> is kept as it was presented; its "not run" and its counts describe that day.
+
 Full reasoning and evidence: `WP3_AUTHOR_DECISIONS_REQUIRED.md`. Template:
 `rubric/wp3-gate-a-decisions.json`. **Nothing below is decided; undecided = not approved.** WP3
 has not been run; preflight passes except for the intent gate; `prove-gates` 66/66; Arc21 unchanged.

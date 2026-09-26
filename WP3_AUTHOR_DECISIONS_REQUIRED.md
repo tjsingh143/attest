@@ -1,5 +1,10 @@
 # Gate A — the author's decisions before WP3 may run
 
+> **Historical — the Gate A packet as the author read it on 2026-09-24.** The author answered it the
+> same day and the decisions were applied exactly (`DECISIONS.md` D3.54); the WP3 assessment was then
+> executed on 2026-09-25 — run `20260925T014011Z-5695a4c3df2d` is the result (D3.55). The text below
+> is kept as it was presented; its "not run" and its counts describe that day.
+
 **Status, 2026-09-24.** Everything Attest can do before the WP3 assessment is done. Planning
 preflight passes on a freshly rebuilt baseline, `prove-gates` catches 66 of 66 injected defects
 with 3 of 3 controls held, and Arc21 is unchanged (fingerprint `13569cf0e2dd36c1…` before and

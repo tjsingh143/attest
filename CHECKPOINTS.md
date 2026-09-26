@@ -157,6 +157,8 @@ corrections to it listed (D3.35).
 | targeted smoke (42 + 5 probes, NOT evidence) | every family, runner and setup exercised; two harness defects found and fixed; three candidates recorded (below) |
 
 **The full 345-probe assessment has not been run**, and no WP3 counts exist. WP4 has not begun.
+*(As of 2026-09-23. Superseded: the assessment ran on 2026-09-25 — see "2026-09-25 — WP3 executed"
+below.)*
 
 **Pending the author, before execution:**
 

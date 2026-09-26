@@ -2894,3 +2894,149 @@ what the exercise is not), supplied by AI-drafted text and labelled so.
 independence gap would be stated only in prose. Without the Part 11 cap, §11.10(d) would read
 "evidenced" on the strength of a system Part 11 does not apply to. Mapping §11.300 through the
 boundary cases would have presented token-expiry behaviour as password-control evidence.
+
+---
+
+## WP7 — reporting and communication
+
+### D3.61 — Three outputs built from the evidence, checked by code that did not write them, and a `run` that says exactly what it reproduces
+
+**What was built.** `npm run attest reports` builds every generated deliverable in memory from
+persisted evidence only — no database — and writes it: FINDINGS.md and the CP4 record (WP5), the
+framework mapping, CSA note and CP5 record (WP6), and WP7's three outputs, one per audience the
+brief names:
+
+- **`ASSURANCE_REPORT.md`** — the posture in one table, the method, the WP0 inventory, the risk
+  tiers and sensitivity, the WP3 results by family and by depth, then one section per tier listing
+  every control with its frozen rating, the assurance activity RUBRIC.md Part 5 assigns, the Test IDs
+  that name it and their outcomes; functions and suite-level tests; the ranked findings with the
+  author's statuses; drift; the framework study; limitations; how to reproduce every number.
+- **`dashboard/index.html`** — one self-contained file with the evidence summary embedded as JSON:
+  it opens from disk with no server, no network and no build step. Posture first (the verdict bar
+  and a row of key figures), then effectiveness by family and by tier, coverage, findings, drift, the
+  framework study, and an evidence drill-down: select a control, see every test that names it — the
+  statement issued, the identity it ran as, what was expected, what happened, when, and the attack
+  it simulates with that sentence's provenance. Status is never carried by colour alone: every
+  verdict has an icon and a label, every chart a table view, every segment an accessible name; the
+  status palette and the one-hue coverage ramp follow the dataviz method, in light and dark.
+- **`SUMMARY.md`** — one page for a reader with no technical background, AI-drafted and labelled so.
+- **The README's numbers** live only in five generated sections between markers (status, results,
+  commands, layout, limitations); everything else in the README is prose that carries no count.
+
+*Alternatives rejected.* A served web application (the brief asks for a small local view; a server
+adds a process and a network surface to something that only reads files); a charting library
+loaded from a CDN (the page must open offline); README numbers maintained by hand (they had gone
+stale — the README said 74 injected defects when the suite had 80, and "CP4 awaiting the author"
+after the author had approved it).
+
+**Coverage, defined — and the first draft's definition rejected.** The brief asks for "percentage
+of resources with a control, and the list of those without". The first draft counted a resource as
+controlled if the inventory held any control row for it — vacuous, because every table carries an
+`rls_enabled` row by construction. The report uses WP4's definition of a row-level control (D3.56:
+row-level security on, or a view that runs as its invoker): **40 of 40**. Beside it, the brief's
+own three WP0 patterns as the frozen inventory classified them: row-level security off — none; on
+with no policy, so every client is denied and no client role holds a grant — 5; readable without an
+account — 4 (the catalogue tables, B3); granted to the anonymous role with no policy admitting it —
+1 (B4). Enabled-versus-forced is reported separately (0 of 39 forced; B1). Control-level coverage
+is by *naming*: 222 of 397 controls are named by a Test ID's control id, a mechanism it asserts or
+a function its statement calls; 137 are named by none but sit on a resource other tests exercise;
+38 are on functions no test calls — computed, not asserted: 32 SECURITY DEFINER functions no client
+role can execute and 6 execute grants on SECURITY INVOKER helpers. A named control is exercised on
+that test's path, not proven in every respect; the limitations say so.
+
+**`validate-reports` — independent re-derivation, not a second copy of the generator.** It does not
+import `evidence-facts.ts` or any renderer for a number. It re-derives with its own counting —
+families from each Test ID's prefix (not the family label the generators read), drift from the
+transition lists (not the counts stored beside them), every finding's status from the author's
+recorded CP4 reply, the prove-gates totals from the record's rows — and parses what the report, the
+summary, the dashboard's embedded data and the README's sections say. **22 checks**: the official
+runs are the author's selection, complete and validated; the WP3 counts three ways; the report, the
+summary, the dashboard (all 345 embedded records compared field by field) and the README each
+stating the evidence; WP0, WP1 and WP4 re-derived; every status the author's; the framework study's
+support levels and its caps; the prove-gates record recounted, passed, cited and current; every run
+id cited is official or listed as not a result; three lints (claims, provenance, stale state); the
+summary plain and one page; the README's hand-written text count-free; the command registry equal to
+the CLI's dispatch; every layout path present; the dashboard offline; and every file byte-identical
+to a fresh regeneration. What it shares with the generators is deliberate and small: the claims-lint
+rule set (broken separately by prove-gates), the README markers and the command registry.
+
+*The lints were wrong three ways the first time they read the real documents, and each is fixed
+rather than suppressed.* (1) A list item was judged without the line that introduces it: "This
+approval does NOT mean:" followed by "- findings were fixed;" read as a closure claim. (2) Markdown
+is hard-wrapped, so a line-by-line reading could part a claim from its negation — or hide a real
+claim from the lint; units are now paragraphs and list items. (3) NIST AC-2's verbatim "Review
+accounts for compliance…" read as a compliance claim; verbatim framework quotations are removed
+before linting, matched line for line against the pinned source text. And the existing claims lint
+refused "Nothing below was remediated by Attest" because its rule looked for a negation only after
+the phrase; it now needs a negation anywhere in the sentence, like every other rule.
+
+**prove-gates is recorded, and cited rather than typed.** `prove-gates` writes
+`evidence/prove-gates/prove-gates.{json,md}` on every run, pass or fail. The reports cite counts
+computed from its rows and the harness hash it ran on; `validate-reports` requires the record to have
+passed, every citation to match its rows, and the record to be for the harness as it is now — so any
+code change requires re-proving the gates before the reports validate. WP7 added 36 injections and
+2 controls: 28 against the report validator — every defect the completion brief listed (a wrong
+total, a moved verdict count, the superseded run cited as the result, an altered status, not
+measured counted as effective in data and in prose, stale state, AI text labelled the author's,
+remediation claimed, Arc21 called fixed, findings called closed, CP5 called approved, a hand-edited
+README number, an evidence count in hand-written prose, a tampered dashboard record, jargon, a
+padded summary, a file edited after generation, a framework overclaim in the table and in prose, a
+false pass → fail, a wrong WP1 count, "complete" while CP4 is not approved, an undocumented command,
+a network script, a miscited prove-gates count) — and 8 against the reproduction comparisons below.
+A numeric defect is written into both the on-disk and the regenerated copy (a generator bug, which
+the byte comparison cannot see), so only the independent re-derivation can catch it; a hand edit is
+written into the on-disk copy only. *Found in doing it:* the first run caught 114 of 116 — the README's
+status line was not itself checked for CP5, and the "complete while CP4 is not approved" injection
+depended on the README already saying complete instead of building that premise. With both fixed,
+the second run failed its WP7 control and two more injections, because their baseline was the disk,
+which the first run's own record had just made stale. The validator now checks the status line; the
+injection builds its premise; the baseline is what `reports` would write now. The third run caught
+116 of 116 with 9 of 9 controls held; the result on the final code is in D3.62.
+
+**prove-gates refuses a stale baseline instead of misreporting it.** On 2026-09-26 the unchanged
+suite reported 79 of 80 with one injection "NOT CAUGHT". The gate was fine: the injection's
+precondition — the real database verifies as a baseline — failed, because two fixtures are bound to
+the current UTC date (today's daily challenge and today's entries) and the baseline had been seeded
+the day before. The same class had cost a run on 2026-09-25 (PROJECT_COMPLETION_PROGRESS). prove-gates
+now verifies the baseline before any injection and refuses with the cause and the remedy
+(`bringup`, `seed-extensions`), rather than report a working gate as broken. Rebuilt, the unchanged
+suite caught 80 of 80.
+
+**`run` — what it reproduces, and how each step is checked.** The brief's one command. It rebuilds
+the disposable database from Arc21's migrations and re-derives everything that can be re-derived
+without re-running the 345 probes: the inventory, the harness validation, the risk inputs, the
+tiers, the fixtures and the WP3 plan. Each is compared with the frozen evidence the reports are
+built from (`src/reproduce.ts`, written to `reproduction.{json,md}` in the run's directory): the
+inventory in every drift class, count, role and anonymous reach; WP1 scenario by scenario, including
+what the over-privileged connections answered; every recorded risk-input field; every tier, impact,
+exposure and test count; the plan against the approved manifest and against every frozen field of
+the plan the official run executed; and the intent store against the sentences the official run
+recorded. Then it re-proves every gate on the fresh baseline and regenerates and validates every
+report. The step that drafted intent sentences is gone from `run`: all 240 were adopted at Gate A,
+and the drafting merge rewrote the store's header on every run.
+
+`run -- --confirm` re-executes the assessment as a **reproduction** — the same approved suite through
+the same executor, recorded with `kind: "WP3 reproduction"`, never a result — validates it with
+`validate-wp3` and compares it with the official run Test ID by Test ID (`compare-wp3`, also a
+command of its own); `--with-wp4` repeats WP4 against it. A reproduction is excluded from the CP4
+record's list of earlier official runs, and prove-gates and `validate-wp3` now take the official
+run and its plan from `rubric/official-runs.json` rather than "the newest complete run", which a
+reproduction would otherwise become. *Not exercised end to end:* re-executing the probes means
+rebuilding the database after every probe that changes state, and re-running an independently
+validated assessment only to show it runs was not the purpose. What stands for it: the two complete
+executions that exist — the superseded run 1 and the official run, on different days from separately
+rebuilt databases — recorded the same outcome for all 345 probes; `compare-wp3` finds them different
+only in the 11 verdicts and 3 identities D3.55 describes, which is the known answer prove-gates now
+checks it against; and every other step of `--confirm` is the function that produced or validated
+the official run.
+
+**Provenance (Amendment A2).** Every WP7 output's connecting prose, the summary, the dashboard's text
+and the report's limitations are AI-drafted and labelled so; the author's CP4 narratives appear only
+as FINDINGS.md already carries them, as `user_reviewed_ai_draft`; each attack sentence in the
+dashboard is labelled "AI-drafted intent, adopted by the author at Gate A". No AI-worded text is
+presented as the author's.
+
+**What would change.** Without the independent validator, the reports would be checked only by the
+code that wrote them — the failure D3.19 warned about. Without the recorded prove-gates result, every
+document would carry a typed count that goes stale at the next injection. Without the coverage
+definitions above, "100% of resources have a control" would be true of any inventory.

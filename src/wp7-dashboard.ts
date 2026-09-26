@@ -16,7 +16,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ATTEST_ROOT } from "./config.ts";
 import { FAMILIES, familyCode, VERDICTS, type Evidence, type Facts } from "./evidence-facts.ts";
-import { indexEvidence } from "./wp7-report.ts";
+import { frameworkLabel, indexEvidence, proveGatesLine } from "./wp7-report.ts";
+import { SUPPORT_TEXT } from "./wp6-mapping.ts";
 
 type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -70,12 +71,12 @@ export function dashboardData(ev: Evidence, f: Facts): Rec {
       s: String(r.executed?.statement ?? r.operationPlanned ?? ""),
       a: Array.isArray(r.executed?.params) && r.executed.params.length ? clip(JSON.stringify(r.executed.params), 240) : "",
       e: String(r.expectedPlanned ?? ""), x: String(r.actualSummary ?? ""), ts: String(r.timestampUtc),
-      n: r.authorIntent ? String(r.authorIntent) : "", vr: clip(r.verdictReason, 400),
+      n: r.authorIntent ? String(r.authorIntent) : "", np: r.authorIntent ? String(r.intentProvenance ?? "") : "", vr: clip(r.verdictReason, 400),
     };
   }
   const transitions = (ev.drift.diffs as Rec[])
     .filter((d) => d.from === f.wp4.states[0]?.name && d.to === "C-current")
-    .flatMap((d) => ((d.results?.transitions ?? []) as Rec[]).filter((t) => t.kind === "fail → pass").map((t) => `${t.testId} (${t.from?.summary} → ${t.to?.summary})`));
+    .flatMap((d) => ((d.results?.transitions ?? []) as Rec[]).filter((t) => t.kind === "fail → pass").map((t) => `${t.testId}: ${t.from?.verdict} → ${t.to?.verdict}`));
   const mapping = (ev.framework?.mappings ?? []) as Rec[];
   const openItems = f.wp5.items.filter((i) => i.status === "open");
   return {
@@ -85,6 +86,9 @@ export function dashboardData(ev: Evidence, f: Facts): Rec {
       arc21Fingerprint: f.wp3.arc21Fingerprint.slice(0, 16), arc21Unchanged: f.wp3.arc21Unchanged,
       cp4: f.wp5.cp4Approved ? `approved ${f.wp5.cp4Date}` : "not approved",
       validation: `${f.wp3.validationChecksPassed} of ${f.wp3.validationChecks}`,
+      wp6Validation: f.wp6 ? `${f.wp6.validationChecksPassed} of ${f.wp6.validationChecks}` : "not run",
+      proveGates: f.proveGates ? { caught: f.proveGates.caught, injected: f.proveGates.injected, held: f.proveGates.held, controls: f.proveGates.controls, restored: f.proveGates.restored, line: proveGatesLine(f) } : null,
+      wp1: { detected: f.wp1.detected, scenarios: f.wp1.scenarios, overPrivilegedDiscriminated: f.wp1.overPrivilegedDiscriminated, overPrivilegedChecks: f.wp1.overPrivilegedChecks },
       openFindings: openItems.map((i) => i.id),
     },
     verdicts: [...VERDICTS],
@@ -92,16 +96,25 @@ export function dashboardData(ev: Evidence, f: Facts): Rec {
     byFamily: FAMILIES.map((fam) => ({ code: fam.code, name: fam.name, counts: f.wp3.byFamily[fam.code] })),
     byTier: Object.entries(f.wp3.byTier).map(([tier, counts]) => ({ tier, counts })),
     coverage: {
-      resources: f.wp0.resources, withControl: f.wp0.resources - f.wp0.resourcesWithoutControl.length, without: f.wp0.resourcesWithoutControl,
+      resources: f.wp0.resources, withRowControl: f.wp0.rowControl.withRowControl, withoutRowControl: f.wp0.rowControl.without,
+      patterns: [
+        { label: "row-level security off", resources: f.wp0.rowControl.rlsDisabled, note: "no table" },
+        { label: "on, with no policy — every client denied, no client grant", resources: f.wp0.rowControl.noPolicyDenyAll, note: "server-only tables" },
+        { label: "readable without an account", resources: f.wp0.rowControl.anonReachable, note: "catalogue tables — accepted as design intent at CP4 (B3)" },
+        { label: "granted to the anonymous role, no policy admits it", resources: f.wp0.rowControl.anonLatent, note: "a latent grant — informational (B4)" },
+      ],
+      notForced: f.wp0.rowControl.notForced, tables: f.wp0.tables,
       controls: f.wp0.controls, named: f.coverage.controlsNamed, resourceOnly: f.coverage.controlsResourceOnly, unexercised: f.coverage.controlsUnexercised,
+      unexercisedDefinerServerOnly: f.coverage.unexercisedDefinerServerOnly, unexercisedInvokerGrant: f.coverage.unexercisedInvokerGrant, unexercisedOther: f.coverage.unexercisedOther,
       observations: f.wp0.observations,
     },
     findings: f.wp5.items.map((i) => ({ id: i.id, key: i.key, title: i.title, tier: i.tier, evidence: i.evidenceClass, tests: i.testIds, status: i.status, part: i.part })),
     scope: f.wp5.scope,
     drift: { states: f.wp4.states, diffs: f.wp4.diffs, newUnprotected: f.wp4.newUnprotected, passToFail: f.wp4.diffs.reduce((m, d) => m + (d.passToFail ?? 0), 0), transitions },
     framework: mapping.map((e) => ({
-      id: `${e.framework === "21 CFR Part 11" ? "21 CFR " : ""}${e.id}`, title: String(e.title).replace(/^§ ?[\d.]+ /, "").replace(/\.$/, ""),
-      support: String(e.support).replace("_", " "), subject: e.subject,
+      id: frameworkLabel(e).split(" ").slice(0, e.framework === "21 CFR Part 11" ? 3 : 1).join(" "),
+      title: frameworkLabel(e).split(" ").slice(e.framework === "21 CFR Part 11" ? 3 : 1).join(" "),
+      support: SUPPORT_TEXT[e.support as keyof typeof SUPPORT_TEXT] ?? String(e.support), subject: e.subject,
       evidence: (e.evidence.testIds as string[]).length ? `${e.evidence.counts.total} records, ${e.evidence.counts.effective} effective` : ((e.evidence.artifacts as Rec[]).map((a) => a.artifact).join(", ") || "none"),
     })),
     resources, functions,

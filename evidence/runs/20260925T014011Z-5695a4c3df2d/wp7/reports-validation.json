@@ -1,0 +1,116 @@
+{
+  "wp3RunId": "20260925T014011Z-5695a4c3df2d",
+  "passed": true,
+  "checks": [
+    {
+      "name": "the official runs are the author's selection, and each is complete and validated",
+      "passed": true,
+      "detail": "WP3 20260925T014011Z-5695a4c3df2d (345 records, validate-wp3 19/19), WP4 20260925T042837Z-wp4 (4 states, all exit 0)"
+    },
+    {
+      "name": "the WP3 counts re-derived from the raw records agree with the results file and its validation",
+      "passed": true,
+      "detail": "effective 283, deficient 5, gap 19, characterized 25, not_measured 13, total 345"
+    },
+    {
+      "name": "the assurance report states the WP3 counts re-derived from the raw records (headline, families, depth, run, validation)",
+      "passed": true,
+      "detail": "12 family rows and the headline agree"
+    },
+    {
+      "name": "the plain-language summary states the numbers the evidence gives, and its plain claims hold",
+      "passed": true,
+      "detail": "every number and claim agrees"
+    },
+    {
+      "name": "the dashboard's embedded data is the evidence: counts, every record, statuses, drift, coverage, framework support",
+      "passed": true,
+      "detail": "345 records and every summary agree"
+    },
+    {
+      "name": "the README's generated sections state the evidence: verdicts, families, inventory, findings and statuses, drift, WP6, project status",
+      "passed": true,
+      "detail": "43 rows agree"
+    },
+    {
+      "name": "WP0, WP1 and WP4 numbers in the report are re-derived from the frozen inventory, the WP1 record and the drift transitions",
+      "passed": true,
+      "detail": "inventory 40/397, WP1 5/5, drift 4 comparisons"
+    },
+    {
+      "name": "each finding's status is the author's recorded CP4 decision, and its Test IDs and evidence class are the records'",
+      "passed": true,
+      "detail": "10 items; 2 open (A2, A4); every non-effective record in exactly one"
+    },
+    {
+      "name": "the framework mapping is a validated study exercise, and every report states its support levels as the mapping does",
+      "passed": true,
+      "detail": "16 entries: 1 evidenced (tested paths only), 14 partial, 1 not mapped; validate-wp6 9/9"
+    },
+    {
+      "name": "prove-gates: the recorded result is recounted from its rows, it passed, and every report cites it",
+      "passed": true,
+      "detail": "116/116 injected defects caught, 9/9 controls held, restored true"
+    },
+    {
+      "name": "the prove-gates record is for the harness as it is now",
+      "passed": true,
+      "detail": "harness b0a87299d68a"
+    },
+    {
+      "name": "every run a report cites is official or listed as not a result, and only the official WP3 run is presented as the result",
+      "passed": true,
+      "detail": "official WP3 20260925T014011Z-5695a4c3df2d; 4 earlier runs cited only as not results"
+    },
+    {
+      "name": "no generated document claims compliance, validation, certification, independence or regulated status",
+      "passed": true,
+      "detail": "9 documents clean"
+    },
+    {
+      "name": "no generated document claims remediation, closure or a fixed Arc21, calls CP5 approved, labels AI-worded text as the author's, or counts not measured as a pass",
+      "passed": true,
+      "detail": "9 documents clean"
+    },
+    {
+      "name": "the current-state documents carry no stale project state (WP3 unrun, a checkpoint pending, a package unfinished)",
+      "passed": true,
+      "detail": "clean"
+    },
+    {
+      "name": "every output carries its provenance label and says the assessment is not independent",
+      "passed": true,
+      "detail": "labels present"
+    },
+    {
+      "name": "the plain-language summary has no jargon, reads as plain sentences, and fits one page (≤ 650 words)",
+      "passed": true,
+      "detail": "604 words, jargon-free outside the one cross-reference line"
+    },
+    {
+      "name": "the README's evidence numbers live only in its generated sections",
+      "passed": true,
+      "detail": "5 sections, hand-written text count-free"
+    },
+    {
+      "name": "every command the README documents is one the CLI dispatches, and every command the CLI dispatches is documented",
+      "passed": true,
+      "detail": "29 commands"
+    },
+    {
+      "name": "every path the README's layout lists exists",
+      "passed": true,
+      "detail": "20 paths present"
+    },
+    {
+      "name": "the dashboard is one self-contained file that opens from disk with no network, and carries its banners",
+      "passed": true,
+      "detail": "349 KB, no external resource"
+    },
+    {
+      "name": "every generated file is byte-identical to what the evidence regenerates (nothing hand-edited, nothing stale)",
+      "passed": true,
+      "detail": "17 files identical"
+    }
+  ]
+}

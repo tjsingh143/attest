@@ -12,9 +12,13 @@
  */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ATTEST_ROOT, RUNS_ROOT } from "./config.ts";
-import { diffInventories } from "./wp4-drift.ts";
+import { ATTEST_ROOT, EVIDENCE_ROOT, RUNS_ROOT } from "./config.ts";
+import { diffInventories, hasNoRowControl } from "./wp4-drift.ts";
 import type { Inventory } from "./inventory.ts";
+
+/** Where `prove-gates` records its latest result (D3.61). */
+export const PROVE_GATES_DIR = join(EVIDENCE_ROOT, "prove-gates");
+export const PROVE_GATES_PATH = join(PROVE_GATES_DIR, "prove-gates.json");
 
 type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -69,6 +73,13 @@ export interface Evidence {
   readonly official: Rec;
   /** framework-mapping.json (WP6), when it has been generated. */
   readonly framework: Rec | null;
+  /** The independent validation of that mapping, when it has been run. */
+  readonly wp6Validation: Rec | null;
+  /** The WP5 narrative store and the AUTHOR INTENT store: their provenance labels are reported. */
+  readonly narratives: Rec;
+  readonly intents: Rec;
+  /** The latest `prove-gates` result, when one has been recorded. */
+  readonly proveGates: Rec | null;
 }
 
 const json = async (p: string): Promise<Rec> => JSON.parse(await readFile(p, "utf8")) as Rec;
@@ -101,6 +112,10 @@ export async function loadEvidence(): Promise<Evidence> {
     cp4: await json(join(ATTEST_ROOT, "rubric", "cp4-author-response.json")),
     official,
     framework: await json(join(ATTEST_ROOT, "framework-mapping.json")).catch(() => null),
+    wp6Validation: await json(join(RUNS_ROOT, runs.wp3, "wp6", "wp6-validation.json")).catch(() => null),
+    narratives: await json(join(ATTEST_ROOT, "rubric", "wp5-author-narratives.json")),
+    intents: await json(join(ATTEST_ROOT, "rubric", "author-intents.json")),
+    proveGates: await json(PROVE_GATES_PATH).catch(() => null),
   };
 }
 
@@ -164,10 +179,27 @@ export interface Facts {
     readonly rlsEnabled: number; readonly rlsForced: number; readonly tables: number; readonly roles: number; readonly rolesBypassRls: readonly string[];
     readonly anonReach: number; readonly anonReachApplication: number; readonly observations: Readonly<Record<string, number>>;
     readonly resourcesWithoutControl: readonly string[];
+    /**
+     * Row-level control by WP4's definition (D3.56): a table with row-level security on, or a
+     * view that runs as its invoker. Beside it, the brief's three WP0 patterns as the frozen
+     * inventory classified them.
+     */
+    readonly rowControl: {
+      readonly withRowControl: number; readonly without: readonly string[];
+      readonly rlsDisabled: readonly string[]; readonly noPolicyDenyAll: readonly string[];
+      readonly anonReachable: readonly string[]; readonly anonLatent: readonly string[]; readonly notForced: number;
+    };
+    /** Who owns the tables: an owner is exempt from row-level security that is not forced. */
+    readonly ownership: {
+      readonly appTables: number; readonly appTablesOwnedByBypass: number; readonly appOwners: readonly string[];
+      readonly otherTables: readonly { readonly resource: string; readonly owner: string; readonly bypasses: boolean }[];
+    };
   };
   readonly coverage: {
     readonly controlsNamed: number; readonly controlsResourceOnly: number; readonly controlsUnexercised: number;
     readonly byKind: Readonly<Record<string, { total: number; named: number }>>;
+    /** What the controls no test touches are: server-only definer functions, invoker execute grants, anything else. */
+    readonly unexercisedDefinerServerOnly: number; readonly unexercisedInvokerGrant: number; readonly unexercisedOther: readonly string[];
   };
   readonly wp1: { readonly scenarios: number; readonly detected: number; readonly restored: number; readonly inventoryUnchanged: boolean; readonly overPrivilegedChecks: number; readonly overPrivilegedDiscriminated: number; readonly families: readonly string[]; readonly canSetServiceRole: boolean | null };
   readonly wp4: {
@@ -181,6 +213,20 @@ export interface Facts {
     readonly scope: { trailRequired: number; excluded: number; conditional: number; total: number } | null;
     readonly cp4Approved: boolean; readonly cp4Date: string;
   };
+  readonly wp6: {
+    readonly entries: number; readonly evidenced: number; readonly partial: number; readonly notMapped: number;
+    readonly briefMinimum: number; readonly added: number; readonly attestActivities: number;
+    readonly validationPassed: boolean; readonly validationChecks: number; readonly validationChecksPassed: number;
+  } | null;
+  /** Provenance labels as the stores record them (Amendment A2): nothing AI-worded is labelled the author's. */
+  readonly provenance: {
+    readonly narratives: Readonly<Record<string, number>>; readonly intents: Readonly<Record<string, number>>; readonly mapping: string | null;
+  };
+  /** The latest recorded prove-gates result, counted from its rows. */
+  readonly proveGates: {
+    readonly injected: number; readonly caught: number; readonly controls: number; readonly held: number;
+    readonly restored: boolean; readonly passed: boolean; readonly harnessSha256: string;
+  } | null;
 }
 
 export function computeFacts(ev: Evidence): Facts {
@@ -224,6 +270,27 @@ export function computeFacts(ev: Evidence): Facts {
     if (named.has(String(c.controlId))) byKind[k]!.named++;
   }
   const resourceOnly = controls.filter((c) => !named.has(String(c.controlId)) && testedResources.has(String(c.resource))).length;
+  const untouched = controls.filter((c) => !named.has(String(c.controlId)) && !testedResources.has(String(c.resource)));
+  const clientExec = (c: Rec) => ((c.detail?.executable_by ?? []) as string[]).some((g) => g === "anon" || g === "authenticated");
+  const definerServerOnly = untouched.filter((c) => c.controlKind === "security_definer_function" && !clientExec(c));
+  const invokerGrant = untouched.filter((c) => c.controlKind === "function_execute_grant" && c.detail?.security_definer !== true);
+  const untouchedOther = untouched.filter((c) => !definerServerOnly.includes(c) && !invokerGrant.includes(c)).map((c) => String(c.controlId));
+
+  // Row-level control (WP4's definition) and the brief's three WP0 patterns, from the frozen inventory.
+  const obsOf = (k: string) => ((inv.observations as Rec[]).filter((o) => o.kind === k).map((o) => String(o.resource))).sort();
+  const withoutRowControl = resources.filter((r) => hasNoRowControl(r as never)).map((r) => String(r.resource));
+  const rlsDisabled = resources.filter((r) => r.kind !== "view" && r.kind !== "materialized_view" && r.rlsEnabled === false).map((r) => String(r.resource));
+
+  // WP6
+  const fm = ev.framework;
+  const maps = fm ? (fm.mappings as Rec[]) : [];
+  const wv = ev.wp6Validation;
+
+  // Provenance and prove-gates
+  const tallyBy = (rows: readonly Rec[], k: string) => rows.reduce<Record<string, number>>((m, x) => ({ ...m, [String(x[k])]: (m[String(x[k])] ?? 0) + 1 }), {});
+  const pg = ev.proveGates;
+  const pgRows = pg ? (pg.rows as Rec[]) : [];
+  const pgInjected = pgRows.filter((r) => r.control !== true), pgControls = pgRows.filter((r) => r.control === true);
 
   // WP1
   const scenarios = ev.wp1.scenarios as Rec[];
@@ -281,8 +348,26 @@ export function computeFacts(ev: Evidence): Facts {
       roles: roles.length, rolesBypassRls: roles.filter((r) => r.bypasses_rls).map((r) => String(r.role_name)),
       anonReach: (inv.anonymousReach as Rec[]).length, anonReachApplication: (inv.anonymousReach as Rec[]).filter((a) => a.in_application_schema).length,
       observations, resourcesWithoutControl: resources.map((r) => String(r.resource)).filter((r) => !withControl.has(r)),
+      ownership: (() => {
+        const bypass = new Set(roles.filter((r) => r.bypasses_rls).map((r) => String(r.role_name)));
+        const tables = resources.filter((r) => r.kind === "table" || r.kind === "partitioned_table");
+        const app = tables.filter((r) => ["public", "private"].includes(String(r.schema)));
+        return {
+          appTables: app.length, appTablesOwnedByBypass: app.filter((r) => bypass.has(String(r.owner))).length,
+          appOwners: [...new Set(app.map((r) => String(r.owner)))].sort(),
+          otherTables: tables.filter((r) => !app.includes(r)).map((r) => ({ resource: String(r.resource), owner: String(r.owner), bypasses: bypass.has(String(r.owner)) })),
+        };
+      })(),
+      rowControl: {
+        withRowControl: resources.length - withoutRowControl.length, without: withoutRowControl, rlsDisabled,
+        noPolicyDenyAll: obsOf("deny_by_default"), anonReachable: obsOf("anon_reachable"), anonLatent: obsOf("anon_granted_but_no_policy_admits_it"),
+        notForced: obsOf("rls_enabled_not_forced").length,
+      },
     },
-    coverage: { controlsNamed: named.size, controlsResourceOnly: resourceOnly, controlsUnexercised: controls.length - named.size - resourceOnly, byKind },
+    coverage: {
+      controlsNamed: named.size, controlsResourceOnly: resourceOnly, controlsUnexercised: controls.length - named.size - resourceOnly, byKind,
+      unexercisedDefinerServerOnly: definerServerOnly.length, unexercisedInvokerGrant: invokerGrant.length, unexercisedOther: untouchedOther,
+    },
     wp1: {
       scenarios: scenarios.length, detected: scenarios.filter((s) => s.detected).length, restored: scenarios.filter((s) => s.restored).length,
       inventoryUnchanged: ev.wp1.inventoryUnchanged === true,
@@ -303,5 +388,26 @@ export function computeFacts(ev: Evidence): Facts {
       cp4Approved: /^approved\b/.test(String(ev.cp4.approval?.CP4 ?? "")),
       cp4Date: /\b(\d{4}-\d{2}-\d{2})\b/.exec(String(ev.cp4.recordedFrom ?? ""))?.[1] ?? "",
     },
+    wp6: fm ? {
+      entries: maps.length,
+      evidenced: maps.filter((e) => e.support === "evidenced").length, partial: maps.filter((e) => e.support === "partial").length,
+      notMapped: maps.filter((e) => e.support === "not_mapped").length,
+      briefMinimum: maps.filter((e) => e.inBriefMinimum === true).length, added: maps.filter((e) => e.inBriefMinimum !== true).length,
+      attestActivities: maps.filter((e) => e.subject === "attest").length,
+      validationPassed: wv?.passed === true, validationChecks: ((wv?.checks ?? []) as Rec[]).length,
+      validationChecksPassed: ((wv?.checks ?? []) as Rec[]).filter((c) => c.passed === true).length,
+    } : null,
+    provenance: {
+      narratives: tallyBy((ev.narratives.entries ?? []) as Rec[], "provenance"),
+      intents: tallyBy((ev.intents.intents ?? []) as Rec[], "provenance"),
+      mapping: fm ? String(fm.provenance ?? "") : null,
+    },
+    proveGates: pg ? {
+      injected: pgInjected.length, caught: pgInjected.filter((r) => r.caught === true).length,
+      controls: pgControls.length, held: pgControls.filter((r) => r.caught === true).length,
+      restored: pgRows.length > 0 && pgRows.every((r) => r.restored === true),
+      passed: pgRows.length > 0 && pgRows.every((r) => r.caught === true && r.restored === true),
+      harnessSha256: String(pg.harness?.sourcesSha256 ?? ""),
+    } : null,
   };
 }

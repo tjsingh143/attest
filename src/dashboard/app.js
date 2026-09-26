@@ -135,9 +135,10 @@
       kpi("Characterized", T.characterized, "recorded fact, not pass or fail", "characterized"),
       kpi("Not measured", T.not_measured, "never counted as effective", "not_measured"),
       kpi("Open findings", D.findings.filter(function (f) { return f.status === "open"; }).length, D.findings.filter(function (f) { return f.status === "open"; }).map(function (f) { return f.id; }).join(", ") + " — nothing remediated", null),
-      kpi("Resources with a control", D.coverage.withControl + " / " + D.coverage.resources, D.coverage.without.length ? D.coverage.without.length + " without" : "none without a control", null),
+      kpi("Resources with a row-level control", D.coverage.withRowControl + " / " + D.coverage.resources, D.coverage.withoutRowControl.length ? D.coverage.withoutRowControl.length + " without" : "none without one", null),
       kpi("Pass → fail across history", D.drift.passToFail, "WP4, " + D.drift.states.length + " schema states", null),
-      kpi("Independent validation", m.validation, "validate-wp3, raw records re-derived", null),
+      kpi("Results validated", m.validation, "validate-wp3 re-derived every verdict from the raw records", null),
+      kpi("Gates proven", m.proveGates ? m.proveGates.caught + " / " + m.proveGates.injected : "—", m.proveGates ? "injected defects caught; " + m.proveGates.held + " / " + m.proveGates.controls + " controls held" : "no prove-gates record", null),
     ]),
   ]));
   function kpi(label, value, note, v) {
@@ -161,39 +162,50 @@
   var cov = D.coverage;
   var covSegs = [
     { cls: "o-1", value: cov.named, label: "named by at least one Test ID" },
-    { cls: "o-2", value: cov.resourceOnly, label: "exercised only through tests of their resource" },
-    { cls: "o-3", value: cov.unexercised, label: "not exercised by any test" },
+    { cls: "o-2", value: cov.resourceOnly, label: "named by none, on a resource other tests exercise" },
+    { cls: "o-3", value: cov.unexercised, label: "on a function no test calls" },
   ];
   var covBars = el("div", { class: "bars" }); barRow("All " + cov.controls + " controls", null, covSegs, cov.controls).forEach(function (n) { covBars.appendChild(n); });
   var covTable = el("div", { class: "tablewrap" }, [el("table", {}, [
     el("thead", {}, [el("tr", {}, [el("th", { text: "Controls" }), el("th", { class: "num", text: "count" })])]),
     el("tbody", {}, covSegs.map(function (s) { return el("tr", {}, [el("td", { text: s.label }), el("td", { class: "num", text: String(s.value) })]); })),
   ])]);
+  var patterns = el("div", { class: "tablewrap" }, [el("table", { class: "patterns" }, [
+    el("thead", {}, [el("tr", {}, [el("th", { text: "The brief's “no control” patterns" }), el("th", { class: "num", text: "resources" }), el("th", { text: "Which, and what it means" })])]),
+    el("tbody", {}, cov.patterns.map(function (x) {
+      return el("tr", {}, [el("td", { text: x.label }), el("td", { class: "num", text: String(x.resources.length) }), el("td", {}, [x.resources.length ? el("code", { text: x.resources.join(", ") }) : null, x.resources.length ? " — " : "", x.note])]);
+    })),
+  ])]);
+  var forced = el("p", { class: "sub", style: "margin-top:10px" }, [el("strong", { text: "Enabled is not forced: " }), "row-level security is forced on none of the " + cov.tables + " tables (" + cov.notForced + " not forced), so a table's owner is not subject to it — informational by the author's decision (B1)."]);
   $("coverage").appendChild(el("div", { class: "grid2" }, [
     el("section", { class: "card" }, [
-      el("h2", { text: "Resources with a control" }),
-      el("p", { class: "sub", text: "WP0, read from the live catalogs of the frozen build" }),
-      el("div", { class: "hero-fig", style: "font-size:40px" }, [pct(cov.withControl, cov.resources), el("small", { text: " (" + cov.withControl + " of " + cov.resources + ")" })]),
-      el("p", {}, [el("strong", { text: "Without a control: " }), cov.without.length ? cov.without.join(", ") : "none — every resource has row-level security or no client path."]),
-      el("div", { class: "tablewrap" }, [el("table", {}, [
-        el("thead", {}, [el("tr", {}, [el("th", { text: "Structural observation" }), el("th", { class: "num", text: "resources" })])]),
-        el("tbody", {}, Object.keys(cov.observations).map(function (k) { return el("tr", {}, [el("td", {}, [el("code", { text: k })]), el("td", { class: "num", text: String(cov.observations[k]) })]); })),
-      ])]),
+      el("h2", { text: "Resources with a row-level control" }),
+      el("p", { class: "sub", text: "WP0, read from the live catalogs of the frozen build. A row-level control: row-level security on (tables), or a view that runs as its invoker." }),
+      el("div", { class: "hero-fig", style: "font-size:40px" }, [pct(cov.withRowControl, cov.resources), el("small", { text: " (" + cov.withRowControl + " of " + cov.resources + ")" })]),
+      el("p", {}, [el("strong", { text: "Without one: " }), cov.withoutRowControl.length ? cov.withoutRowControl.join(", ") : "none."]),
+      patterns,
+      forced,
     ]),
-    chartCard("Controls exercised by a test", "Named by a Test ID's control id, a mechanism it asserts, or a function its statement calls", covBars, covTable,
+    chartCard("Controls exercised by a test", "A control is named by a Test ID's control id, a mechanism it asserts, or a function its statement calls", covBars, covTable,
       legend(covSegs.map(function (s) { return el("span", { class: "key" }, [el("span", { class: "sw " + s.cls }), s.label]); }))),
   ]));
+  var unex = el("p", { class: "sub", style: "margin-top:8px", text: "Not called by any test: " + cov.unexercisedDefinerServerOnly + " SECURITY DEFINER functions no client role can execute, and " + cov.unexercisedInvokerGrant + " execute grants on SECURITY INVOKER helpers, which run with the caller's own privileges" + (cov.unexercisedOther.length ? "; other: " + cov.unexercisedOther.join(", ") : "") + "." });
+  $("coverage").querySelectorAll(".card")[1].appendChild(unex);
 
   // ---------------------------------------------------------------- findings
   var ft = el("table");
   ft.appendChild(el("thead", {}, [el("tr", {}, ["#", "Item", "Tier", "Evidence", "Tests", "The author's status", ""].map(function (h, i) { return el("th", { class: i === 4 ? "num" : "", text: h }); }))]));
   var fb = el("tbody");
   D.findings.forEach(function (f) {
-    var show = el("button", { class: "btn", type: "button", text: "Show tests" });
-    show.disabled = !f.tests.length;
-    show.addEventListener("click", function () { showTestSet(f.id + " — " + f.title, f.tests); $("drill").scrollIntoView({ behavior: "smooth", block: "start" }); });
+    var show;
+    if (f.tests.length) {
+      show = el("button", { class: "btn", type: "button", text: "Show tests", "aria-label": "Show the tests of " + f.id });
+      show.addEventListener("click", function () { showTestSet(f.id + " — " + f.title, f.tests); $("drill").scrollIntoView({ behavior: "smooth", block: "start" }); });
+    } else {
+      show = el("span", { class: "muted", text: "no test — read from the inventory" });
+    }
     fb.appendChild(el("tr", {}, [el("td", { text: f.id }), el("td", { text: f.title }), el("td", { text: f.tier }), el("td", {}, [f.evidence === "none" ? "WP0 observation" : statusKey(f.evidence)]),
-      el("td", { class: "num", text: String(f.tests.length) }), el("td", {}, [el("span", { class: "status", text: STATUS[f.status] || f.status })]), el("td", {}, [show])]));
+      el("td", { class: "num", text: String(f.tests.length) }), el("td", {}, [el("span", { class: "status" + (f.status === "open" ? " open" : ""), text: STATUS[f.status] || f.status })]), el("td", {}, [show])]));
   });
   ft.appendChild(fb);
   $("findings").appendChild(el("section", { class: "card" }, [
@@ -213,7 +225,7 @@
   $("drift").appendChild(el("section", { class: "card" }, [
     el("h2", { text: "Drift across Arc21's own history (WP4)" }),
     el("p", { class: "sub", text: "Today's approved questions asked of earlier schemas, rebuilt from Arc21's git history without touching the checkout — not findings about Arc21 today." }),
-    el("ul", {}, D.drift.states.map(function (s) { return el("li", {}, [el("code", { text: s.name }), " — " + s.label + " (" + s.migrationCount + " migrations, exit " + s.exit + ")"]); })),
+    el("ul", {}, D.drift.states.map(function (s) { return el("li", {}, [el("code", { text: s.name }), " — " + s.label + " · exit " + s.exit]); })),
     el("div", { class: "tablewrap" }, [dt]),
     el("p", { style: "margin-top:8px" }, [el("strong", { text: "Caught without anyone looking: " }), D.drift.newUnprotected.map(function (u) { return u.resource + " (" + (u.clientReachable ? "reachable by a client role" : "no client grant today — one GRANT from exposed") + ")"; }).join("; ") || "nothing"]),
     D.drift.transitions.length ? el("p", { class: "sub", text: "Fail → pass: " + D.drift.transitions.join("; ") }) : null,
@@ -253,7 +265,8 @@
       var box = el("div", { class: "group" }, [el("div", { class: "group-h" }, [el("span", { text: g.title }), el("span", { class: "muted", text: g.tag })])]);
       cs.forEach(function (c) {
         shown++;
-        var b = el("button", { class: "ctl", type: "button" }, [el("span", { text: c.id.indexOf("#") > 0 ? c.id.split("#")[1] : c.id }), el("span", { class: "k", text: " · " + c.kind + " · " + c.tests.length + " test" + (c.tests.length === 1 ? "" : "s") })]);
+        var shortId = c.id.indexOf("#") > 0 ? c.id.split("#")[1] : c.id;
+        var b = el("button", { class: "ctl", type: "button" }, [el("span", { text: shortId }), el("span", { class: "k", text: (shortId === c.kind ? "" : " · " + c.kind) + " · " + c.tests.length + " test" + (c.tests.length === 1 ? "" : "s") })]);
         if (current === c) b.setAttribute("aria-current", "true");
         b.addEventListener("click", function () { current = c; renderList(); showControl(c, g); });
         box.appendChild(b);
@@ -266,7 +279,8 @@
     var r = D.records[id];
     var dl = el("dl");
     function row(k, v) { if (v) { dl.appendChild(el("dt", { text: k })); dl.appendChild(el("dd", { text: v })); } }
-    row("Identity", r.i); row("Expected", r.e); row("Actual", r.x); row("Parameters", r.a); row("Attack simulated (intent)", r.n); row("Verdict reason", r.vr); row("Control", r.c); row("Resource", r.r);
+    var INTENT = { user_reviewed_ai_draft: "Attack simulated (AI-drafted intent, adopted by the author at Gate A)", user_authored: "Attack simulated (the author's intent)" };
+    row("Identity", r.i); row("Expected", r.e); row("Actual", r.x); row("Parameters", r.a); row(INTENT[r.np] || ("Attack simulated (intent" + (r.np ? ", " + r.np : "") + ")"), r.n); row("Verdict reason", r.vr); row("Control", r.c); row("Resource", r.r);
     return el("div", { class: "test" }, [
       el("div", { class: "row" }, [el("strong", { style: "color:var(--ink-1)", text: id }), statusKey(r.v), el("span", { text: r.p }), el("span", { text: r.f }), el("span", { class: "mono", text: r.ts })]),
       el("pre", { class: "mono", text: r.s }),

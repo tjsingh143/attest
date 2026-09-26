@@ -1,24 +1,14 @@
 /**
- * Attest — command line.
+ * Attest — command line. Every command is listed, with what it does, in src/commands.ts
+ * (the README's command table and the usage text are generated from that list).
  *
- *   node src/cli.ts bringup      rebuild the instance from migrations and seed it
- *   node src/cli.ts inventory    read the control inventory from the catalogs
- *   node src/cli.ts validate     WP1: deliberate-break validation of the harness
- *   node src/cli.ts run          all of the above, in order  (the one command)
+ *   node src/cli.ts run              the one command: rebuild, re-derive, compare with the
+ *                                    frozen evidence, prove the gates, regenerate every report
+ *   node src/cli.ts run --confirm    all of that, then re-execute WP3 as a reproduction
+ *   node src/cli.ts reports          regenerate every report from the evidence (no database)
+ *   node src/cli.ts validate-reports check every report with code that did not write it
  *
- * WP3, in the order they must happen:
- *
- *   seed-extensions              build the fixture state the matrix requires
- *   plan-wp3                     generate and validate the 345-row matrix
- *   draft-intents                draft the 240 attack sentences for the author to review
- *   prove-gates                  break every gate on purpose and require each to fire
- *   preflight-wp3 --for-execution   everything that must hold before a real run
- *   smoke-wp3 <Test ID>...       plumbing smoke of named probes (NOT evidence; .smoke/)
- *   execute-wp3 --confirm        run it. Refused until the author has adopted all 240.
- *
- * The brief's standard is that one command reproduces every number in the
- * report from a fresh database. `run` is that command. As work packages land it
- * grows; today it brings up the instance and inventories it.
+ * Every command is bracketed by the Arc21 read-only guard (D3.31, D3.32).
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -143,6 +133,189 @@ async function cmdRiskInputs(fixedRunId?: string): Promise<void> {
   );
   console.log(`  ${inputs.counts.resources} resources profiled, no scores assigned`);
   console.log(`  written to evidence/runs/${runId}/`);
+}
+
+/** Break every gate on purpose and require each to fire; record the result (D3.29, D3.48, D3.61). */
+async function cmdProveGates(): Promise<boolean> {
+  console.log("prove the gates by breaking them (deep copies, rolled-back transactions, tampered report copies and a throwaway repo; nothing real is changed)");
+  const { plan, resources } = await buildPlanInProcess();
+  const store = await loadIntentStore();
+  if (!store) { console.error("attest: no canonical intent store."); return false; }
+  const manifest = await loadApprovedManifest();
+  if (!manifest) { console.error("attest: rubric/wp3-approved-matrix.json is missing."); return false; }
+  const rs = await withSession(adminSession("prove-gates"), async (a) => {
+    const { rows } = await a.query(
+      "select rolname, rolsuper, rolbypassrls from pg_roles where rolname in ('postgres','authenticator')",
+    );
+    const m = new Map(rows.map((r) => [r.rolname as string, r]));
+    return runInjections(plan, resources, store, {
+      admin: a,
+      manifest,
+      liveRoleProps: {
+        postgresBypassRls: m.get("postgres")?.rolbypassrls === true,
+        authenticatorBypassRls: m.get("authenticator")?.rolbypassrls !== false,
+        authenticatorSuperuser: m.get("authenticator")?.rolsuper !== false,
+      },
+      realtimeUrl: REALTIME_HEALTH_URL,
+    });
+  });
+  console.log(renderInjections(rs));
+  const controls = rs.filter((r) => r.control);
+  const injected = rs.filter((r) => !r.control);
+  const missed = injected.filter((r) => !r.caught);
+  const falseAlarms = controls.filter((r) => !r.caught);
+  console.log(
+    `\n  ${injected.length - missed.length}/${injected.length} injected defects were caught; ` +
+      `${controls.length - falseAlarms.length}/${controls.length} controls held; real state restored: ${rs.every((r) => r.restored)}`,
+  );
+  // The result is recorded, pass or fail, so the reports cite a count read from a file
+  // rather than one typed into them (D3.61).
+  const { recordProveGates } = await import("./wp7-run.ts");
+  console.log(`  recorded: ${await recordProveGates(rs)}`);
+  if (missed.length || falseAlarms.length || !rs.every((r) => r.restored)) {
+    for (const r of missed) console.error(`  NOT CAUGHT: ${r.defect}`);
+    for (const r of falseAlarms) console.error(`  CONTROL FAILED: ${r.defect} — ${r.firedCheck}`);
+    console.error(`\nattest: ${missed.length} injected defect(s) produced no failure, ${falseAlarms.length} control(s) failed, or state was not restored — a gate that does not fire is a finding.`);
+    return false;
+  }
+  return true;
+}
+
+function printChecks(checks: readonly { name: string; passed: boolean; detail: string }[]): void {
+  for (const c of checks) console.log(`  ${c.passed ? "ok  " : "FAIL"} ${c.name}\n       ${c.detail.slice(0, 400)}`);
+}
+
+/** Regenerate every WP5, WP6 and WP7 output from the persisted evidence, then validate them (D3.61). */
+async function cmdReports(): Promise<boolean> {
+  console.log("reports — FINDINGS.md, the CP4 and CP5 records, the framework mapping and CSA note, the assurance report, the dashboard, the summary and the README's generated sections, from the evidence (no database)");
+  const { buildReportOutputs, rel } = await import("./wp7-run.ts");
+  const built = await buildReportOutputs("write");
+  if (built.problems.length) {
+    console.error("\nattest: REFUSED — the outputs would not match the evidence:");
+    for (const p of built.problems) console.error(`  - ${p}`);
+    return false;
+  }
+  for (const p of [...built.files.keys()].map(rel).sort()) console.log(`  written: ${p}`);
+  console.log("");
+  return cmdValidateReports();
+}
+
+async function cmdValidateReports(): Promise<boolean> {
+  console.log("validate-reports — every number re-derived from the raw evidence by separate code, every output parsed and compared, every file compared with a fresh regeneration");
+  const { validateReports, writeReportsValidation } = await import("./wp7-validate.ts");
+  const v = await validateReports();
+  printChecks(v.checks);
+  const path = await writeReportsValidation(v, v.official);
+  console.log(`\n  VALIDATION ${v.passed ? "PASSED" : "FAILED"} — ${v.checks.filter((c) => c.passed).length} of ${v.checks.length} checks; recorded in ${path.replace(/^.*evidence/, "evidence")}`);
+  return v.passed;
+}
+
+const readJson = async (p: string): Promise<Record<string, any>> => JSON.parse(await (await import("node:fs/promises")).readFile(p, "utf8")); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+/**
+ * The one command (brief §6; D3.61). Rebuilds the disposable database and re-derives every
+ * piece of evidence that can be re-derived without re-running the 345 probes — the inventory,
+ * the harness validation, the risk inputs and tiers, the fixtures, the WP3 plan — and requires
+ * each to equal the frozen evidence the reports are built from; re-proves every gate on the
+ * fresh baseline; regenerates and validates every report. `--confirm` then re-executes the
+ * assessment as a reproduction and compares it with the official run Test ID by Test ID;
+ * `--with-wp4` also repeats WP4 against that reproduction.
+ */
+async function cmdRun(arc21Pre: Arc21SourceState): Promise<void> {
+  const confirm = process.argv.includes("--confirm");
+  const withWp4 = process.argv.includes("--with-wp4");
+  const log = (m: string) => console.log(m);
+  const fail = (m: string) => { console.error(`\nattest: ${m}`); process.exitCode = 1; };
+  const runId = makeRunId(new Date(), shortVersion(await readSchemaVersion()));
+  const { loadOfficialRuns } = await import("./wp5-run.ts");
+  const R = await import("./reproduce.ts");
+  const off = await loadOfficialRuns();
+  const frozen = (f: string) => readJson(join(RUNS_ROOT, off.frozenCp3, f));
+  const fresh = (f: string) => readJson(join(RUNS_ROOT, runId, f));
+  const comparisons: import("./reproduce.ts").Comparison[] = [];
+
+  await cmdBringup();
+  await cmdInventory(runId);
+  comparisons.push(R.compareInventory(await frozen("inventory.json"), await fresh("inventory.json")));
+  console.log("validate (WP1)");
+  const v = await validate(log, runId);
+  reportValidation(v);
+  comparisons.push(R.compareWp1(await frozen("wp1-validation.json"), await fresh("wp1-validation.json")));
+  await cmdRiskInputs(runId);
+  comparisons.push(R.compareRiskInputs(await frozen("risk-inputs.json"), await fresh("risk-inputs.json")));
+  console.log("score (WP2)");
+  const c = await runCp3(log, runId);
+  if (c.invariants.some((i) => !i.passed) || c.coverageGaps.length || c.issues.length) fail("CP3 FAILED — the estimate is not internally consistent, or a resource is unrated.");
+  comparisons.push(R.compareTiers(await frozen("cp3-tiers.json"), await fresh("cp3-tiers.json")));
+  // The matrix depends on state the standing seed does not create, so the fixtures are built
+  // here — before planning, and before anything reads the instance expecting them.
+  console.log("seed extensions (WP3 fixtures)");
+  await withSession(adminSession("seed-extensions"), async (a) => {
+    await applySeedExtensions(a, log);
+    const bad = (await verifySeedExtensions(a)).filter((r) => !r.ok);
+    for (const r of bad) console.error(`  FAIL ${r.key}: ${r.detail}`);
+    console.log(`  ${bad.length === 0 ? "all seed extensions verified" : `${bad.length} seed extension(s) NOT satisfied`}`);
+    if (bad.length) process.exitCode = 1;
+  });
+  console.log("plan WP3 (matrix only — nothing executed)");
+  const pl = await runWp3Planner(log, runId, c.totalTestsPrimary);
+  if (pl.issues.length > 0 || !pl.worksheetValid) fail("WP3 PLAN FAILED validation.");
+  const matrix = await fresh("wp3-matrix.json");
+  const manifest = await loadApprovedManifest();
+  if (!manifest) { fail("rubric/wp3-approved-matrix.json is missing."); return; }
+  const officialPlan = ((await readJson(join(RUNS_ROOT, off.plan, "wp3-matrix.json"))).plan as { tests: Record<string, unknown>[] }).tests;
+  comparisons.push(R.comparePlan(matrix.plan, officialPlan, manifest, (matrix.semanticValidation ?? []) as unknown[]));
+  // The intents were adopted at Gate A: nothing is drafted any more; the store must hold exactly what the official run recorded.
+  comparisons.push(R.compareIntentStore((await loadIntentStore()) as unknown as Record<string, unknown>, await R.loadRunRecords(off.wp3)));
+
+  await R.writeReproduction(join(RUNS_ROOT, runId), { frozenCp3: off.frozenCp3, plan: off.plan, wp3: off.wp3 }, comparisons);
+  console.log("\nreproduction — what this rebuild re-derived, against the frozen evidence");
+  printChecks(comparisons.map((x) => ({ name: x.name, passed: x.identical, detail: x.detail })));
+  const reproduced = comparisons.every((x) => x.identical);
+  console.log(`  ${reproduced ? "REPRODUCED" : "NOT REPRODUCED"} — written to evidence/runs/${runId}/reproduction.{json,md}\n`);
+  if (!reproduced) process.exitCode = 1;
+
+  // The database is a freshly verified baseline now: prove every gate on it, then rebuild the reports.
+  if (!(await cmdProveGates())) process.exitCode = 1;
+  console.log("");
+  if (!(await cmdReports())) process.exitCode = 1;
+
+  if (!confirm) {
+    console.log(
+      `\n  run: ${process.exitCode ? "FAILED" : "complete"}. The WP3 probes were not re-executed; the official result is ${off.wp3}.\n` +
+        "  To re-execute the whole assessment as a reproduction and compare it Test ID by Test ID: npm run attest run -- --confirm",
+    );
+    return;
+  }
+  if (process.exitCode) { fail("run --confirm: the steps above failed, so the assessment is not re-executed."); return; }
+
+  console.log("\nrun --confirm — re-execute the WP3 assessment as a reproduction (never a result) and compare it with the official run");
+  const { plan, resources, schemaVersion } = await buildPlanInProcess();
+  const pf = await preflight(plan, resources, { forExecution: true, expectedSchemaSha: schemaVersion, arc21Pre });
+  console.log(renderPreflight(pf, true));
+  if (!pf.passed) { fail("REFUSED — preflight did not pass for execution; nothing was executed."); return; }
+  const { executeWp3 } = await import("./wp3-execute-run.ts");
+  const ex = await executeWp3(plan, pf.specs, arc21Pre, schemaVersion, log, "reproduction");
+  console.log(`\n  ${ex.summary.records.length} records written to ${ex.path}`);
+  if (!ex.arc21Unchanged || ex.summary.aborted?.arc21Changed) { process.exitCode = ARC21_GUARD_EXIT_CODE; return; }
+  if (ex.summary.aborted || ex.summary.harnessErrors > 0) { fail(`the reproduction ${ex.summary.aborted ? `ABORTED before ${ex.summary.aborted.beforeTestId}` : `had ${ex.summary.harnessErrors} harness error(s)`}.`); return; }
+  const { validateWp3Results, writeValidation } = await import("./wp3-validate-results.ts");
+  const sv = await readSchemaVersion();
+  const val = await validateWp3Results(ex.runId, { planRunId: runId, expectedSchema: sv.migrationSetSha256, expectedArc21Commit: sv.git.commit ?? undefined, expectedFingerprint: arc21Pre.fingerprint });
+  await writeValidation(val);
+  printChecks(val.checks);
+  console.log(`  validate-wp3 on the reproduction: ${val.passed ? "PASSED" : "FAILED"}`);
+  const cmp = R.compareWp3Runs(await R.loadRunRecords(off.wp3), await R.loadRunRecords(ex.runId));
+  await R.writeReproduction(join(RUNS_ROOT, ex.runId), { official: off.wp3, planningRun: runId }, [cmp]);
+  console.log(`  compared with ${off.wp3}: ${cmp.identical ? "IDENTICAL" : "DIFFERENT"} — ${cmp.detail.slice(0, 300)}`);
+  if (!val.passed || !cmp.identical) process.exitCode = 1;
+  if (withWp4 && !process.exitCode) {
+    const { runWp4 } = await import("./wp4-orchestrate.ts");
+    const r = await runWp4({ wp3RunId: ex.runId, planRunId: runId, log });
+    console.log(`\n  WP4 against the reproduction ${r.ok ? "completed" : "INCOMPLETE"} — evidence/runs/${r.runId}/wp4/drift-report.md`);
+    if (r.safetyViolation) process.exitCode = ARC21_GUARD_EXIT_CODE;
+    else if (!r.ok) process.exitCode = 1;
+  }
 }
 
 /**
@@ -316,7 +489,10 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       const planArg = process.argv.find((a) => a.startsWith("--plan-run="));
       const { validateWp3Results, writeValidation } = await import("./wp3-validate-results.ts");
       const sv = await readSchemaVersion();
-      const v = await validateWp3Results(runArg, { planRunId: planArg?.split("=")[1], expectedSchema: sv.migrationSetSha256, expectedArc21Commit: sv.git.commit ?? undefined, expectedFingerprint: arc21Pre.fingerprint });
+      // The official run is validated against the plan it executed (J14), not merely the newest planning run.
+      const offRuns = await (await import("./wp5-run.ts")).loadOfficialRuns();
+      const planDefault = runArg === offRuns.wp3 ? offRuns.plan : undefined;
+      const v = await validateWp3Results(runArg, { planRunId: planArg?.split("=")[1] ?? planDefault, expectedSchema: sv.migrationSetSha256, expectedArc21Commit: sv.git.commit ?? undefined, expectedFingerprint: arc21Pre.fingerprint });
       await writeValidation(v);
       for (const c of v.checks) console.log(`  ${c.passed ? "ok  " : "FAIL"} ${c.name}\n       ${c.detail.slice(0, 300)}`);
       console.log(`\n  by verdict: ${JSON.stringify((v.totals as Record<string, unknown>).byVerdict)}`);
@@ -387,21 +563,30 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     case "reports": {
-      // WP7 outputs from the persisted evidence (D3.61): the assurance report, the
-      // plain-language summary and the dashboard. No database is touched.
-      const { loadEvidence, computeFacts } = await import("./evidence-facts.ts");
-      const { renderReport, REPORT_PATH } = await import("./wp7-report.ts");
-      const { renderSummary, SUMMARY_PATH } = await import("./wp7-summary.ts");
-      const { renderDashboard, DASHBOARD_PATH } = await import("./wp7-dashboard.ts");
-      const { mkdir: mk, writeFile: wf } = await import("node:fs/promises");
-      const { dirname } = await import("node:path");
-      const ev = await loadEvidence();
-      const facts = computeFacts(ev);
-      await wf(REPORT_PATH, renderReport(ev, facts));
-      await wf(SUMMARY_PATH, renderSummary(facts));
-      await mk(dirname(DASHBOARD_PATH), { recursive: true });
-      await wf(DASHBOARD_PATH, await renderDashboard(ev, facts));
-      console.log("  written: ASSURANCE_REPORT.md, SUMMARY.md, dashboard/index.html");
+      // WP5, WP6 and WP7 outputs from the persisted evidence, then their independent validation (D3.61).
+      if (!(await cmdReports())) process.exitCode = 1;
+      break;
+    }
+    case "validate-reports": {
+      // Every generated output checked by code that did not write it, and against a regeneration (D3.61).
+      if (!(await cmdValidateReports())) process.exitCode = 1;
+      break;
+    }
+    case "compare-wp3": {
+      // Two WP3 runs, Test ID by Test ID (D3.61). Reads evidence only.
+      const cand = process.argv.slice(3).find((a) => !a.startsWith("--"));
+      const offArg = process.argv.find((a) => a.startsWith("--official="))?.split("=")[1];
+      if (!cand) { console.error("usage: attest compare-wp3 <candidate run id> [--official=<run id>]"); process.exitCode = 2; break; }
+      const { loadOfficialRuns } = await import("./wp5-run.ts");
+      const official = offArg ?? (await loadOfficialRuns()).wp3;
+      const { compareWp3Runs, loadRunRecords } = await import("./reproduce.ts");
+      const c = compareWp3Runs(await loadRunRecords(official), await loadRunRecords(cand));
+      console.log(`compare WP3 run ${cand} with ${official}`);
+      console.log(`  differences by field: ${JSON.stringify(c.byField)}`);
+      for (const d of c.differences.slice(0, 40)) console.log(`    ${d}`);
+      if (c.differences.length > 40) console.log(`    … ${c.differences.length - 40} more`);
+      console.log(`\n  ${c.identical ? "IDENTICAL" : "DIFFERENT"} — ${c.detail.slice(0, 200)}`);
+      if (!c.identical) process.exitCode = 1;
       break;
     }
     case "framework-sources": {
@@ -442,43 +627,7 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     case "prove-gates": {
-      console.log("prove the WP3 gates by breaking them (deep copies, rolled-back transactions and a throwaway repo; nothing real is changed)");
-      const { plan, resources } = await buildPlanInProcess();
-      const store = await loadIntentStore();
-      if (!store) { console.error("attest: no canonical intent store; run draft-intents first."); process.exitCode = 1; break; }
-      const manifest = await loadApprovedManifest();
-      if (!manifest) { console.error("attest: rubric/wp3-approved-matrix.json is missing."); process.exitCode = 1; break; }
-      const rs = await withSession(adminSession("prove-gates"), async (a) => {
-        const { rows } = await a.query(
-          "select rolname, rolsuper, rolbypassrls from pg_roles where rolname in ('postgres','authenticator')",
-        );
-        const m = new Map(rows.map((r) => [r.rolname as string, r]));
-        return runInjections(plan, resources, store, {
-          admin: a,
-          manifest,
-          liveRoleProps: {
-            postgresBypassRls: m.get("postgres")?.rolbypassrls === true,
-            authenticatorBypassRls: m.get("authenticator")?.rolbypassrls !== false,
-            authenticatorSuperuser: m.get("authenticator")?.rolsuper !== false,
-          },
-          realtimeUrl: REALTIME_HEALTH_URL,
-        });
-      });
-      console.log(renderInjections(rs));
-      const controls = rs.filter((r) => r.control);
-      const injected = rs.filter((r) => !r.control);
-      const missed = injected.filter((r) => !r.caught);
-      const falseAlarms = controls.filter((r) => !r.caught);
-      console.log(
-        `\n  ${injected.length - missed.length}/${injected.length} injected defects were caught; ` +
-          `${controls.length - falseAlarms.length}/${controls.length} controls held; real state restored: ${rs.every((r) => r.restored)}`,
-      );
-      if (missed.length || falseAlarms.length || !rs.every((r) => r.restored)) {
-        for (const r of missed) console.error(`  NOT CAUGHT: ${r.defect}`);
-        for (const r of falseAlarms) console.error(`  CONTROL FAILED: ${r.defect} — ${r.firedCheck}`);
-        console.error(`\nattest: ${missed.length} injected defect(s) produced no failure, ${falseAlarms.length} control(s) failed, or state was not restored — a gate that does not fire is a finding.`);
-        process.exitCode = 1;
-      }
+      if (!(await cmdProveGates())) process.exitCode = 1;
       break;
     }
     case "preflight-wp3": {
@@ -594,58 +743,14 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       break;
     }
     case "run": {
-      // One run id for the whole command, so the inventory and the validation
-      // it was performed against land in the same directory.
-      const runId = makeRunId(new Date(), shortVersion(await readSchemaVersion()));
-      await cmdBringup();
-      await cmdInventory(runId);
-      console.log("validate (WP1)");
-      const v = await validate((s) => console.log(s), runId);
-      await cmdRiskInputs(runId);
-      reportValidation(v);
-      console.log("score (WP2)");
-      const c = await runCp3((s) => console.log(s), runId);
-      if (c.invariants.some((i) => !i.passed) || c.coverageGaps.length || c.issues.length) {
-        console.error("\nattest: CP3 FAILED — the estimate is not internally consistent, or a resource is unrated.");
-        process.exitCode = 1;
-      }
-      // The matrix depends on state the standing seed does not create, so the
-      // fixtures are built here — before planning, and before anything reads
-      // the instance expecting them.
-      console.log("seed extensions (WP3 fixtures)");
-      await withSession(adminSession("seed-extensions"), async (a) => {
-        await applySeedExtensions(a, (m) => console.log(m));
-        const bad = (await verifySeedExtensions(a)).filter((r) => !r.ok);
-        for (const r of bad) console.error(`  FAIL ${r.key}: ${r.detail}`);
-        console.log(`  ${bad.length === 0 ? "all seed extensions verified" : `${bad.length} seed extension(s) NOT satisfied`}`);
-        if (bad.length) process.exitCode = 1;
-      });
-      console.log("plan WP3 (matrix only — nothing executed)");
-      const pl = await runWp3Planner((s) => console.log(s), runId, c.totalTestsPrimary);
-      if (pl.issues.length > 0 || !pl.worksheetValid) {
-        console.error("\nattest: WP3 PLAN FAILED validation.");
-        process.exitCode = 1;
-      }
-      // Drafts are regenerated from the plan every run, and the merge never
-      // touches a sentence the author has written (D3.24).
-      console.log("draft AUTHOR INTENT sentences (drafts only — the author adopts them)");
-      const { plan: freshPlan, schemaVersion } = await buildPlanInProcess();
-      const ip = await buildIntentPackage(freshPlan, runId, schemaVersion, (m) => console.log(m));
-      if (ip.qualityIssues.length > 0 || !ip.worksheetValid) {
-        console.error("\nattest: the AUTHOR INTENT draft package did not validate.");
-        process.exitCode = 1;
-      }
-      console.log(
-        `\n  WP3 is planned and implemented but NOT executed.\n` +
-          `  ${ip.aiDraft} of ${ip.required} intent sentences still await the author.\n` +
-          `  Next: review evidence/runs/${runId}/author-intent-worksheet.md, adopt each sentence in\n` +
-          `  rubric/author-intents.json, then: npm run attest preflight-wp3 -- --for-execution`,
-      );
+      await cmdRun(arc21Pre);
       break;
     }
-    default:
-      console.error(`unknown command: ${cmd}\nusage: node src/cli.ts [bringup|inventory|validate|risk-inputs|rubric|score|plan-wp3|\n         seed-extensions|draft-intents|preflight-wp3 [--for-execution]|prove-gates|\n         smoke-wp3 <Test ID>...|execute-wp3 [--confirm]|gate-a-package|apply-gate-a|validate-wp3 <runId>|wp4 --wp3-run= --plan-run=|wp4-report <id> --wp3-run= --plan-run=|\n         wp5 --wp3-run= --plan-run= [--wp4-run=]|verify-finding <item> --official= --candidate=|run]`);
+    default: {
+      const { usageText } = await import("./commands.ts");
+      console.error(`unknown command: ${cmd}\n${usageText()}`);
       process.exitCode = 2;
+    }
   }
 }
 

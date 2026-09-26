@@ -13,6 +13,10 @@ arc21 copy/
 # published. Adding it later is trivial; removing it from history is not.
 PROJECT_BRIEF.md
 
+# The author's personal résumé and job-application handoff notes. Kept out of version
+# control for the same reason as the brief; ignored so that it cannot be committed by accident.
+Attest RESUME_HANDOFF.md
+
 # Plumbing smoke runs of the WP3 executor. NOT evidence (see src/wp3-execute-run.ts);
 # kept out of version control so a smoke record can never be mistaken for a WP3 result.
 .smoke/

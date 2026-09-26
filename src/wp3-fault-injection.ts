@@ -172,6 +172,19 @@ export async function runInjections(
   ctx: InjectionContext,
 ): Promise<InjectionResult[]> {
   const out: InjectionResult[] = [];
+  // Every world gate below is proven against a verified baseline. Some fixtures are
+  // date-bound (today's daily challenge), so a baseline seeded on an earlier UTC day
+  // stops verifying at midnight, and an injection judged against it would read as
+  // "not caught" when the gate is fine and the state is stale (seen 2026-09-26).
+  // Refuse up front and name the cause instead of reporting a false miss.
+  try {
+    await verifyBaselineState(ctx.admin, { counts: null, catalog: null });
+  } catch (err) {
+    throw new Error(
+      `prove-gates needs the disposable database at a freshly verified baseline, and it is not one: ${(err as Error).message}. ` +
+        "Run `npm run attest bringup`, then `npm run attest seed-extensions` (a date-bound fixture stops holding after a UTC date change), then prove-gates again.",
+    );
+  }
   const snapshotPlan = JSON.stringify(plan);
   const snapshotStore = JSON.stringify(store);
   const liveDigestBefore = await stateDigest(ctx.admin);
@@ -1039,8 +1052,9 @@ export async function runInjections(
   // most of the kinds of record the cases break.
   // ------------------------------------------------------------------
   {
+    // The author's official run (J14), never merely the newest: a `run --confirm` reproduction is newer.
     let resultsRun: string | null = null;
-    for (const d of (await readdir(RUNS_ROOT)).sort().reverse()) {
+    for (const d of [(await loadOfficialRuns()).wp3, ...(await readdir(RUNS_ROOT)).sort().reverse()]) {
       try {
         const f = JSON.parse(await readFile(join(RUNS_ROOT, d, "wp3-results.json"), "utf8")) as { meta?: { aborted?: unknown }; records?: unknown[] };
         if (!f.meta?.aborted && (f.records?.length ?? 0) === ctx.manifest.rows.length) { resultsRun = d; break; }
@@ -1050,7 +1064,8 @@ export async function runInjections(
       push({ defect: "the independent WP3 validator", gate: "validate-wp3", caught: false, firedCheck: "NO WP3 RESULTS FILE EXISTS TO BREAK", consequence: "unproven" });
     } else {
       type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-      const inputs = await loadValidationInputs(resultsRun);
+      const off7 = await loadOfficialRuns();
+      const inputs = await loadValidationInputs(resultsRun, resultsRun === off7.wp3 ? off7.plan : undefined);
       const base = validateLoaded(resultsRun, inputs);
       const again = validateLoaded(resultsRun, inputs);
       const deterministic = JSON.stringify(base) === JSON.stringify(again);
@@ -1127,7 +1142,7 @@ export async function runInjections(
   {
     let official: Record<string, any>[] | null = null; // eslint-disable-line @typescript-eslint/no-explicit-any
     let officialRun = "";
-    for (const d of (await readdir(RUNS_ROOT)).sort().reverse()) {
+    for (const d of [(await loadOfficialRuns()).wp3, ...(await readdir(RUNS_ROOT)).sort().reverse()]) {
       try {
         const f = JSON.parse(await readFile(join(RUNS_ROOT, d, "wp3-results.json"), "utf8")) as { meta?: { aborted?: unknown }; records?: Record<string, unknown>[] };
         if (!f.meta?.aborted && (f.records?.length ?? 0) === ctx.manifest.rows.length) { official = f.records as Record<string, any>[]; officialRun = d; break; } // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -1148,7 +1163,7 @@ export async function runInjections(
       ];
       const got = cases.map(([what, mutate]) => { const rs = clone(official!); mutate(rs); const f = fresh(rs); return { what, ok: f.length > 0, f }; });
       push({
-        defect: `WP5 over the newest complete run (${officialRun}), broken three ways: ${cases.map((c) => c[0]).join("; ")}`,
+        defect: `WP5 over the official run (${officialRun}), broken three ways: ${cases.map((c) => c[0]).join("; ")}`,
         gate: "wp5: every non-effective record belongs to exactly one item, with the verdict its prose assumes, and the records it calls holding hold",
         caught: got.every((g) => g.ok),
         firedCheck: got.map((g) => `${g.what}: ${g.ok ? `refused (${g.f[0]!.slice(0, 90)})` : "NOT REFUSED"}`).join("; "),
@@ -1342,6 +1357,16 @@ export async function runInjections(
   }
 
   // ------------------------------------------------------------------
+  // 7g. WP7 (D3.61): validate-reports refuses every report defect, each by
+  //     the check that owns it. A numeric defect is written into the on-disk
+  //     copy AND the regenerated one — a generator bug, which the byte
+  //     comparison cannot see — so only the independent re-derivation can
+  //     catch it; a hand edit is written into the on-disk copy only.
+  // ------------------------------------------------------------------
+  out.push(...(await proveReportGates()));
+  out.push(...(await proveReproduction(ctx.manifest)));
+
+  // ------------------------------------------------------------------
   // 7f. digest snapshots compare by content (D3.56): the same state written in
   //     another key order is unchanged; one changed value is a change
   // ------------------------------------------------------------------
@@ -1387,6 +1412,230 @@ export async function runInjections(
   });
   for (const r of out) (r as { restored: boolean }).restored = r.restored && intact;
   void checkClaimCoverage;
+  return out;
+}
+
+type Rec7 = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+/**
+ * WP7's gates, broken one defect at a time on copies of the real outputs (D3.61). Each
+ * injection names the check that must refuse it; it counts as caught only if that check
+ * passes on the real outputs and fails on the tampered copy. A tamper that matches nothing is
+ * reported as not applied — never as caught (D3.37).
+ */
+async function proveReportGates(): Promise<InjectionResult[]> {
+  const out: InjectionResult[] = [];
+  const { buildReportOutputs, rel } = await import("./wp7-run.ts");
+  const V = await import("./wp7-validate.ts");
+  const built = await buildReportOutputs("compare");
+  if (built.problems.length) {
+    return [{ defect: "WP7 report validation", gate: "validate-reports", caught: false, firedCheck: `THE REPORTS DO NOT BUILD: ${built.problems[0]}`, consequence: "unproven", restored: true }];
+  }
+  const regenerated = new Map([...built.files].map(([p, c]) => [rel(p), c]));
+  // prove-gates proves the validator, so its baseline is what `reports` would write now — the
+  // disk may predate the record the previous prove-gates run wrote. `validate-reports` is what
+  // judges the disk.
+  const loaded = await V.loadReportInputs(regenerated);
+  const docs = Object.fromEntries((Object.entries(V.DOCS) as [keyof typeof V.DOCS, string][]).map(([k, p]) => [k, regenerated.get(p) ?? loaded.docs[k]])) as Record<keyof typeof V.DOCS, string>;
+  const real = { ...loaded, docs, onDisk: new Map(regenerated) };
+  const base = V.validateReportsLoaded(real);
+  const again = V.validateReportsLoaded(real);
+  const failingOnReal = base.checks.filter((c) => !c.passed).map((c) => c.name);
+  // The currency check waits for this run's own record; the record-derived checks cannot pass
+  // while the last record is missing or failing (the injections below prove them on a record
+  // built for the purpose). Everything else must pass.
+  const pgRows = (real.proveGates?.rows ?? []) as Rec7[];
+  const recordPasses = pgRows.length > 0 && pgRows.every((r) => r.caught === true && r.restored === true);
+  const named = (prefix: string) => base.checks.find((c) => c.name.startsWith(prefix))?.name ?? "";
+  const pending = new Set([
+    V.PROVE_GATES_CURRENCY_CHECK,
+    ...(recordPasses ? [] : [named("prove-gates:")]),
+    ...(real.layoutExists["evidence/prove-gates/"] ? [] : [named("every path the README's layout")]),
+  ]);
+  const realOk = failingOnReal.every((n) => pending.has(n)) && JSON.stringify(base) === JSON.stringify(again);
+  out.push({
+    defect: "(control) the real report, summary, dashboard and README, validated twice",
+    gate: "validate-reports: every check passes on the real outputs, deterministically",
+    caught: realOk,
+    firedCheck: realOk ? `${base.checks.length - failingOnReal.length} of ${base.checks.length} checks pass; identical twice${failingOnReal.length ? `; waiting for this run's record: ${failingOnReal.length}` : ""}` : `FALSE ALARM: ${failingOnReal.filter((n) => !pending.has(n)).join("; ")}`,
+    consequence: realOk ? "the reports are accepted" : "a false alarm would block every report",
+    restored: true, control: true,
+  });
+
+  type Real = typeof real;
+  type Mut = { -readonly [K in keyof Omit<Real, "docs" | "onDisk" | "regenerated">]: Real[K] } & { docs: Record<keyof typeof V.DOCS, string>; onDisk: Map<string, string>; regenerated: Map<string, string> | null };
+  const copy = (): Mut => structuredClone(real) as unknown as Mut;
+  const check = (x: Mut) => V.validateReportsLoaded(x as unknown as Real);
+  const edit = (x: Mut, k: keyof typeof V.DOCS, f: (t: string) => string, generatorBug: boolean) => {
+    const path = V.DOCS[k];
+    const next = f(x.docs[k]);
+    if (next === x.docs[k]) throw new Error(`the tamper matched nothing in ${path}`);
+    x.docs[k] = next;
+    if (x.onDisk.has(path)) x.onDisk.set(path, next);
+    if (generatorBug && x.regenerated?.has(path)) x.regenerated.set(path, next);
+  };
+  const inject = (defect: string, expect: readonly string[], mutate: (x: Mut) => void) => {
+    let why = "";
+    let caught = false;
+    try {
+      const x = copy();
+      mutate(x);
+      const v = check(x);
+      const results = expect.map((e) => ({ e, now: v.checks.find((c) => c.name.startsWith(e)), was: base.checks.find((c) => c.name.startsWith(e)) }));
+      caught = results.every((r) => r.now && !r.now.passed && r.was?.passed);
+      why = results.map((r) => (!r.now ? `no check "${r.e.slice(0, 40)}"` : !r.was?.passed ? `"${r.e.slice(0, 40)}" already fails on the real outputs` : r.now.passed ? `NOT REFUSED by "${r.e.slice(0, 50)}"` : `refused by "${r.e.slice(0, 50)}…": ${r.now.detail.slice(0, 110)}`)).join("; ");
+    } catch (err) {
+      why = `INJECTION NOT APPLIED: ${(err as Error).message}`;
+    }
+    out.push({ defect, gate: `validate-reports: ${expect.map((e) => e.split(/[:,(]/)[0]!.trim()).join(" + ")}`, caught, firedCheck: why, consequence: caught ? "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted" : "NOT CAUGHT", restored: true });
+  };
+  const off = real.official as Rec7;
+  const run1 = String(((off.notResults ?? []) as Rec7[]).find((n) => n.disposition === "superseded")?.runId ?? "");
+  const C = {
+    report: "the assurance report states the WP3 counts",
+    summary: "the plain-language summary states the numbers",
+    dash: "the dashboard's embedded data is the evidence",
+    readme: "the README's generated sections state the evidence",
+    wp014: "WP0, WP1 and WP4 numbers in the report",
+    wp5: "each finding's status is the author's recorded CP4 decision",
+    wp6: "the framework mapping is a validated study exercise",
+    pg: "prove-gates: the recorded result",
+    runs: "every run a report cites is official",
+    claims: "no generated document claims compliance",
+    prov: "no generated document claims remediation",
+    stale: "the current-state documents carry no stale project state",
+    labels: "every output carries its provenance label",
+    plain: "the plain-language summary has no jargon",
+    hand: "the README's evidence numbers live only in its generated sections",
+    cmds: "every command the README documents",
+    offline: "the dashboard is one self-contained file",
+    bytes: "every generated file is byte-identical",
+  };
+  const n = (re: RegExp, to: (m: RegExpExecArray) => string) => (t: string) => { const m = re.exec(t); return m ? t.slice(0, m.index) + to(m) + t.slice(m.index + m[0].length) : t; };
+
+  inject("the report's WP3 total off by one (346 Test IDs), written by the generator itself", [C.report], (x) => edit(x, "report", n(/\| Tests executed \(WP3\) \| (\d+) Test IDs/, (m) => `| Tests executed (WP3) | ${Number(m[1]) + 1} Test IDs`), true));
+  inject("a verdict count moved: one F5 record from deficient to effective in the report's family table", [C.report], (x) => edit(x, "report", n(/\| F5 ([^|]+)\| (\d+) \| (\d+) \| (\d+) \|/, (m) => `| F5 ${m[1]}| ${m[2]} | ${Number(m[3]) + 1} | ${Number(m[4]) - 1} |`), true));
+  inject(`the superseded run 1 (${run1.slice(0, 16)}…) cited as the WP3 result in the summary`, [C.runs, C.summary], (x) => edit(x, "summary", (t) => t.replace(`results of run ${off.wp3}`, `results of run ${run1}`), true));
+  inject("a finding's status altered: A4 shown as accepted design intent although the author left it open", [C.wp5], (x) => edit(x, "report", n(/(\| A4 \|[^\n]*\| )open( \|)/, (m) => `${m[1]}accepted design intent${m[2]}`), true));
+  inject("not measured counted as effective: the dashboard reports 296 effective and 0 not measured", [C.dash], (x) => edit(x, "dashboard", (t) => t.replace(/"totals":\{"effective":(\d+),"deficient":(\d+),"gap":(\d+),"characterized":(\d+),"not_measured":(\d+)/, (_m, e, d, g, c, nm) => `"totals":{"effective":${Number(e) + Number(nm)},"deficient":${d},"gap":${g},"characterized":${c},"not_measured":0`), true));
+  inject("not measured presented as passing in prose: \"The 13 not measured tests are counted as effective.\"", [C.prov], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nThe 13 not measured tests are counted as effective.\n"), true));
+  inject("stale state in the README: \"WP3 is planned and implemented but NOT executed.\"", [C.stale], (x) => edit(x, "readme", (t) => t.replace("## The question\n", "## The question\n\nWP3 is planned and implemented but NOT executed.\n"), true));
+  inject("stale state in the report: \"CP4 is presented, awaiting the author.\"", [C.stale], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nCP4 is presented, awaiting the author.\n"), true));
+  inject("AI-drafted text labelled as the author's: the summary's label rewritten to \"Written by the author\"", [C.labels], (x) => edit(x, "summary", (t) => t.replace(/Drafted by AI from the assessment's recorded results and not written by the author \(Amendment A2\)/, "Written by the author from the assessment's recorded results"), true));
+  inject("AI-assisted narrative claimed as the author's own: \"The findings narrative was written by the author.\"", [C.prov], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nThe findings narrative was written by the author.\n"), true));
+  inject("remediation claimed complete: \"Remediation of A4 was completed and verified.\"", [C.prov], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nRemediation of A4 was completed and verified.\n"), true));
+  inject("Arc21 described as fixed on the dashboard: \"Arc21 has been fixed.\"", [C.prov], (x) => edit(x, "dashboard", (t) => t.replace("<footer>", "<footer>Arc21 has been fixed. "), true));
+  inject("findings described as closed in the README: \"A2 and A4 are now closed.\"", [C.prov], (x) => edit(x, "readme", (t) => t.replace("## Prior art\n", "## Prior art\n\nA2 and A4 are now closed.\n"), true));
+  inject("CP5 called approved in the README status", [C.prov, C.readme], (x) => edit(x, "readme", n(/CP5 \*\*superseded by Amendment A2\*\*[^\n]*/, () => "CP5 approved by the author 2026-09-25."), true));
+  inject("a hand-edited number inside the README's generated section (the effective count)", [C.readme, C.bytes], (x) => edit(x, "readme", n(/\| effective \| (\d+) \|/, (m) => `| effective | ${Number(m[1]) + 7} |`), false));
+  inject("an evidence count typed into the README's hand-written text (\"The gates were proven 80/80.\")", [C.hand], (x) => edit(x, "readme", (t) => t.replace("## Prior art\n", "## Prior art\n\nThe gates were proven 80/80.\n"), true));
+  inject("the dashboard's embedded data tampered: one record's verdict (F5.register_push_token.269) made effective", [C.dash], (x) => edit(x, "dashboard", (t) => t.replace(/("F5\.register_push_token\.269":\{[^}]*?"v":)"deficient"/, '$1"effective"'), true));
+  inject("the summary given jargon (row-level security policies, the service_role key)", [C.plain], (x) => edit(x, "summary", (t) => t.replace("**What it means.**", "**What it means.** The row-level security policies deny the anon role unless the service_role key is used."), true));
+  inject(`the summary padded past one page (${V.SUMMARY_WORD_LIMIT}+ words)`, [C.plain], (x) => edit(x, "summary", (t) => t.replace("**What it means.**", `**What it means.** ${"Every player's records stayed their own. ".repeat(60)}`), true));
+  inject("a generated file modified after regeneration (a sentence appended to FINDINGS.md)", [C.bytes], (x) => edit(x, "findings", (t) => `${t}\nThis line was added by hand after generation.\n`, false));
+  inject("framework overclaim: AC-6 (which cites deficient records) shown as evidenced in the report", [C.wp6], (x) => edit(x, "report", n(/(\| AC-6 [^|]*\| )partial( \|)/, (m) => `${m[1]}evidenced (tested paths only)${m[2]}`), true));
+  inject("framework overclaim: \"Arc21 complies with NIST SP 800-53 AC-3 and is Part 11 compliant.\"", [C.claims], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nArc21 complies with NIST SP 800-53 AC-3 and is Part 11 compliant.\n"), true));
+  inject("the report's drift table shows one pass → fail that the transitions do not contain", [C.wp014], (x) => edit(x, "report", n(/(\| H1-[^|]+→ C-current \|(?: \d+ \|){6}) 0 \|/, (m) => `${m[1]} 1 |`), true));
+  inject("the report's WP1 line says 4 of 5 breaks detected", [C.wp014], (x) => edit(x, "report", n(/WP1: (\d+) of (\d+) deliberately/, (m) => `WP1: ${Number(m[1]) - 1} of ${m[2]} deliberately`), true));
+  {
+    // The premise is built, not assumed: a passing prove-gates record and a README that says
+    // complete — then the one condition changed. Accepted before the change, refused after.
+    const passing = { harness: { sourcesSha256: real.harnessNow }, summary: { injected: 1, caught: 1, controls: 1, held: 1, restored: true }, rows: [{ n: 1, control: false, caught: true, restored: true }, { n: 2, control: true, caught: true, restored: true }] };
+    const premise = (cp4: string) => {
+      const x = copy();
+      x.proveGates = passing;
+      x.docs.readme = x.docs.readme.replace(/^\*\*Status: [^\n]*/m, "**Status: complete.** Every work package is done.");
+      (x.cp4 as Rec7).approval = { ...(x.cp4 as Rec7).approval, CP4: cp4 };
+      return check(x).checks.find((c) => c.name.startsWith(C.readme));
+    };
+    const ok = premise("approved."), bad = premise("not approved");
+    out.push({
+      defect: "the README says complete while the recorded CP4 approval is changed to not approved (every other condition made to hold)",
+      gate: "validate-reports: the README's generated sections state the evidence (status)",
+      caught: !!ok?.passed && !!bad && !bad.passed,
+      firedCheck: `CP4 approved: ${ok?.passed ? "accepted" : `FALSE ALARM (${ok?.detail.slice(0, 80)})`}; CP4 not approved: ${bad && !bad.passed ? `refused (${bad.detail.slice(0, 110)})` : "NOT REFUSED"}`,
+      consequence: "validate-reports FAILS → exit 1", restored: true,
+    });
+  }
+  inject("the CLI gains a command the README does not document", [C.cmds], (x) => { x.cliSource = `${x.cliSource}\n    case "undocumented-command": break;\n`; });
+  inject("the dashboard made to load a script from the network", [C.offline], (x) => edit(x, "dashboard", (t) => t.replace("</head>", '<script src="https://cdn.example.com/x.js"></script></head>'), true));
+
+  // prove-gates' own citation: a synthetic record the reports agree with, then a report that cites one fewer.
+  {
+    const rows = [...Array.from({ length: 3 }, (_, i) => ({ n: i + 1, control: false, caught: true, restored: true })), { n: 4, control: true, caught: true, restored: true }];
+    const record = { harness: { sourcesSha256: real.harnessNow }, summary: { injected: 3, caught: 3, controls: 1, held: 1, restored: true }, rows };
+    const cite = (t: string, k: number) => t.replace(/\d+ of \d+ injected defects caught and \d+ of \d+ controls held|prove-gates has no recorded result/g, `${k} of 3 injected defects caught and 1 of 1 controls held`);
+    const withRecord = (k: number) => { const x = copy(); x.proveGates = record; x.docs.report = cite(x.docs.report, k); x.docs.readme = cite(x.docs.readme, k); return check(x); };
+    const ok = withRecord(3).checks.find((c) => c.name.startsWith(C.pg));
+    const bad = withRecord(2).checks.find((c) => c.name.startsWith(C.pg));
+    const failed = { ...record, rows: rows.map((r, i) => (i === 0 ? { ...r, caught: false } : r)) };
+    const x2 = copy(); x2.proveGates = failed; x2.docs.report = cite(x2.docs.report, 3); x2.docs.readme = cite(x2.docs.readme, 3);
+    const failedV = check(x2).checks.find((c) => c.name.startsWith(C.pg));
+    const caught = !!ok?.passed && !!bad && !bad.passed && !!failedV && !failedV.passed;
+    out.push({
+      defect: "the prove-gates count a report cites differs from the record's rows; and a record whose rows show a miss while the reports cite a pass",
+      gate: "validate-reports: prove-gates — recounted from its rows, it passed, and every report cites it",
+      caught, firedCheck: `consistent citation: ${ok?.passed ? "accepted" : "FALSE ALARM"}; one fewer cited: ${bad && !bad.passed ? "refused" : "NOT REFUSED"}; a failed row: ${failedV && !failedV.passed ? "refused" : "NOT REFUSED"}`,
+      consequence: "validate-reports FAILS → exit 1", restored: true,
+    });
+  }
+  return out;
+}
+
+/** The reproduction comparisons (`attest run`), each given the real frozen evidence and a perturbed copy (D3.61). */
+async function proveReproduction(manifest: ApprovedManifest): Promise<InjectionResult[]> {
+  const R = await import("./reproduce.ts");
+  const off = await loadOfficialRuns();
+  const j = async (...p: string[]) => JSON.parse(await readFile(join(RUNS_ROOT, ...p), "utf8")) as Rec7;
+  const inv = await j(off.frozenCp3, "inventory.json");
+  const ri = await j(off.frozenCp3, "risk-inputs.json");
+  const cp3 = await j(off.frozenCp3, "cp3-tiers.json");
+  const wp1 = await j(off.frozenCp3, "wp1-validation.json");
+  const planTests = ((await j(off.plan, "wp3-matrix.json")).plan as Rec7).tests as Rec7[];
+  const official = await R.loadRunRecords(off.wp3);
+  const store = JSON.parse(await readFile(join(ATTEST_ROOT, "rubric", "author-intents.json"), "utf8")) as Rec7;
+  const sc = <T>(x: T): T => structuredClone(x);
+  const plan = { tests: planTests } as unknown as Wp3Plan;
+  const out: InjectionResult[] = [];
+  const same = [
+    R.compareInventory(inv, sc(inv)), R.compareRiskInputs(ri, sc(ri)), R.compareTiers(cp3, sc(cp3)), R.compareWp1(wp1, sc(wp1)),
+    R.comparePlan(sc(plan), planTests, manifest, []), R.compareIntentStore(store, official), R.compareWp3Runs(official, sc(official)),
+  ];
+  // The known answer (D3.55): run 1 against the official run differs exactly in the eleven F10
+  // verdicts its heuristic defect mis-judged and the three F9 identities it failed to record,
+  // with every one of the recorded outcomes identical.
+  const run1 = ((await loadOfficialRuns()).notResults.find((n) => n.disposition === "superseded")?.runId) ?? "";
+  const known = R.compareWp3Runs(official, await R.loadRunRecords(run1));
+  const knownOk = known.byField.verdict === 11 && known.byField.actualSummary === 0 && known.byField.identity === 3 && known.byField.missing === 0 && known.byField.extra === 0;
+  out.push({
+    defect: "(control) the frozen evidence compared with itself by every reproduction comparison; and run 1 compared with the official run",
+    gate: "run: the comparisons report no difference where there is none, and the known one exactly",
+    caught: same.every((c) => c.identical) && knownOk,
+    firedCheck: `${same.filter((c) => c.identical).length} of ${same.length} self-comparisons identical${same.some((c) => !c.identical) ? ` — FALSE ALARM: ${same.find((c) => !c.identical)!.detail.slice(0, 120)}` : ""}; run 1 vs official: ${JSON.stringify(known.byField)} (D3.55: 11 verdicts, 3 identities, 0 outcomes)`,
+    consequence: "a faithful rebuild is accepted", restored: true, control: true,
+  });
+  const cases: [string, () => import("./reproduce.ts").Comparison][] = [
+    ["inventory: one policy's USING expression replaced with true", () => { const b = sc(inv); const p = (b.controls as Rec7[]).find((c) => c.controlKind === "policy" && c.detail?.using_expr)!; p.detail.using_expr = "true"; return R.compareInventory(inv, b); }],
+    ["inventory: one control missing", () => { const b = sc(inv); (b.controls as Rec7[]).splice(3, 1); return R.compareInventory(inv, b); }],
+    ["risk inputs: one resource's effective write exposure changed", () => { const b = sc(ri); (b.resources as Rec7[])[0]!.effectiveWriteExposure = "anonymous"; return R.compareRiskInputs(ri, b); }],
+    ["tiers: one resource re-tiered Medium → High", () => { const b = sc(cp3); const s = (b.scored as Rec7[]).find((x) => x.tier === "Medium")!; s.tier = "High"; return R.compareTiers(cp3, b); }],
+    ["WP1: one deliberate break goes undetected", () => { const b = sc(wp1); (b.scenarios as Rec7[])[0]!.detected = false; b.allDetected = false; return R.compareWp1(wp1, b); }],
+    ["plan: one approved row's expectation reworded", () => { const b = sc(planTests); b[5]!.expected = `${String(b[5]!.expected)} (reworded)`; return R.comparePlan({ tests: b } as unknown as Wp3Plan, planTests, manifest, []); }],
+    ["intent store: one adopted sentence edited, and one relabelled user_authored", () => { const b = sc(store); (b.intents as Rec7[])[0]!.intent = `${String((b.intents as Rec7[])[0]!.intent)} (edited)`; (b.intents as Rec7[])[1]!.provenance = "user_authored"; return R.compareIntentStore(b, official); }],
+    ["a reproduction with one verdict, one recorded outcome and one record different", () => { const b = sc(official); b[0]!.verdict = "deficient"; b[1]!.actualSummary = "error 42501"; b.splice(2, 1); return R.compareWp3Runs(official, b); }],
+  ];
+  for (const [what, f] of cases) {
+    let c: import("./reproduce.ts").Comparison | null = null;
+    let err = "";
+    try { c = f(); } catch (e) { err = (e as Error).message; }
+    out.push({
+      defect: `reproduction — ${what}`,
+      gate: `run: ${c?.name ?? "the reproduction comparison"}`,
+      caught: !!c && !c.identical,
+      firedCheck: err ? `INJECTION NOT APPLIED: ${err}` : c!.identical ? "NOT REPORTED" : c!.detail.slice(0, 180),
+      consequence: "run reports NOT REPRODUCED → exit 1", restored: true,
+    });
+  }
   return out;
 }
 

@@ -4,7 +4,8 @@
  * For a reader with no technical background: what these controls do, why they
  * matter, and what the posture is — no jargon, no SQL. AI-drafted (Amendment A2)
  * and labelled so; every number is computed from the evidence. `validate-reports`
- * checks it for jargon, length and overclaiming, and re-derives its numbers.
+ * checks it for jargon, length and overclaiming, and re-derives its numbers with
+ * its own code.
  */
 import { join } from "node:path";
 import { ATTEST_ROOT } from "./config.ts";
@@ -22,10 +23,13 @@ export const CROSS_REFERENCE = "*For readers of the technical report:";
 
 export function renderSummary(f: Facts): string {
   const bv = f.wp3.byVerdict;
+  const item = (key: string) => f.wp5.items.find((i) => i.key === key);
   const deficientOpen = f.wp5.items.filter((i) => i.evidenceClass === "deficient" && i.status === "open");
   const deficientAccepted = f.wp5.items.filter((i) => i.evidenceClass === "deficient" && i.status === "accepted_design_intent");
   const acceptedCount = deficientAccepted.reduce((n, i) => n + i.testIds.length, 0);
   const openCount = deficientOpen.reduce((n, i) => n + i.testIds.length, 0);
+  const absent = item("audit-trail-absent")?.testIds.length ?? 0;
+  const partial = item("audit-trail-partial");
   const scope = f.wp5.scope;
   const L = [
     "# Arc21's data protections — a one-page summary",
@@ -39,8 +43,8 @@ export function renderSummary(f: Facts): string {
     "**What was found.**",
     "",
     `- **${bv.effective} of the ${bv.total} attempts behaved exactly as intended.** Every direct attempt to read or change another player's own records, to get at data without signing in, or to change chips outside the game's own rules was stopped. The chip balance stayed correct even when two changes arrived at the same moment.`,
-    `- **${bv.deficient} attempts showed a rule not holding.** ${openCount === 1 ? "One is still open" : `${openCount} are still open`}: a signed-in player who knows the long code that identifies another player's phone can use one of the game's own features to take over that phone's alert registration, so its owner may stop getting their alerts. How an attacker could learn that code was not tested. The other ${acceptedCount} show players with a private profile still named on leaderboards; the author decided that is intended, because leaderboards exist to show competitors.`,
-    `- **${bv.gap} checks found no record of who changed what.** ${scope ? `For ${scope.trailRequired} kinds of important information — privacy settings, friendships and blocks, game results and prize chips, game rules and abuse limits — the author decided a history of changes should exist, and it does not yet. ` : ""}Without it, nobody could work out afterwards who changed an important setting or result.`,
+    `- **${bv.deficient} attempts showed a rule not holding.** ${openCount === 1 ? "One is still open" : `${openCount} are still open`}: a signed-in player who knows the long code that identifies another player's phone can use one of the game's own features to take over that phone's alert registration, so its owner may stop getting their alerts. How an attacker could learn that code was not tested. The other ${acceptedCount} show players with a private profile still named on leaderboards; the author decided that is intended, because the game is designed to keep players visible on leaderboards even when their profile is private.`,
+    `- **${bv.gap} checks found no complete record of who changed what** — none at all for ${absent} kinds of important information, and only part of one for ${partial?.testIds.length ?? 0} more${partial?.status === "accepted_design_intent" ? ", which the author accepted as enough" : ""}. ${scope ? `Under a rule the author set, ${scope.trailRequired} of the ${absent} — among them privacy settings, friendships and blocks, game and tournament results, and the game's rules and abuse limits — should keep such a history, and none exists yet. ` : ""}Without it, nobody could work out afterwards who changed an important setting or result.`,
     `- **${bv.characterized} results are facts rather than passes or fails**, and **${bv.not_measured} could not be measured** — for example, deleting an account removes everything it owned, so there was nothing left to test. Those ${bv.not_measured} are not counted as passes.`,
     "",
     "**What it means.** The direct protections that keep each player's own data to themselves held every time they were tested. The weaknesses are narrower: one built-in feature that lets a player take over another player's phone alerts, and the missing history of changes, which would make it hard to investigate a problem after the fact.",

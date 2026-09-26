@@ -14,6 +14,8 @@ import { join } from "node:path";
 import { ATTEST_ROOT } from "./config.ts";
 import { controlsNamedBy, countVerdicts, familyCode, FAMILIES, TIER_ACTIVITY, type Evidence, type Facts, type VerdictCounts } from "./evidence-facts.ts";
 import { WP5_ITEMS } from "./wp5-guidance.ts";
+import { SUPPORT_TEXT } from "./wp6-mapping.ts";
+import { COMMANDS } from "./commands.ts";
 
 type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -23,6 +25,34 @@ const vc = (c: VerdictCounts) => [c.effective && `${c.effective} effective`, c.d
 const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 const tick = (s: string) => `\`${s}\``;
 const minutes = (s: number) => `${Math.round(s / 60)} minutes`;
+
+/** The latest recorded prove-gates result, as its rows count it — never a typed number. */
+export function proveGatesLine(f: Facts): string {
+  const g = f.proveGates;
+  if (!g) return "prove-gates has no recorded result";
+  return `${g.caught} of ${g.injected} injected defects caught and ${g.held} of ${g.controls} controls held, real state ${g.restored ? "restored" : "NOT restored"} (harness \`${g.harnessSha256.slice(0, 12)}\`)`;
+}
+
+/** The brief's WP0 "no control" patterns, as the frozen inventory classified each resource. */
+export function rcList(f: Facts): string {
+  const rc = f.wp0.rowControl;
+  const names = (xs: readonly string[]) => (xs.length ? xs.map(tick).join(", ") : "none");
+  return [
+    `row-level security **off**: ${names(rc.rlsDisabled)}.`,
+    `Row-level security on with **no policy** — every client is denied, and no client role holds a grant: ${names(rc.noPolicyDenyAll)}.`,
+    `**Readable without an account**: ${names(rc.anonReachable)} — the catalogue tables, accepted as design intent at CP4 (B3).`,
+    `**Granted to the anonymous role with no policy admitting it** (a latent grant): ${names(rc.anonLatent)} — informational (B4).`,
+    `By WP4's definition of a row-level control (row-level security on, or a view that runs as its invoker), ${rc.withRowControl} of ${f.wp0.resources} resources have one${rc.without.length ? `; without: ${names(rc.without)}` : ""}.`,
+  ].join(" ");
+}
+
+/** "AC-3 Access Enforcement"; a Part 11 paragraph by its own words: "21 CFR §11.10(d) Limiting system access to authorized individuals". */
+export function frameworkLabel(e: Rec): string {
+  if (e.framework !== "21 CFR Part 11") return `${e.id} ${cell(String(e.title).replace(/\.$/, ""))}`;
+  const para = /^\([a-z]\)\s+(.*)$/.exec(String((e.statement as string[])[0] ?? ""));
+  const words = para ? para[1]!.split(/;|\.(?:\s|$)/)[0]!.trim() : String(e.title).replace(/^§ ?[\d.]+ /, "").replace(/\.$/, "");
+  return `21 CFR ${e.id} ${cell(words.length > 70 ? `${words.slice(0, 70).replace(/[\s,]+\S*$/, "")}…` : words)}`;
+}
 
 /** The one-line meaning of each verdict — the project's exact terms. */
 export const VERDICT_MEANING: Readonly<Record<string, string>> = {
@@ -135,15 +165,18 @@ export function renderReport(ev: Evidence, f: Facts): string {
   p();
   p("| | |");
   p("|---|---|");
-  p(`| Resources in scope (WP0) | ${f.wp0.resources} — ${f.wp0.resourcesWithoutControl.length === 0 ? "every one has at least one control" : `${f.wp0.resourcesWithoutControl.length} without a control: ${f.wp0.resourcesWithoutControl.join(", ")}`} |`);
+  const rc = f.wp0.rowControl;
+  p(`| Resources in scope (WP0) | ${f.wp0.resources}; **${rc.withRowControl} of ${f.wp0.resources} have a row-level control** (row-level security on every table; the one view runs as its invoker)${rc.without.length ? ` — without one: ${rc.without.join(", ")}` : ""} |`);
+  p(`| The brief's "no control" patterns (WP0) | row-level security off: ${rc.rlsDisabled.length}; on with no policy (every client denied, no client grant): ${rc.noPolicyDenyAll.length}; readable without an account: ${rc.anonReachable.length} (item B3); an anonymous grant no policy admits: ${rc.anonLatent.length} (item B4) |`);
   p(`| Controls inventoried from the live catalogs | ${f.wp0.controls} (resource, control) pairs; ${f.wp0.policies} policies; row-level security enabled on ${f.wp0.rlsEnabled} of ${f.wp0.tables} tables, **forced on ${f.wp0.rlsForced}** |`);
-  p(`| Risk tiers (WP2, frozen) | ${Object.entries(f.wp2.byTier).map(([t, n]) => `${n} ${t}`).join(", ")}; no resource rated Low |`);
+  p(`| Risk tiers (WP2, frozen at CP3) | ${Object.entries(f.wp2.byTier).map(([t, n]) => `${n} ${t}`).join(", ")}; no resource rated Low |`);
   p(`| Tests executed (WP3) | ${f.wp3.total} Test IDs under role-scoped sessions — **${bv.effective} effective, ${bv.deficient} deficient, ${bv.gap} gap, ${bv.characterized} characterized, ${bv.not_measured} not measured** |`);
-  p(`| Independent validation of the results | ${f.wp3.validationChecksPassed} of ${f.wp3.validationChecks} checks passed |`);
-  p(`| Findings (WP5, after CP4) | ${items.filter((i) => i.part === "finding").length} findings (${open.length} open: ${open.map((i) => i.id).join(", ")}), ${items.filter((i) => i.part === "informational").length} informational items, ${items.filter((i) => i.part === "limitation").length} limitations — CP4 ${f.wp5.cp4Approved ? `approved by the author ${f.wp5.cp4Date}` : "not approved"} |`);
-  p(`| Drift (WP4) | ${f.wp4.states.length} schema states; ${f.wp4.diffs.reduce((m, d) => m + (d.passToFail ?? 0), 0)} pass → fail; new unprotected resource caught: ${f.wp4.newUnprotected.map((u) => tick(u.resource)).join(", ") || "none"} |`);
-  p(`| Harness self-checks | WP1: ${f.wp1.detected} of ${f.wp1.scenarios} deliberately broken controls detected; over-privileged connections discriminated in ${f.wp1.overPrivilegedDiscriminated} of ${f.wp1.overPrivilegedChecks} checks |`);
-  p(`| Arc21 modified by Attest | no — fingerprint ${tick(f.wp3.arc21Fingerprint.slice(0, 16) + "…")} identical before and after |`);
+  p(`| Independent validation of the results | ${f.wp3.validationChecksPassed} of ${f.wp3.validationChecks} checks passed (\`validate-wp3\`) |`);
+  p(`| Findings (WP5, after CP4) | ${items.filter((i) => i.part === "finding").length} findings (${open.length} open: ${open.map((i) => i.id).join(", ")}), ${items.filter((i) => i.part === "informational").length} informational items, ${items.filter((i) => i.part === "limitation").length} limitations — CP4 ${f.wp5.cp4Approved ? `approved by the author ${f.wp5.cp4Date}` : "not approved"}; nothing remediated |`);
+  p(`| Drift (WP4) | ${f.wp4.states.length} schema states; ${f.wp4.diffs.reduce((m, d) => m + (d.passToFail ?? 0), 0)} pass → fail; ${f.wp4.diffs.find((d) => d.from === f.wp4.states[0]?.name && d.to === "C-current")?.failToPass ?? 0} fail → pass from the oldest state to today; the unprotected table added in an Attest-only scratch state was caught: ${f.wp4.newUnprotected.map((u) => tick(u.resource)).join(", ") || "none"} |`);
+  p(`| Framework mapping (WP6, a study exercise) | ${f.wp6 ? `${f.wp6.entries} entries: ${f.wp6.evidenced} evidenced (tested paths only), ${f.wp6.partial} partial, ${f.wp6.notMapped} not mapped; \`validate-wp6\` ${f.wp6.validationChecksPassed} of ${f.wp6.validationChecks}; CP5 superseded by Amendment A2 (not approved)` : "not generated"} |`);
+  p(`| Harness self-checks | WP1: ${f.wp1.detected} of ${f.wp1.scenarios} deliberately broken controls detected by the role-scoped probe, while the same statements on over-privileged connections told intact from broken in ${f.wp1.overPrivilegedDiscriminated} of ${f.wp1.overPrivilegedChecks} checks; ${proveGatesLine(f)} |`);
+  p(`| Arc21 modified by Attest | no — fingerprint ${tick(f.wp3.arc21Fingerprint.slice(0, 16) + "…")} identical before and after the official run |`);
   p();
   p("**What the verdicts mean** (the project's exact terms):");
   p();
@@ -156,7 +189,7 @@ export function renderReport(ev: Evidence, f: Facts): string {
   p(`2. **Harness validation (WP1).** Before any result counts, ${f.wp1.scenarios} controls across different mechanisms are broken on purpose; the role-scoped probe must notice each break, and the same statement run on over-privileged connections is shown unable to tell intact from broken — so the role scoping is load-bearing.`);
   p("3. **Risk rating (WP2).** The author's rubric (RUBRIC.md) rates every resource on data criticality, blast radius, integrity impact, reversibility and exposure, and maps the tier to an assurance activity. The tiers were frozen at CP3, before any test ran.");
   p(`4. **Testing (WP3).** A matrix of ${f.wp3.total} Test IDs (${f.wp3.byPolarity.positive ?? 0} positive, ${f.wp3.byPolarity.negative ?? 0} negative, ${f.wp3.byPolarity.characterization ?? 0} characterization) was generated from the frozen tiers and approved. Each negative test names the attack it simulates. Tests run under genuine role-scoped sessions carrying a user's identity (never a superuser or a role that bypasses row-level security, read back from the database each time); after any probe that changed state the database is rebuilt and re-verified (${f.wp3.rebuilds} rebuilds in the official run). Each record carries the statement, the identity, the expectation, the outcome, a timestamp and the schema version.`);
-  p("5. **Independent validation.** `validate-wp3` re-derives every verdict and total from the raw records with its own code.");
+  p(`5. **Independent validation.** \`validate-wp3\` re-derives every verdict and total from the raw records with its own code (${f.wp3.validationChecksPassed} of ${f.wp3.validationChecks} checks passed). Every gate in the harness — preflight, the evaluators, the isolation guards, the validators, the report checks — is proven by breaking it on purpose (\`prove-gates\`: ${proveGatesLine(f)}).`);
   p(`6. **Drift (WP4).** The same approved questions are asked of Arc21's earlier schemas, rebuilt from its own git history without touching the checkout, and every difference is classified.`);
   p("7. **Findings (WP5)** are ranked mechanically from the frozen tiers and the evidence; the author set each status at CP4. **Framework mapping (WP6)** is a study exercise.");
   p();
@@ -170,7 +203,9 @@ export function renderReport(ev: Evidence, f: Facts): string {
   for (const [k, v] of Object.entries(f.coverage.byKind)) p(`| ${k} | ${v.total} | ${v.named} |`);
   p(`| **total** | **${f.wp0.controls}** | **${f.coverage.controlsNamed}** |`);
   p();
-  p(`**Test coverage of the inventory.** ${f.coverage.controlsNamed} of the ${f.wp0.controls} controls are named by at least one Test ID (its control id, a mechanism it asserts, or a function its statement calls). ${f.coverage.controlsResourceOnly} are exercised only through tests of their resource — for example, row-level security being enabled is what every read-isolation test relies on, though no test names that flag alone. ${f.coverage.controlsUnexercised} are not exercised by any test: server-only SECURITY DEFINER functions that no client role can execute, and execute grants on SECURITY INVOKER helper functions, which run with the caller's own privileges.`);
+  p(`**Test coverage of the inventory.** ${f.coverage.controlsNamed} of the ${f.wp0.controls} controls are named by at least one Test ID (its control id, a mechanism it asserts, or a function its statement calls). ${f.coverage.controlsResourceOnly} are named by none but sit on a resource that other tests exercise — row-level security being enabled, for example, is what every read-isolation test on that table relies on, though no test names the flag alone. ${f.coverage.controlsUnexercised} are on functions no test calls: ${f.coverage.unexercisedDefinerServerOnly} SECURITY DEFINER functions that no client role can execute, and ${f.coverage.unexercisedInvokerGrant} execute grants on SECURITY INVOKER helpers, which run with the caller's own privileges${f.coverage.unexercisedOther.length ? `; and ${f.coverage.unexercisedOther.length} other: ${f.coverage.unexercisedOther.join(", ")}` : ""}.`);
+  p();
+  p(`**Resources without a control** (the brief's WP0 list, read from the frozen inventory): ${rcList(f)}`);
   p();
   p(`**Structural observations:** ${Object.entries(f.wp0.observations).map(([k, n]) => `${n} × ${tick(k)}`).join(", ")}. ${f.wp0.roles} roles exist; ${f.wp0.rolesBypassRls.length} hold BYPASSRLS (${f.wp0.rolesBypassRls.join(", ")}). The anonymous role reaches ${f.wp0.anonReach} objects instance-wide, ${f.wp0.anonReachApplication} of them in the application schemas.`);
   p();
@@ -289,7 +324,7 @@ export function renderReport(ev: Evidence, f: Facts): string {
   if (fm) {
     p("| Identifier | Support | Evidence |");
     p("|---|---|---|");
-    for (const e of fm.mappings as Rec[]) p(`| ${e.framework === "21 CFR Part 11" ? "21 CFR " : ""}${e.id} ${cell(String(e.title).replace(/^§ ?[\d.]+ /, "").replace(/\.$/, ""))} | ${String(e.support).replace("_", " ")}${e.subject === "attest" ? " (Attest's activity)" : ""} | ${(e.evidence.testIds as string[]).length ? `${e.evidence.counts.total} records (${vc(e.evidence.counts)})` : (e.evidence.artifacts as Rec[]).map((a) => a.artifact).join(", ") || "none"} |`);
+    for (const e of fm.mappings as Rec[]) p(`| ${frameworkLabel(e)} | ${SUPPORT_TEXT[e.support as keyof typeof SUPPORT_TEXT] ?? e.support}${e.subject === "attest" ? " (Attest's activity, not Arc21's control)" : ""} | ${(e.evidence.testIds as string[]).length ? `${e.evidence.counts.total} records (${vc(e.evidence.counts)})` : (e.evidence.artifacts as Rec[]).map((a) => a.artifact).join(", ") || "none"} |`);
     p();
   }
 
@@ -302,12 +337,11 @@ export function renderReport(ev: Evidence, f: Facts): string {
   // Reproduce
   p(`## ${sectionNo++}. Reproducing every number`);
   p();
-  p("| Command | What it does |");
-  p("|---|---|");
-  p("| `npm run attest reports` | regenerates FINDINGS.md, the CP4 and CP5 records, the framework mapping, the CSA note, this report, the dashboard, the plain-language summary and the README's generated section from the persisted evidence, then validates them — no database needed |");
-  p("| `npm run attest validate-reports` | re-derives every headline number from the raw records with separate code, lints every generated document for overclaiming, and checks that each file is exactly what the evidence regenerates |");
-  p("| `npm run attest run` | rebuilds the disposable database from Arc21's migrations, re-reads the inventory, re-runs the harness validation (WP1), re-scores (WP2), re-plans (WP3, must equal the frozen matrix), compares each with the frozen evidence, and regenerates the reports |");
-  p("| `npm run attest run -- --confirm` | all of the above, then executes the full WP3 assessment again (≈ 40–50 minutes), validates it, repeats WP4 against it, and compares every Test ID with the official run |");
+  p("| Command | What it does | Database |");
+  p("|---|---|---|");
+  for (const c of COMMANDS.filter((x) => x.group === "reproduce" || x.group === "reports")) p(`| \`npm run attest ${c.usage ?? c.name}\` | ${cell(c.does)} | ${c.db === "none" ? "not used" : c.db}${c.network ? "; uses the network" : ""} |`);
+  p();
+  p("What is and is not re-executed: `reports` and `validate-reports` need no database — every number here is recomputed from the persisted evidence. `run` rebuilds the disposable database and re-derives everything that can be re-derived without re-running the 345 probes — the inventory, the harness validation, the tiers, the fixtures and the plan — and requires each to equal the frozen evidence. Re-executing the assessment itself is `run -- --confirm`, which records a reproduction run (never a new result) and compares it with the official run Test ID by Test ID.");
   p();
   p(`Evidence identifiers: WP3 ${tick(f.runs.wp3)} · plan ${tick(f.runs.plan)} · WP4 ${tick(f.runs.wp4)} · frozen CP1/CP3 ${tick(f.runs.frozenCp3)} · schema ${tick(f.wp3.schemaVersion.slice(0, 12))} · harness ${tick(f.wp3.harnessSha256.slice(0, 12))} · Arc21 commit ${tick(f.wp3.arc21Commit.slice(0, 12))} (checkout dirty with the author's own work; fingerprint ${tick(f.wp3.arc21Fingerprint.slice(0, 16) + "…")}).`);
   p();
@@ -317,16 +351,19 @@ export function renderReport(ev: Evidence, f: Facts): string {
 /** The limitations every WP7 output carries — AI-drafted, from the project record. */
 export function REPORT_LIMITATIONS(f: Facts): string[] {
   return [
-    "**Not independent.** The author wrote Arc21, the harness, the rubric and the expectations, and approved the findings. The inventory is read from the system catalogs rather than from anyone's memory, so it would read the same for someone who never saw the code — the one mitigating fact.",
-    "**Not a regulated system, and no compliance claim.** Arc21 is a personal application used as a test subject. The framework mapping is a study exercise; nothing here is compliance, validation, certification or audit, and nothing implies the author has experience of any of those.",
+    "**Not independent.** The author wrote Arc21, the harness, the rubric and the expectations, and approved the findings. Nothing here is a third-party assessment. The one mitigating fact: the inventory is read from the system catalogs rather than from anyone's memory, so it would read the same for someone who never saw the code.",
+    "**Not a regulated system, and no compliance claim.** Arc21 is a personal application used as a test subject — not a GxP or Part 11 system, and not compliant with anything. The framework mapping is a study exercise; nothing here is compliance, validation, certification or audit, and nothing implies the author has experience of any of those.",
+    "**Not a product.** The harness is one person's tool for one system: it has not been validated or qualified as a testing tool, and nobody else uses it.",
     "**Nothing was remediated (Amendment A1).** Arc21 is a read-only assessment target. Findings end as recommendations with verification procedures; none is fixed, closed or independently verified.",
     `**Not measured is not a pass.** ${f.wp3.byVerdict.not_measured} tests could not measure their property on this schema and are reported as such; they are never counted as effective.`,
-    "**Data layer only.** No network, host, container, infrastructure or HTTP-layer testing; authentication itself is assumed to work, and what is tested is what happens given an identity.",
+    "**Data layer only.** No network, host, container, infrastructure, HTTP-layer or user-interface testing, and no password or authentication testing: the identity provider is assumed to work, and what is tested is what happens given an identity. Nothing here claims every attack surface was tested.",
     `**One point in time, one instance.** One schema version (${f.wp3.migrationCount} migrations), a disposable local database, synthetic accounts. Historical states are today's questions asked of yesterday's schema.`,
-    "**The tests detect the breaks they were written for.** Each negative test simulates the attack its approved row names; WP1 shows the harness notices deliberately obvious breaks, not every possible weakening.",
-    "**Platform-owned surface is reported, not assessed.** Supabase's own schemas and defaults appear in the inventory and are flagged, with no finding raised against them.",
-    "**The harness's refusal to test as a role that bypasses row-level security is code, not a database property**: the testing login can switch into service_role, and the harness refuses to.",
-    "**The harness has been wrong before.** Its own defects are written up in DECISIONS.md, and every run they affected is kept as it was written; that bears on how much weight one run deserves.",
-    "**Provenance.** Titles, explanations, remediation options, the framework rationale and this report's connecting prose are AI-drafted; the findings narrative is AI-assisted wording the author reviewed and adopted at CP4 (Amendment A2).",
+    "**The tests detect the breaks they were written for.** Each negative test simulates the attack its approved row names. WP1 shows the harness notices deliberately obvious breaks — an expression replaced with true, a trigger disabled — not every possible weakening, and says nothing about a control no test touches. A control counted as named by a test is exercised on that test's path, not proven in every respect.",
+    "**The refusal to test as a role that bypasses row-level security is code, not a database property.** The testing login can switch into service_role, which holds BYPASSRLS; the harness refuses to.",
+    "**Platform-owned surface is reported, not assessed.** Supabase's own schemas and defaults appear in the inventory and are flagged as platform-owned, with no finding raised against them.",
+    "**The read-only guard sees git-visible state.** It fingerprints Arc21's tracked files, index, refs, untracked files (with their contents) and the names of ignored paths; it does not hash the contents of already-ignored directories such as node_modules/ or the Supabase CLI's supabase/.temp/.",
+    "**Realtime's message partitions are created by the service at runtime,** so immediately after a rebuild the realtime publication is empty; broadcast authorization is enforced by the row policies on realtime.messages, which are inventoried and tested.",
+    "**The harness has been wrong before.** Each defect is written up in DECISIONS.md, and every run a defect affected is kept as it was written — the superseded and aborted WP3 runs and the two stopped WP4 runs among them. That bears on how much weight any single run deserves.",
+    "**Provenance.** Titles, explanations, remediation options, the framework rationale and every report's connecting prose are AI-drafted; the findings narratives are AI-assisted wording the author reviewed and adopted at CP4 (Amendment A2).",
   ];
 }

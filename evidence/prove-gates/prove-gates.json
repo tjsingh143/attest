@@ -1,0 +1,1270 @@
+{
+  "WARNING": "The latest `npm run attest prove-gates` result, rewritten by every run, pass or fail. Each row is one injected defect, or a control the gate must NOT fire on; a row may bundle several sub-cases, each named in its text. The reports cite counts computed from these rows. The harness hash identifies the code that ran; the commit is context (the tree may have had uncommitted changes, as recorded).",
+  "at": "2026-09-26T20:18:17.147Z",
+  "harness": {
+    "version": "0.1.0",
+    "sourcesSha256": "b0a87299d68aca468a6cec002ee7c62a760df1e8feff9fa9f9b4991c0827f822",
+    "fileCount": 91
+  },
+  "attestCommit": "75257c08262950ad197c39c42d8d3b75c61a8c31",
+  "trackedChangesUncommitted": true,
+  "summary": {
+    "injected": 116,
+    "caught": 116,
+    "controls": 9,
+    "held": 9,
+    "restored": true
+  },
+  "rows": [
+    {
+      "n": 1,
+      "control": true,
+      "defect": "(control) the real, unbroken plan",
+      "gate": "planChecks — the static half of preflight",
+      "caught": true,
+      "restored": true,
+      "consequence": "no static check fails (exit 0 as far as the plan is concerned)",
+      "firedCheck": "all 21 static checks pass"
+    },
+    {
+      "n": 2,
+      "control": false,
+      "defect": "a Test ID is missing from the plan",
+      "gate": "preflight: 345 Test IDs; the plan is the approved matrix",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan carries 345 Test IDs: 344 | polarity accounting reconciles: every Test ID is exactly one of the three supported polarities: 63 positive + 240 negative + 41 characterization = 344 of 344 — DIFFERS from the frozen 63/240/42 | the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 approved Test ID(s) missing: F7.private_game_commands.011"
+    },
+    {
+      "n": 3,
+      "control": false,
+      "defect": "an extra Test ID appears (a probe with no approved row)",
+      "gate": "preflight: the plan is the approved matrix; no implementation without a planned row",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan carries 345 Test IDs: 346 | polarity accounting reconciles: every Test ID is exactly one of the three supported polarities: 63 positive + 241 negative + 42 characterization = 346 of 346 — DIFFERS from the frozen 63/240/42 | the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 Test ID(s) not in the approved matrix: F1.injected_extra.999"
+    },
+    {
+      "n": 4,
+      "control": false,
+      "defect": "an approved Test ID is substituted, leaving the count at 345",
+      "gate": "preflight: the plan is the approved matrix",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 approved Test ID(s) missing: F10.private_game_state_private.021; 1 Test ID(s) not in the approved matrix: F1.substituted.998"
+    },
+    {
+      "n": 5,
+      "control": false,
+      "defect": "a duplicate Test ID (two rows, one ID)",
+      "gate": "preflight: every Test ID is unique; semantic: one Test ID = one probe",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "every Test ID is unique: 344 unique of 345 | the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 approved Test ID(s) missing: F10.private_career_drill_seeds.006; 1 duplicated; 1 row(s) whose operation, expected, covers or other frozen field changed: F7.private_career_drill_seeds.005 | identities and fixtures differ from the approved run only by the listed corrections: 1 unlisted identity change(s), 0 unlisted fixture change(s): F7.private_career_drill_seeds.005: \"server-side catalog read (no control is exercised)\" -> \"owner(postgres)\" | no placeholder, multi-"
+    },
+    {
+      "n": 6,
+      "control": false,
+      "defect": "a row carries a fourth, unsupported polarity",
+      "gate": "preflight: polarity accounting reconciles",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "polarity accounting reconciles: every Test ID is exactly one of the three supported polarities: 63 positive + 239 negative + 42 characterization = 344 of 345 — DIFFERS from the frozen 63/240/42; 1 row(s) carry an unsupported polarity | the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 row(s) whose operation, expected, covers or other frozen field changed: F4.private_career_drill_seeds.004 | no placeholder, multi-probe or multi-identity row (semantic validation): 2 issue(s): F4.private_career_drill_seeds.004 intent only for negatives; (whole plan) polarity t"
+    },
+    {
+      "n": 7,
+      "control": false,
+      "defect": "an approved row's expected result is edited",
+      "gate": "preflight: no frozen field changed",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 row(s) whose operation, expected, covers or other frozen field changed: F5.caller_is_room_member.252 | every row binds: claims, premises, guards, references: F5.caller_is_room_member.252: no template consumes the whole text: \"returns TRUE\" | [R1] every claim of every approved expectation has an implemented evaluator: 1 problem(s): F5.caller_is_room_member.252"
+    },
+    {
+      "n": 8,
+      "control": false,
+      "defect": "an unresolved placeholder survives into an operation",
+      "gate": "semantic validator: no placeholders",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 row(s) whose operation, expected, covers or other frozen field changed: F2.private_career_drill_seeds.001 | no placeholder, multi-probe or multi-identity row (semantic validation): 1 issue(s): F2.private_career_drill_seeds.001 no placeholders"
+    },
+    {
+      "n": 9,
+      "control": false,
+      "defect": "one Test ID bundles two probes (delete, then truncate)",
+      "gate": "semantic validator: one probe per row",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 row(s) whose operation, expected, covers or other frozen field changed: F2.private_career_drill_seeds.001 | no placeholder, multi-probe or multi-identity row (semantic validation): 1 issue(s): F2.private_career_drill_seeds.001 one probe per row"
+    },
+    {
+      "n": 10,
+      "control": false,
+      "defect": "one Test ID names two execution identities",
+      "gate": "semantic validator: one identity per row; identity consistency",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "identities and fixtures differ from the approved run only by the listed corrections: 1 unlisted identity change(s), 0 unlisted fixture change(s): F1.public_game_events.073: \"authenticated:carol\" -> \"authenticated:carol and as authenticated:bob\" | no placeholder, multi-probe or multi-identity row (semantic validation): 1 issue(s): F1.public_game_events.073 one identity per row"
+    },
+    {
+      "n": 11,
+      "control": false,
+      "defect": "an F5 row's caller metadata reverts to alice while its operation names carol (the C1 defect)",
+      "gate": "preflight: identity agrees with operation / expected / executor (C1); identities match the manifest",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "identities and fixtures differ from the approved run only by the listed corrections: 1 unlisted identity change(s), 0 unlisted fixture change(s): F5.get_room_state.246: \"authenticated:carol\" -> \"authenticated:alice\" | no Test ID carries an unresolved plan contradiction (C1 class): C1: 1 row(s) | every row's identity agrees with its operation, its expected result and the executor's caller (C1, incl. every F5 row): 1 row(s): F5.get_room_state.246 — the operation runs \"as carol\" but the structured identity is \"authenticated:alice\""
+    },
+    {
+      "n": 12,
+      "control": false,
+      "defect": "a row names a fixture that does not exist",
+      "gate": "preflight: implemented Test IDs equal planned Test IDs (derivation)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 row(s) whose operation, expected, covers or other frozen field changed: F1.public_blocks.023 | implemented Test IDs equal planned Test IDs: 1 row(s) have no executable derivation: F1.public_blocks.023 (unknown fixture reference fixtures.nosuchfixture.id) | every row binds: claims, premises, guards, references: derivation failed, so nothing could be bound"
+    },
+    {
+      "n": 13,
+      "control": false,
+      "defect": "an approved expectation no claim template covers (an unknown custom expectation)",
+      "gate": "preflight: [R1] every claim has an evaluator; every row binds",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the plan is the approved matrix: same Test IDs, same order, no frozen field changed: 1 row(s) whose operation, expected, covers or other frozen field changed: F1.public_blocks.023 | every row binds: claims, premises, guards, references: F1.public_blocks.023: no template consumes the whole text: \"the attacker is politely discouraged\" | [R1] every claim of every approved expectation has an implemented evaluator: 1 problem(s): F1.public_blocks.023"
+    },
+    {
+      "n": 14,
+      "control": false,
+      "defect": "a required fixture has no implementation (tournament_alice_bob_match removed)",
+      "gate": "preflight: every required seed extension has an implementation",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "every required seed extension has an Attest-side implementation of the same scope, and nothing else is implemented: 1 unimplemented (tournament_alice_bob_match), 0 implemented but not required (none), scope mismatch: none"
+    },
+    {
+      "n": 15,
+      "control": false,
+      "defect": "a required fixture is implemented with the wrong scope (a probe-scoped setup made baseline)",
+      "gate": "preflight: every required seed extension has an implementation of the same scope",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "every required seed extension has an Attest-side implementation of the same scope, and nothing else is implemented: 0 unimplemented (none), 0 implemented but not required (none), scope mismatch: probe:dave_deleted"
+    },
+    {
+      "n": 16,
+      "control": false,
+      "defect": "the executor derives a caller other than the row's structured identity",
+      "gate": "preflight: identity agrees with the executor's caller",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "75 row(s) flagged, e.g. F4.private_career_drill_seeds.004: identity is anon but the executor derives authenticated:alice; F4.private_game_commands.010: identity is anon but the executor derives authenticated:alice"
+    },
+    {
+      "n": 17,
+      "control": false,
+      "defect": "a derived probe binds signature text, an elision or an unresolved fixture reference as its argument",
+      "gate": "preflight: no unresolved placeholder, elision or signature text reaches an executed statement or parameter",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "real specs: 0 flagged; with 'p_action text': F5.remove_room_member.245; with '...': F5.remove_room_member.245; with 'fixtures.bob.id': F5.remove_room_member.245"
+    },
+    {
+      "n": 18,
+      "control": false,
+      "defect": "a derived probe issues two mutating commands (one Test ID, two probes)",
+      "gate": "preflight: one derived probe issues one mutating command",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "real specs: 0 bundled; injected: F2.private_career_drill_seeds.003"
+    },
+    {
+      "n": 19,
+      "control": false,
+      "defect": "F10.private_game_commands.013: a client UPDATE loses its WHERE clause — pg_safeupdate would refuse it before the policy under test",
+      "gate": "preflight: no client probe is refused by the connection's own guard before its control, unless registered",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unregistered hazards: F10.private_game_commands.013; the real plan carries 0 such probe(s)"
+    },
+    {
+      "n": 20,
+      "control": false,
+      "defect": "the second assertion of a compound expectation is dropped (\"1 row affected, and the row is still attributed to alice afterwards\", 3 rows)",
+      "gate": "preflight: [R1] every claim of every approved expectation has an evaluator (compound coverage)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the second span deleted: 3 issue(s) — no template consumes the whole text: \"1 row affected, and the row is still attributed to alice afterwards\" | the second span relabelled a connective: 3 issue(s) — connective span \"the row is still attributed to alice afterwards\" carries \"the row is still attributed to alic | the second span relabelled a rationale with no reason: 3 issue(s) — rationale span \"the row is still attributed to alice afterwards\" does not say why it is not asserted"
+    },
+    {
+      "n": 21,
+      "control": false,
+      "defect": "F3.public_friend_requests.059: the write succeeds (1 row) but the row is re-attributed — only the SECOND claim fails",
+      "gate": "judge: every claim is judged; one unmet claim cannot be outvoted by a met one",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: not_as_predicted → deficient",
+      "firedCheck": "rows_affected=1=met, state:still_attributed=unmet"
+    },
+    {
+      "n": 22,
+      "control": false,
+      "defect": "F3.public_friend_requests.059: a state claim with its guard removed",
+      "gate": "preflight: [R6] every state claim has a guard",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes; even unguarded at run time the claim is record: harness_error → not_measured; execute-wp3 exits 1 (a harness error is never a result)",
+      "firedCheck": "real bindings: clear; broken: \"the row is still attributed to alice afterwards\" (state:still_attributed): no state guard 'still_attributed' is bound — the state claim would go unchecked; and if it ran anyway: harness_error"
+    },
+    {
+      "n": 23,
+      "control": false,
+      "defect": "F5.set_room_ready.247: the call returns NULL (void) — \"no effect\" inferred from the return value",
+      "gate": "preflight: [R4] no-effect is judged from a state guard; judge: a return value is never 'no effect'",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes; at run time a NULL return with changed state is deficient, and with no guard is not_measured",
+      "firedCheck": "guard removed → R4 clear, R6 FAILS; NULL return + state changed → not_as_predicted/deficient; NULL return + no guard → harness_error/not_measured"
+    },
+    {
+      "n": 24,
+      "control": false,
+      "defect": "F10.private_game_commands.013: a negative whose verdict depends on rows loses the premise that its subject is non-empty",
+      "gate": "preflight: [R2] no probe can pass on an absent target",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "the probe acts on rows, and no premise makes its subject non-empty"
+    },
+    {
+      "n": 25,
+      "control": false,
+      "defect": "F1.public_career_attempts.032: the rows the negative probes are absent (a vacuous \"no data\")",
+      "gate": "preflight: [R5/R2 live] every subject premise holds",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: holds; staged: F1.public_career_attempts.032 — rows the probe's own WHERE selects (at least one, so the result is not vacuous): rows the probe's own WHERE selects (at least one, so the result is not vacuous): 0 (need >= 1)"
+    },
+    {
+      "n": 26,
+      "control": false,
+      "defect": "F1.public_game_events.072: a positive's prerequisite is invalid (alice's seat has been left)",
+      "gate": "preflight: [R5] every positive's premise holds",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: holds; staged: F1.public_game_events.072 — alice's live seat at the session: alice's live seat at the session: 0 (need 1)"
+    },
+    {
+      "n": 27,
+      "control": false,
+      "defect": "F3.public_blocks.026: a row with the positive's unique key already exists (a duplicate key would refuse before WITH CHECK)",
+      "gate": "preflight: [R3] every positive reaches its control",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: holds; staged: F3.public_blocks.026 — a row with (blocker_id, blocked_id) = (00000000-0000-4000-8000-00000000000a, 00000000-0000-4000-8000-00000000000c) already exists; the positive would hit a unique key, not WITH CHECK"
+    },
+    {
+      "n": 28,
+      "control": false,
+      "defect": "F3.public_blocks.026: the positive INSERT hits a genuine unique violation (23505)",
+      "gate": "judge: a constraint that fires is not the policy under test",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: precondition_failed → not_measured",
+      "firedCheck": "23505 duplicate key value violates unique constraint \"blocks_unique_pair\"; claims: rows_affected=1=unmeasurable/precondition"
+    },
+    {
+      "n": 29,
+      "control": false,
+      "defect": "B.private_game_commands.323: the deleted-user probe runs with dave's account still live (the setup that deletes it skipped)",
+      "gate": "preflight: [R5] the deleted-user premise holds (C5 excuses only the empty subject, never 'dave is deleted')",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "with the deletion: holds; without: probe-scoped fixture probe:dave_deleted holds: auth.users rows for dave: 1 (need 0), profiles rows for dave: 1 (need 0)"
+    },
+    {
+      "n": 30,
+      "control": false,
+      "defect": "F8.realtime_messages.308: the probe reads topic \"game:e0000000-0000-4000-8000-000000000001,\" (the old parser kept the comma)",
+      "gate": "preflight: [R5/R2 live] the topic's subject rows exist; derivation: the topic is exactly the fixture's",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "exact topic: subject holds; with the comma: rows the probe's own WHERE selects (at least one, so the result is not vacuous): rows the probe's own WHERE selects (at least one, so the result is not vacuous): 0 (need >= 1); the current parser yields \"game:e0000000-0000-4000-8000-000000000001\""
+    },
+    {
+      "n": 31,
+      "control": false,
+      "defect": "the tournament-match fixture is absent",
+      "gate": "preflight: every baseline and runtime fixture holds live (tournament_alice_bob_match)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: match bbbb0000-0000-4000-8000-000000000001 present; in fixtures.tournamentAliceBob: true; slot A is alice's entry in it: true; slot B is bob's entry in it: true; pending, round 1, slot 0, no winner: true; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true; staged: match bbbb0000-0000-4000-8000-000000000001 MISSING; in fixtures.tournamentAliceBob: false; slot A is alice's entry in it: false; slot B is bob's entry in it: false; pending, round 1, slot 0, no winner: false; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true"
+    },
+    {
+      "n": 32,
+      "control": false,
+      "defect": "the tournament match sits in the wrong tournament",
+      "gate": "preflight: every baseline and runtime fixture holds live (tournament_alice_bob_match)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: match bbbb0000-0000-4000-8000-000000000001 present; in fixtures.tournamentAliceBob: true; slot A is alice's entry in it: true; slot B is bob's entry in it: true; pending, round 1, slot 0, no winner: true; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true; staged: match bbbb0000-0000-4000-8000-000000000001 present; in fixtures.tournamentAliceBob: false; slot A is alice's entry in it: true; slot B is bob's entry in it: true; pending, round 1, slot 0, no winner: true; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true"
+    },
+    {
+      "n": 33,
+      "control": false,
+      "defect": "the tournament match has the wrong participants (bob's slot emptied)",
+      "gate": "preflight: every baseline and runtime fixture holds live (tournament_alice_bob_match)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: match bbbb0000-0000-4000-8000-000000000001 present; in fixtures.tournamentAliceBob: true; slot A is alice's entry in it: true; slot B is bob's entry in it: true; pending, round 1, slot 0, no winner: true; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true; staged: match bbbb0000-0000-4000-8000-000000000001 present; in fixtures.tournamentAliceBob: true; slot A is alice's entry in it: true; slot B is bob's entry in it: false; pending, round 1, slot 0, no winner: true; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true"
+    },
+    {
+      "n": 34,
+      "control": false,
+      "defect": "the tournament match is in the wrong state (completed, with a winner)",
+      "gate": "preflight: every baseline and runtime fixture holds live (tournament_alice_bob_match)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: match bbbb0000-0000-4000-8000-000000000001 present; in fixtures.tournamentAliceBob: true; slot A is alice's entry in it: true; slot B is bob's entry in it: true; pending, round 1, slot 0, no winner: true; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true; staged: match bbbb0000-0000-4000-8000-000000000001 present; in fixtures.tournamentAliceBob: true; slot A is alice's entry in it: true; slot B is bob's entry in it: true; pending, round 1, slot 0, no winner: false; carol in that tournament's bracket: 0 (need 0); tournament present and not cancelled: true"
+    },
+    {
+      "n": 35,
+      "control": false,
+      "defect": "a fixture exists with the wrong value (the falsifying inactive cosmetic made active)",
+      "gate": "preflight: every baseline and runtime fixture holds live (anon_falsifying_row:public.cosmetics)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: cosmetics row with is_active = false: 1; staged: cosmetics row with is_active = false: 0"
+    },
+    {
+      "n": 36,
+      "control": false,
+      "defect": "erin, the private-privacy subject of the leaderboard claims, is made public",
+      "gate": "preflight: every baseline and runtime fixture holds live (account:erin)",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "unbroken: erin profile with privacy private and display name Erin: 1 (need 1), erin wallet: 1 (need 1); staged: erin profile with privacy private and display name Erin: 0 (need 1), erin wallet: 1 (need 1)"
+    },
+    {
+      "n": 37,
+      "control": false,
+      "defect": "a probe classified as read-only leaves a row behind (carol→erin block) — the next probe would inherit it",
+      "gate": "isolation: the post-probe digest forces a rebuild; baseline verification refuses contaminated state",
+      "caught": true,
+      "restored": true,
+      "consequence": "the next probe runs on a rebuilt, re-verified baseline; a baseline that does not verify stops the run (exit 1)",
+      "firedCheck": "digest moved: public.blocks; dirtyReason → the probe changed public.blocks; baseline verification refused: the baseline's row counts differ from this run's canonical baseline: public.blocks 2 -> 3; unchanged state → no rebuild; after rollback the baseline verifies"
+    },
+    {
+      "n": 38,
+      "control": false,
+      "defect": "a harness exception is presented as the database's answer (all 345 rows, every other input satisfied)",
+      "gate": "judge: a harness error is never a refusal, never a pass",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: harness_error → not_measured; execute-wp3 exits 1",
+      "firedCheck": "all 345 rows → harness_error / not_measured"
+    },
+    {
+      "n": 39,
+      "control": false,
+      "defect": "a malformed probe's genuine 42601 (\"syntax error at or near \"selec\"\") meets every refusal expectation",
+      "gate": "judge: a malformed statement is the harness's fault, not a refusal",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: harness_error → not_measured; execute-wp3 exits 1",
+      "firedCheck": "all 240 negatives → harness_error / not_measured (mechanism 'malformed')"
+    },
+    {
+      "n": 40,
+      "control": false,
+      "defect": "F5.delete_own_account.283 on the baseline, where alice holds a live seat: the call is refused by the active-seat rule (P0001 'leave your table before deleting your account')",
+      "gate": "judge: a business prerequisite is not the security property (D3.41); .283's own setup stands alice up first",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: control_not_reached → not_measured",
+      "firedCheck": "completes=unmeasurable/not_reached, state:caller_account_removed=met, state:documented_effects_only=met, state:no_unrelated_change=met, reachability=met"
+    },
+    {
+      "n": 41,
+      "control": false,
+      "defect": "a client guard's genuine 21000 ('UPDATE requires a WHERE clause') is read as the grant surface's answer",
+      "gate": "judge: pg_safeupdate refuses BEFORE the privilege check, so the privilege claim was not reached (never 'passed', never 'deficient'); and no real grant statement can meet it",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: control_not_reached → not_measured, never effective and never deficient",
+      "firedCheck": "all 51 grant-surface negatives → control_not_reached / not_measured; the real plan's 34 UPDATE/DELETE grant statements: 0 without a WHERE, 0 still registered"
+    },
+    {
+      "n": 42,
+      "control": false,
+      "defect": "delete_own_account's invariant: a lobby handed to the wrong member, another account's wallet altered, an unrelated friendship removed, a new row naming another account, another member's row altered — and a global table changed",
+      "gate": "guard: documented_effects_only permits exactly the documented deletion effects (B) and refuses any other cross-account change (C); no_unrelated_change sees a table no account reaches",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: not_as_predicted → deficient for a category-C change; as_predicted only when every change is documented",
+      "firedCheck": "the documented handover to the longest-joined member, with alice's rows cascaded: permitted; the lobby handed to carol, who joined after bob: refused; bob's wallet balance altered: refused; the bob<->carol friendship, which does not involve alice, removed: refused; a new row naming bob appears: refused; carol's membership row altered: refused; rulesets changed → unrelated digest moved"
+    },
+    {
+      "n": 43,
+      "control": false,
+      "defect": "F2.private_career_drill_seeds.001: a claim names an evaluator nobody implements (\"custom:attacker_discouraged\")",
+      "gate": "preflight: [R1] every evaluator is implemented; judge: an unknown expectation is a harness error, never met",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: harness_error → not_measured; execute-wp3 exits 1 (a harness error is never a result)",
+      "firedCheck": "custom:attacker_discouraged=unmeasurable/harness: no evaluator for custom:attacker_discouraged"
+    },
+    {
+      "n": 44,
+      "control": false,
+      "defect": "F5.leaderboard_weekly_xp.271: the leaderboard returns no rows, so \"no private-privacy identity appears\" would be true of nothing",
+      "gate": "judge: an empty result cannot satisfy a claim about what the result contains (R2)",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: precondition_failed → not_measured",
+      "firedCheck": "result:no_private_identity=unmeasurable/precondition, result:leaderboard_columns_only=met"
+    },
+    {
+      "n": 45,
+      "control": false,
+      "defect": "a role property the control tests rest on is inverted (postgres, authenticator)",
+      "gate": "preflight: role properties match what the plan assumes",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "live: hold; each of three inverted: refused, refused, refused"
+    },
+    {
+      "n": 46,
+      "control": false,
+      "defect": "the F7 scratch roles are built with the wrong properties",
+      "gate": "preflight: [F7] the scratch roles carry exactly the properties the mechanism rests on",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "correct properties: accepted; the bypass role lacks BYPASSRLS: refused; the owner role holds BYPASSRLS: refused; the bypass role owns the table: refused; the bypass role is a member of the owner role: refused; a scratch role is a superuser: refused"
+    },
+    {
+      "n": 47,
+      "control": false,
+      "defect": "the shared local instance is not a build of the migration files (a migration applied from another checkout; a file not applied)",
+      "gate": "planner: refuse to read a plan from an instance that is not a build of these files (every WP3 command plans first)",
+      "caught": true,
+      "restored": true,
+      "consequence": "the command throws before planning → exit 1; nothing executes",
+      "firedCheck": "live instance: accepted; migration with no file: refused; file not applied (20260909120000): refused"
+    },
+    {
+      "n": 48,
+      "control": false,
+      "defect": "the Realtime service is unreachable while F8 socket probes are planned",
+      "gate": "preflight: [F8] the local Realtime service is healthy",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "pointed at a closed port: http://127.0.0.1:9/realtime/v1/api/tenants/realtime-dev/health unreachable: fetch failed; the live service: http://127.0.0.1:54321/realtime/v1/api/tenants/realtime-dev/health -> HTTP 200, healthy: true"
+    },
+    {
+      "n": 49,
+      "control": false,
+      "defect": "Realtime stops delivering mid-run: no subscriber — authorised or not — receives anything (silence everywhere)",
+      "gate": "socket runner: silence counts only inside a window an observer proved live",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: precondition_failed → not_measured",
+      "firedCheck": "every socket row → precondition_failed / not_measured (neither 'refused' nor 'did not receive')"
+    },
+    {
+      "n": 50,
+      "control": false,
+      "defect": "a socket probe presents a token for a different subject than the row's identity",
+      "gate": "socket runner: the identity premise is read back from the token presented",
+      "caught": true,
+      "restored": true,
+      "consequence": "record: precondition_failed → not_measured",
+      "firedCheck": "every socket row → precondition_failed / not_measured"
+    },
+    {
+      "n": 51,
+      "control": false,
+      "defect": "an evidence record missing required fields, a harness error carrying a verdict, an 'effective' with an unmet claim",
+      "gate": "evidence schema: validateRecord",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight FAILS → exit 1; nothing executes",
+      "firedCheck": "missing: 36 problem(s) (missing field recordId; missing field runId); harness+effective: observation harness_error must carry verdict not_measured, not effective; an effective verdict requires observation as_predicted; unmet+effective: missing field claims; an effective verdict with a claim not met"
+    },
+    {
+      "n": 52,
+      "control": false,
+      "defect": "an intent entry is missing for a required Test ID",
+      "gate": "intent validation: every matrix negative has a canonical entry",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight --for-execution FAILS → execute-wp3 exits 1; nothing executes",
+      "firedCheck": "every matrix negative has a canonical entry: 1 missing: B.private_game_commands.323"
+    },
+    {
+      "n": 53,
+      "control": false,
+      "defect": "the store carries an entry the matrix does not require",
+      "gate": "intent validation: no entry that the matrix does not require",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight --for-execution FAILS → execute-wp3 exits 1; nothing executes",
+      "firedCheck": "no entry that the matrix does not require: 1 extra: F1.not.a.real.test"
+    },
+    {
+      "n": 54,
+      "control": false,
+      "defect": "an intent is blank",
+      "gate": "intent validation: no entry carries a blank sentence",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight --for-execution FAILS → execute-wp3 exits 1; nothing executes",
+      "firedCheck": "no entry carries a blank sentence: 1 blank: B.private_game_commands.323"
+    },
+    {
+      "n": 55,
+      "control": false,
+      "defect": "a Test ID appears twice in the store",
+      "gate": "intent validation: no duplicate Test ID",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight --for-execution FAILS → execute-wp3 exits 1; nothing executes",
+      "firedCheck": "no duplicate Test ID in the store: 1 duplicated: B.private_game_commands.323"
+    },
+    {
+      "n": 56,
+      "control": false,
+      "defect": "every required intent is still an unreviewed AI draft, and a real run is requested",
+      "gate": "intent validation: every required intent is authored or reviewed by the author",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight --for-execution FAILS → execute-wp3 exits 1; nothing executes",
+      "firedCheck": "every required intent is authored or reviewed by the author: 240 of 240 still awaiting the author (240 ai_draft, 0 unreviewed)"
+    },
+    {
+      "n": 57,
+      "control": false,
+      "defect": "an ai_draft is marked approved without changing its provenance",
+      "gate": "intent validation: no ai_draft is marked approved",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight --for-execution FAILS → execute-wp3 exits 1; nothing executes",
+      "firedCheck": "no ai_draft is marked approved: 1 marked approved while still ai_draft — set provenance to user_reviewed_ai_draft or user_authored: B.private_game_commands.323"
+    },
+    {
+      "n": 58,
+      "control": false,
+      "defect": "a draft relabelled user_reviewed_ai_draft but left unreviewed",
+      "gate": "intent validation: every required intent is authored or reviewed by the author",
+      "caught": true,
+      "restored": true,
+      "consequence": "preflight --for-execution FAILS → execute-wp3 exits 1; nothing executes",
+      "firedCheck": "every required intent is authored or reviewed by the author: 1 of 240 still awaiting the author (0 ai_draft, 1 unreviewed)"
+    },
+    {
+      "n": 59,
+      "control": false,
+      "defect": "a draft describes the test rather than the attack",
+      "gate": "draft quality: names the attack, not the test",
+      "caught": true,
+      "restored": true,
+      "consequence": "draft-intents refuses the package (exit 1)",
+      "firedCheck": "names the attack, not the test; describes the objective, not the expected error"
+    },
+    {
+      "n": 60,
+      "control": false,
+      "defect": "a draft carries a grammatical defect ('a other party')",
+      "gate": "draft quality: article agreement",
+      "caught": true,
+      "restored": true,
+      "consequence": "draft-intents refuses the package (exit 1)",
+      "firedCheck": "article agreement: \"a other\" — the noun takes \"an\" (or \"another\"); function-specific, not generic: does not name accept_friend_request(), so it could be about any SECURITY DEFINER function"
+    },
+    {
+      "n": 61,
+      "control": false,
+      "defect": "five sentences the pre-audit store carried: a reversed block direction, a deleted-user row aimed at another account, a dangling 'that table', an anonymous actor with 'their own' score, and housekeeping claimed for a function that has none",
+      "gate": "draft quality: the five checks added by the 2026-09-24 audit, each on its own row",
+      "caught": true,
+      "restored": true,
+      "consequence": "draft-intents refuses the package (exit 1)",
+      "firedCheck": "F1.public_profiles.148: the block's direction matches the probe | B.public_wallets.344: the deleted-user target is the deleted account's own rows | F1.public_game_events.073: no dangling reference | F4.public_daily_entries.052: an anonymous actor has no account of its own | F5.latest_verifiable_daily_challenge.278: actor matches the identity; no shared effect the function does not have"
+    },
+    {
+      "n": 62,
+      "control": false,
+      "defect": "two probes are given the same sentence",
+      "gate": "draft quality: no two probes share a sentence",
+      "caught": true,
+      "restored": true,
+      "consequence": "draft-intents refuses the package (exit 1)",
+      "firedCheck": "2 probes carry identical wording: F1.public_blocks.023, F2.private_career_drill_seeds.001"
+    },
+    {
+      "n": 63,
+      "control": false,
+      "defect": "the F10 absence probe meets (1) a DELETE trigger that only refuses, and (2) a DELETE trigger that writes an archive row",
+      "gate": "F10 absence (D3.55): only a trigger that writes a record counts as a trail; a refusing guard is reported separately",
+      "caught": true,
+      "restored": true,
+      "consequence": "a write guard never turns an audit gap into a 'trail found'; an archive does",
+      "firedCheck": "real: no_trail true; with a refusing guard: no_trail true (history/versioning/audit relations naming friendships: 0, soft-delete columns: 0, delete triggers that write a record: 0 (delete triggers that only guard or refuse, not a trail: 1)); with an archiving trigger: no_trail false"
+    },
+    {
+      "n": 64,
+      "control": true,
+      "defect": "(control) the WP4 detector compares an inventory with an unchanged copy of itself",
+      "gate": "wp4 drift: no drift is reported where nothing changed",
+      "caught": true,
+      "restored": true,
+      "consequence": "drift report: nothing",
+      "firedCheck": "no drift of any class"
+    },
+    {
+      "n": 65,
+      "control": false,
+      "defect": "WP4: a table added with no control (reachable, and unreachable), an existing table's RLS switched off, a policy's USING replaced with true, a policy removed, a grant widened — and one pass→fail, one fail→pass, and a probe incompatible with one state",
+      "gate": "wp4 drift: each change lands in exactly its class; a probe a state could not run is never a pass or a failure",
+      "caught": true,
+      "restored": true,
+      "consequence": "the drift report names the change in its class",
+      "firedCheck": "a table added with row-level security off and reachable by anon: classified; a table added with row-level security off and NO client grant (Arc21's default privileges since 2026-09-04): classified; an existing table's row-level security switched off: classified; a policy's USING expression replaced with true: classified; a policy removed: classified; a table grant widened (DELETE granted): classified; transitions {\"pass → fail\":1,\"fail → pass\":1,\"unchanged\":1,\"only in the earlier run\":1,\"only in the later run\":1}"
+    },
+    {
+      "n": 66,
+      "control": true,
+      "defect": "(control) the real results file of run 20260925T014011Z-5695a4c3df2d, validated twice",
+      "gate": "validate-wp3 is deterministic: the same file gives the same checks",
+      "caught": true,
+      "restored": true,
+      "consequence": "a stable verdict on the real evidence",
+      "firedCheck": "identical; that run itself PASSES"
+    },
+    {
+      "n": 67,
+      "control": false,
+      "defect": "the WP3 evidence broken ten ways in memory: a record dropped from the file; a server-side record's read-back identity removed; a role-scoped session read back as bypassing RLS; a deficient verdict rewritten as effective; an unmet claim's observation rewritten as as_predicted; an unadopted AI draft in a negative record; a planned expectation edited inside the evidence; one record's harness hash altered; a probe after a dirty one recorded as running without a rebuild; the file's own totals altered",
+      "gate": "validate-wp3: each break fails the check that owns it, naming the record",
+      "caught": true,
+      "restored": true,
+      "consequence": "VALIDATION FAILED → exit 1; the run is not accepted as evidence",
+      "firedCheck": "a record dropped from the file: refused; a server-side record's read-back identity removed: refused; a role-scoped session read back as bypassing RLS: refused; a deficient verdict rewritten as effective: refused; an unmet claim's observation rewritten as as_predicted: refused; an unadopted AI draft in a negative record: refused; a planned expectation edited inside the evidence: refused; one record's harness hash altered: refused; a probe after a dirty one recorded as running without a rebuild: refused; the file's own totals altered: refused"
+    },
+    {
+      "n": 68,
+      "control": false,
+      "defect": "a reset that fails with a migration's SQL error; one that fails while the CLI restarts containers; one that fails while it initialises the schema",
+      "gate": "bringup (D3.55, D3.56): a migration's SQL error is never retried; an infrastructure failure is, and the rebuilt state is then verified as always",
+      "caught": true,
+      "restored": true,
+      "consequence": "a broken migration stops the run at once; an overloaded host is retried at most three times (30 s, 60 s, 120 s)",
+      "firedCheck": "SQL error → not retried (a migration raised a SQL error (ERROR: relation \"public.x\" does not exist (SQLSTATE 42P01))); restart failure → retried (during \"Restarting containers...\" with no SQL error (Restarting containers... / supabase_storage_arc21 container logs:)); initialisation failure → retried (during \"Initialising schema...\" with no SQL error)"
+    },
+    {
+      "n": 69,
+      "control": false,
+      "defect": "WP5 over the official run (20260925T014011Z-5695a4c3df2d), broken three ways: an effective record turned deficient, belonging to no item; a leaderboard record the item calls deficient turned effective; a supporting record (anonymous leaderboard call) turned deficient",
+      "gate": "wp5: every non-effective record belongs to exactly one item, with the verdict its prose assumes, and the records it calls holding hold",
+      "caught": true,
+      "restored": true,
+      "consequence": "WP5 REFUSED → exit 1; FINDINGS.md is not written",
+      "firedCheck": "an effective record turned deficient, belonging to no item: refused (F1.public_blocks.022 (deficient) belongs to no WP5 item: every non-effective record must b); a leaderboard record the item calls deficient turned effective: refused (leaderboards-private-identity: F5.leaderboard_weekly_xp.271 is effective, the item was wri); a supporting record (anonymous leaderboard call) turned deficient: refused (leaderboards-private-identity: supporting F5.leaderboard_weekly_xp.272 is deficient; the i)"
+    },
+    {
+      "n": 70,
+      "control": false,
+      "defect": "verify-finding given: the official run itself; a candidate with the leaderboard rows effective; the same with one regression; the same unvalidated; and an item its frozen rows cannot confirm",
+      "gate": "verify-finding: a fix is confirmed only by the stated verdicts, on a validated run, with no regression",
+      "caught": true,
+      "restored": true,
+      "consequence": "a future fix is confirmed only by evidence",
+      "firedCheck": "unchanged → not confirmed; fixed → confirmed; fixed + regression → refused; unvalidated → refused; partial-trail item → refused (frozen rows cannot confirm)"
+    },
+    {
+      "n": 71,
+      "control": true,
+      "defect": "(control) the real narrative store against the recorded CP4 reply",
+      "gate": "wp5 (CP4): the store carries the reply verbatim, with its provenance",
+      "caught": true,
+      "restored": true,
+      "consequence": "FINDINGS.md is written",
+      "firedCheck": "no problem"
+    },
+    {
+      "n": 72,
+      "control": false,
+      "defect": "the CP4 record broken six ways: one word of A1's narrative changed in the store; A2's AI-assisted narrative relabelled user_authored; A4's status changed from open to accepted_design_intent; J1 and J3 swapped between the A1 and A2 answers; the recorded approval changed to not approved; a narrative present with no recorded reply at all",
+      "gate": "wp5 (CP4): verbatim narratives, truthful provenance, the author's statuses, answers attached to the questions asked, a real approval",
+      "caught": true,
+      "restored": true,
+      "consequence": "WP5 REFUSED → exit 1; FINDINGS.md is not written",
+      "firedCheck": "one word of A1's narrative changed in the store: refused (narrative store: leaderboards-private-identity's narrative is not the reply's te); A2's AI-assisted narrative relabelled user_authored: refused (narrative store: audit-trail-absent is labelled user_authored, but the reply's w); A4's status changed from open to accepted_design_intent: refused (narrative store: push-token-reassignment's status is accepted_design_intent, the); J1 and J3 swapped between the A1 and A2 answers: refused (CP4: leaderboards-private-identity's questions were numbered J1, J2; the record ); the recorded approval changed to not approved: refused (CP4: the recorded approval reads \"not approved — change the ranking\", not \"appro); a narrative present with no recorded reply at all: refused (narrative store: leaderboards-private-identity carries a narrative or status but)"
+    },
+    {
+      "n": 73,
+      "control": false,
+      "defect": "the J3/J4 audit scope: control (the real scope), then broken four ways: one resource dropped from the scope; an exclusion with its residual risk removed; a resource citing the wrong Test ID; a resource whose absence record is not in the run",
+      "gate": "wp5 (CP4): the scope covers exactly the audit-absence records, each exclusion with a reason and a residual risk",
+      "caught": true,
+      "restored": true,
+      "consequence": "WP5 REFUSED → exit 1; FINDINGS.md is not written",
+      "firedCheck": "real scope: no problem; one resource dropped from the scope: refused; an exclusion with its residual risk removed: refused; a resource citing the wrong Test ID: refused; a resource whose absence record is not in the run: refused"
+    },
+    {
+      "n": 74,
+      "control": true,
+      "defect": "(control) the real framework mapping against the official evidence and the pinned sources",
+      "gate": "wp6: every mapping is borne out by its evidence",
+      "caught": true,
+      "restored": true,
+      "consequence": "the mapping is written",
+      "firedCheck": "no problem"
+    },
+    {
+      "n": 75,
+      "control": false,
+      "defect": "the WP6 mapping broken eight ways: AC-3 cites a Test ID that is not in the run; AC-6, which cites 5 deficient records, raised to evidenced; a Part 11 provision raised to evidenced; §11.300 (not mapped) given evidence; one word of AC-3's quoted control statement changed; AC-3's verdict counts altered by one; \"Arc21 is compliant with AC-3.\" added to AC-3's rationale; a rationale relabelled as the author's",
+      "gate": "wp6: citations exist, counts are the records', support follows the rules, quotes are verbatim, no overclaiming, rationale labelled AI-drafted",
+      "caught": true,
+      "restored": true,
+      "consequence": "WP6 REFUSED → exit 1; nothing is written",
+      "firedCheck": "AC-3 cites a Test ID that is not in the run: refused (NIST:AC-3: cites a Test ID that is not in the official run); AC-6, which cites 5 deficient records, raised to evidenced: refused (NIST:AC-6: evidenced, yet 5 deficient and 0 gap records are cited — at); a Part 11 provision raised to evidenced: refused (P11:11.10(d): a Part 11 provision is never more than partial here — Ar); §11.300 (not mapped) given evidence: refused (P11:11.300: not mapped, yet it cites evidence); one word of AC-3's quoted control statement changed: refused (NIST:AC-3: the quoted statement is not the source text verbatim); AC-3's verdict counts altered by one: refused (NIST:AC-3: its verdict counts are not the counts of the records it cit); \"Arc21 is compliant with AC-3.\" added to AC-3's rationale: refused (NIST:AC-3: refused phrasing (\\bArc21 (is|was|has been) (compliant|cert); a rationale relabelled as the author's: refused (NIST:AU-2: rationale provenance is not labelled AI-drafted)"
+    },
+    {
+      "n": 76,
+      "control": false,
+      "defect": "the CSA note with its limitations cut to two items (shorter than its claims, gaps unnamed); control: the real note",
+      "gate": "wp6: the CSA note is one page, names the four gaps, and its limitations are longer than its claims",
+      "caught": true,
+      "restored": true,
+      "consequence": "WP6 REFUSED → exit 1",
+      "firedCheck": "real note: no problem; shortened: refused (CSA note: the limitations (76 words) must be longer than the claims (137))"
+    },
+    {
+      "n": 77,
+      "control": false,
+      "defect": "validate-wp6: control (the written files), then tampered six ways: a selector's Test ID list padded with a record of another family; AC-24 counts one deficient record fewer; SI-7 raised to evidenced; a quoted Part 11 paragraph reworded; AU-9 says \"the harness is a validated tool\"; the CSA note's limitations reduced to one line",
+      "gate": "validate-wp6 re-derives every citation and count from the raw records, and checks quotes, support rules, claims and the CSA note itself",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-wp6 exits 1; CP5 is recorded as NOT validated",
+      "firedCheck": "written files: passed; a selector's Test ID list padded with a record of another family: refused by \"every cited Test ID is in the official run, and every count \"; AC-24 counts one deficient record fewer: refused by \"every cited Test ID is in the official run, and every count \"; SI-7 raised to evidenced: refused by \"every cited Test ID is in the official run, and every count \"; a quoted Part 11 paragraph reworded: refused by \"every quoted statement and title is the pinned source text, \"; AU-9 says \"the harness is a validated tool\": refused by \"no mapping text claims compliance, validation, certification\"; the CSA note's limitations reduced to one line: refused by \"the CSA note is one page, names the four gaps, and its limit\""
+    },
+    {
+      "n": 78,
+      "control": false,
+      "defect": "the overclaiming lint given 5 claims it must refuse and 5 honest sentences it must let through",
+      "gate": "claims lint (brief §7): a compliance, validation, certification or independence claim needs a negation in the same sentence",
+      "caught": true,
+      "restored": true,
+      "consequence": "an overclaiming sentence stops WP6 and WP7",
+      "firedCheck": "refused 5 of 5; let through 5 of 5"
+    },
+    {
+      "n": 79,
+      "control": true,
+      "defect": "(control) the real report, summary, dashboard and README, validated twice",
+      "gate": "validate-reports: every check passes on the real outputs, deterministically",
+      "caught": true,
+      "restored": true,
+      "consequence": "the reports are accepted",
+      "firedCheck": "21 of 22 checks pass; identical twice; waiting for this run's record: 1"
+    },
+    {
+      "n": 80,
+      "control": false,
+      "defect": "the report's WP3 total off by one (346 Test IDs), written by the generator itself",
+      "gate": "validate-reports: the assurance report states the WP3 counts",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the assurance report states the WP3 counts…\": 1: posture table says 346/283/5/19/25/13; the records give effective 283, deficient 5, gap 19, characterized 2"
+    },
+    {
+      "n": 81,
+      "control": false,
+      "defect": "a verdict count moved: one F5 record from deficient to effective in the report's family table",
+      "gate": "validate-reports: the assurance report states the WP3 counts",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the assurance report states the WP3 counts…\": 1: family F5: report effective 53, deficient 4, gap 0, characterized 1, not_measured 0, total 58; records effe"
+    },
+    {
+      "n": 82,
+      "control": false,
+      "defect": "the superseded run 1 (20260924T203033Z…) cited as the WP3 result in the summary",
+      "gate": "validate-reports: every run a report cites is official + the plain-language summary states the numbers",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"every run a report cites is official…\": 1: SUMMARY.md cites the superseded run 20260924T203033Z-5695a4c3df2d outside its \"not results\" entry; refused by \"the plain-language summary states the numbers…\": 1: the summary cites run 20260924T203033Z-5695a4c3df2d as the result"
+    },
+    {
+      "n": 83,
+      "control": false,
+      "defect": "a finding's status altered: A4 shown as accepted design intent although the author left it open",
+      "gate": "validate-reports: each finding's status is the author's recorded CP4 decision",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"each finding's status is the author's recorded CP4…\": 1: A4: report status \"accepted design intent\", the author's \"open\""
+    },
+    {
+      "n": 84,
+      "control": false,
+      "defect": "not measured counted as effective: the dashboard reports 296 effective and 0 not measured",
+      "gate": "validate-reports: the dashboard's embedded data is the evidence",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the dashboard's embedded data is the evidence…\": 1: totals effective 296, deficient 5, gap 19, characterized 25, not_measured 0, total 345"
+    },
+    {
+      "n": 85,
+      "control": false,
+      "defect": "not measured presented as passing in prose: \"The 13 not measured tests are counted as effective.\"",
+      "gate": "validate-reports: no generated document claims remediation",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"no generated document claims remediation…\": 1: ASSURANCE_REPORT.md: presents not-measured results as passing: \"The 13 not measured tests are counted as ef"
+    },
+    {
+      "n": 86,
+      "control": false,
+      "defect": "stale state in the README: \"WP3 is planned and implemented but NOT executed.\"",
+      "gate": "validate-reports: the current-state documents carry no stale project state",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the current-state documents carry no stale project…\": 2: README.md: says WP3 has not run: \"WP3 is planned and implemented but NOT executed.\" | README.md: says the a"
+    },
+    {
+      "n": 87,
+      "control": false,
+      "defect": "stale state in the report: \"CP4 is presented, awaiting the author.\"",
+      "gate": "validate-reports: the current-state documents carry no stale project state",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the current-state documents carry no stale project…\": 2: ASSURANCE_REPORT.md: says a checkpoint is pending: \"CP4 is presented, awaiting the author.\" | ASSURANCE_REP"
+    },
+    {
+      "n": 88,
+      "control": false,
+      "defect": "AI-drafted text labelled as the author's: the summary's label rewritten to \"Written by the author\"",
+      "gate": "validate-reports: every output carries its provenance label",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"every output carries its provenance label…\": 1: SUMMARY.md: the AI-drafted label is missing or altered"
+    },
+    {
+      "n": 89,
+      "control": false,
+      "defect": "AI-assisted narrative claimed as the author's own: \"The findings narrative was written by the author.\"",
+      "gate": "validate-reports: no generated document claims remediation",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"no generated document claims remediation…\": 1: ASSURANCE_REPORT.md: labels AI-worded text as the author's own writing: \"The findings narrative was written"
+    },
+    {
+      "n": 90,
+      "control": false,
+      "defect": "remediation claimed complete: \"Remediation of A4 was completed and verified.\"",
+      "gate": "validate-reports: no generated document claims remediation",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"no generated document claims remediation…\": 1: ASSURANCE_REPORT.md: claims remediation was implemented or verified: \"Remediation of A4 was completed and v"
+    },
+    {
+      "n": 91,
+      "control": false,
+      "defect": "Arc21 described as fixed on the dashboard: \"Arc21 has been fixed.\"",
+      "gate": "validate-reports: no generated document claims remediation",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"no generated document claims remediation…\": 1: dashboard/index.html: claims Arc21 was fixed: \"Arc21 has been fixed.\""
+    },
+    {
+      "n": 92,
+      "control": false,
+      "defect": "findings described as closed in the README: \"A2 and A4 are now closed.\"",
+      "gate": "validate-reports: no generated document claims remediation",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"no generated document claims remediation…\": 1: README.md: claims a finding was fixed, remediated or closed: \"A2 and A4 are now closed.\""
+    },
+    {
+      "n": 93,
+      "control": false,
+      "defect": "CP5 called approved in the README status",
+      "gate": "validate-reports: no generated document claims remediation + the README's generated sections state the evidence",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"no generated document claims remediation…\": 1: README.md: calls CP5 approved (it was superseded by Amendment A2): \"Checkpoints: CP1, CP2 and CP3 approved ; refused by \"the README's generated sections state the evidence…\": 1: the status block does not record CP5 as superseded by Amendment A2, never approved"
+    },
+    {
+      "n": 94,
+      "control": false,
+      "defect": "a hand-edited number inside the README's generated section (the effective count)",
+      "gate": "validate-reports: the README's generated sections state the evidence + every generated file is byte-identical",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the README's generated sections state the evidence…\": 1: verdict effective: README 290, records 283; refused by \"every generated file is byte-identical…\": 1: README.md differs from what the evidence regenerates (first at line 78: \"| effective | 290 | the control he"
+    },
+    {
+      "n": 95,
+      "control": false,
+      "defect": "an evidence count typed into the README's hand-written text (\"The gates were proven 80/80.\")",
+      "gate": "validate-reports: the README's evidence numbers live only in its generated sections",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the README's evidence numbers live only in its gen…\": 1: hand-written text carries an evidence count: \"The gates were proven 80/80.\""
+    },
+    {
+      "n": 96,
+      "control": false,
+      "defect": "the dashboard's embedded data tampered: one record's verdict (F5.register_push_token.269) made effective",
+      "gate": "validate-reports: the dashboard's embedded data is the evidence",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the dashboard's embedded data is the evidence…\": 1: F5.register_push_token.269: verdict effective, recorded deficient"
+    },
+    {
+      "n": 97,
+      "control": false,
+      "defect": "the summary given jargon (row-level security policies, the service_role key)",
+      "gate": "validate-reports: the plain-language summary has no jargon",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the plain-language summary has no jargon…\": 4: jargon \"row-level\" | jargon \"anon\" | jargon \"policies\" | jargon \"service_role\""
+    },
+    {
+      "n": 98,
+      "control": false,
+      "defect": "the summary padded past one page (650+ words)",
+      "gate": "validate-reports: the plain-language summary has no jargon",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the plain-language summary has no jargon…\": 1: 964 words, more than one page (650)"
+    },
+    {
+      "n": 99,
+      "control": false,
+      "defect": "a generated file modified after regeneration (a sentence appended to FINDINGS.md)",
+      "gate": "validate-reports: every generated file is byte-identical",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"every generated file is byte-identical…\": 1: FINDINGS.md differs from what the evidence regenerates (first at line 739: \"This line was added by hand aft"
+    },
+    {
+      "n": 100,
+      "control": false,
+      "defect": "framework overclaim: AC-6 (which cites deficient records) shown as evidenced in the report",
+      "gate": "validate-reports: the framework mapping is a validated study exercise",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the framework mapping is a validated study exercis…\": 2: AC-6: report support \"evidenced (tested paths only)\", mapping partial | AC-6 overclaimed as evidenced"
+    },
+    {
+      "n": 101,
+      "control": false,
+      "defect": "framework overclaim: \"Arc21 complies with NIST SP 800-53 AC-3 and is Part 11 compliant.\"",
+      "gate": "validate-reports: no generated document claims compliance",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"no generated document claims compliance…\": 1: ASSURANCE_REPORT.md: Arc21 complies with NIST SP 800-53 AC-3 and is Part 11 compliant."
+    },
+    {
+      "n": 102,
+      "control": false,
+      "defect": "the report's drift table shows one pass → fail that the transitions do not contain",
+      "gate": "validate-reports: WP0",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"WP0, WP1 and WP4 numbers in the report…\": 1: drift H1-009464c → C-current result transitions"
+    },
+    {
+      "n": 103,
+      "control": false,
+      "defect": "the report's WP1 line says 4 of 5 breaks detected",
+      "gate": "validate-reports: WP0",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"WP0, WP1 and WP4 numbers in the report…\": 1: WP1 line: 4/5/0/10"
+    },
+    {
+      "n": 104,
+      "control": false,
+      "defect": "the README says complete while the recorded CP4 approval is changed to not approved (every other condition made to hold)",
+      "gate": "validate-reports: the README's generated sections state the evidence (status)",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → exit 1",
+      "firedCheck": "CP4 approved: accepted; CP4 not approved: refused (2: the status block's CP4 state is not the recorded approval | the README says complete, but CP4 approval does)"
+    },
+    {
+      "n": 105,
+      "control": false,
+      "defect": "the CLI gains a command the README does not document",
+      "gate": "validate-reports: every command the README documents",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"every command the README documents…\": 1: src/cli.ts dispatches \"undocumented-command\", which the README does not document"
+    },
+    {
+      "n": 106,
+      "control": false,
+      "defect": "the dashboard made to load a script from the network",
+      "gate": "validate-reports: the dashboard is one self-contained file",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → `reports` and `run` exit 1; nothing is accepted",
+      "firedCheck": "refused by \"the dashboard is one self-contained file…\": 1: loads an external script"
+    },
+    {
+      "n": 107,
+      "control": false,
+      "defect": "the prove-gates count a report cites differs from the record's rows; and a record whose rows show a miss while the reports cite a pass",
+      "gate": "validate-reports: prove-gates — recounted from its rows, it passed, and every report cites it",
+      "caught": true,
+      "restored": true,
+      "consequence": "validate-reports FAILS → exit 1",
+      "firedCheck": "consistent citation: accepted; one fewer cited: refused; a failed row: refused"
+    },
+    {
+      "n": 108,
+      "control": true,
+      "defect": "(control) the frozen evidence compared with itself by every reproduction comparison; and run 1 compared with the official run",
+      "gate": "run: the comparisons report no difference where there is none, and the known one exactly",
+      "caught": true,
+      "restored": true,
+      "consequence": "a faithful rebuild is accepted",
+      "firedCheck": "7 of 7 self-comparisons identical; run 1 vs official: {\"missing\":0,\"extra\":0,\"order\":0,\"verdict\":11,\"observation\":11,\"actualSummary\":0,\"identity\":3} (D3.55: 11 verdicts, 3 identities, 0 outcomes)"
+    },
+    {
+      "n": 109,
+      "control": false,
+      "defect": "reproduction — inventory: one policy's USING expression replaced with true",
+      "gate": "run: the control inventory (WP0) equals the frozen CP1 inventory",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "1 difference(s): control definition changed: public.blocks#policy:blocks_delete_own (using_expr)"
+    },
+    {
+      "n": 110,
+      "control": false,
+      "defect": "reproduction — inventory: one control missing",
+      "gate": "run: the control inventory (WP0) equals the frozen CP1 inventory",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "1 difference(s): control removed: private.game_commands#rls_forced"
+    },
+    {
+      "n": 111,
+      "control": false,
+      "defect": "reproduction — risk inputs: one resource's effective write exposure changed",
+      "gate": "run: the risk inputs (WP2 facts) equal the frozen ones",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "1 difference(s): private.career_drill_seeds.effectiveWriteExposure"
+    },
+    {
+      "n": 112,
+      "control": false,
+      "defect": "reproduction — tiers: one resource re-tiered Medium → High",
+      "gate": "run: the risk tiers (WP2) equal the frozen CP3 tiers",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "1 difference(s): public.career_attempts.tier: \"Medium\" → \"High\""
+    },
+    {
+      "n": 113,
+      "control": false,
+      "defect": "reproduction — WP1: one deliberate break goes undetected",
+      "gate": "run: the harness validation (WP1) reproduces the frozen one",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "2 difference(s): S1.detected: true → false | a break went undetected, a control was not restored, or the inventory moved"
+    },
+    {
+      "n": 114,
+      "control": false,
+      "defect": "reproduction — plan: one approved row's expectation reworded",
+      "gate": "run: the WP3 plan equals the approved matrix and the plan the official run executed",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "2 difference(s): differs from the approved matrix: frozen fields of F10.private_career_drill_seeds.006 | F10.private_career_drill_seeds.006: a frozen field differs from the plan th"
+    },
+    {
+      "n": 115,
+      "control": false,
+      "defect": "reproduction — intent store: one adopted sentence edited, and one relabelled user_authored",
+      "gate": "run: the AUTHOR INTENT store holds exactly the adopted sentences the official run recorded",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "3 difference(s): 1 labelled user_authored, but Gate A adopted none as the author's own writing | B.private_game_commands.323: the store no longer holds the sentence the official ru"
+    },
+    {
+      "n": 116,
+      "control": false,
+      "defect": "reproduction — a reproduction with one verdict, one recorded outcome and one record different",
+      "gate": "run: the candidate WP3 run reproduces the official run Test ID by Test ID",
+      "caught": true,
+      "restored": true,
+      "consequence": "run reports NOT REPRODUCED → exit 1",
+      "firedCheck": "3 difference(s): F2.private_career_drill_seeds.001: verdict effective → deficient | F2.private_career_drill_seeds.003 missing | 342 Test ID(s) out of order"
+    },
+    {
+      "n": 117,
+      "control": false,
+      "defect": "the same database digest serialized in reverse key order, and a digest with one relation's value changed",
+      "gate": "state guards (D3.56): a digest snapshot is unchanged when its content is, whatever its order; stateDigest writes keys in a fixed order",
+      "caught": true,
+      "restored": true,
+      "consequence": "no false 'the database changed' from row order; a real change still fails the guard",
+      "firedCheck": "stateDigest keys sorted: true; reordered copy judged unchanged; one value changed judged changed"
+    },
+    {
+      "n": 118,
+      "control": true,
+      "defect": "(control) a dirty checkout, unchanged between two fingerprints",
+      "gate": "arc21 guard: pre == post",
+      "caught": true,
+      "restored": true,
+      "consequence": "exit unaffected",
+      "firedCheck": "identical, although the checkout is dirty — pre-existing changes are accepted, not reverted"
+    },
+    {
+      "n": 119,
+      "control": false,
+      "defect": "Arc21 source mutation: a tracked source file's content changes (e.g. a migration or RLS policy edited)",
+      "gate": "arc21 guard: pre == post",
+      "caught": true,
+      "restored": true,
+      "consequence": "HARNESS SAFETY VIOLATION → exit 3 (nothing is reverted automatically)",
+      "firedCheck": "a tracked file's content changed in the working tree"
+    },
+    {
+      "n": 120,
+      "control": false,
+      "defect": "Arc21 source mutation: a new untracked file appears",
+      "gate": "arc21 guard: pre == post",
+      "caught": true,
+      "restored": true,
+      "consequence": "HARNESS SAFETY VIOLATION → exit 3 (nothing is reverted automatically)",
+      "firedCheck": "git status reports a different set of changes; untracked file appeared: stray.sql"
+    },
+    {
+      "n": 121,
+      "control": false,
+      "defect": "Arc21 source mutation: an existing untracked file (like the uncommitted migration) is edited",
+      "gate": "arc21 guard: pre == post",
+      "caught": true,
+      "restored": true,
+      "consequence": "HARNESS SAFETY VIOLATION → exit 3 (nothing is reverted automatically)",
+      "firedCheck": "untracked file's content changed: untracked.sql"
+    },
+    {
+      "n": 122,
+      "control": false,
+      "defect": "Arc21 source mutation: a change is staged",
+      "gate": "arc21 guard: pre == post",
+      "caught": true,
+      "restored": true,
+      "consequence": "HARNESS SAFETY VIOLATION → exit 3 (nothing is reverted automatically)",
+      "firedCheck": "the index changed: something was staged or unstaged; the staged diff against HEAD changed; a tracked file's content changed in the working tree; git status reports a different set of changes"
+    },
+    {
+      "n": 123,
+      "control": false,
+      "defect": "Arc21 source mutation: a credential file is written into an ignored path",
+      "gate": "arc21 guard: pre == post",
+      "caught": true,
+      "restored": true,
+      "consequence": "HARNESS SAFETY VIOLATION → exit 3 (nothing is reverted automatically)",
+      "firedCheck": "ignored path appeared: jwt.secret — check it is not a credential or artefact written by the harness"
+    },
+    {
+      "n": 124,
+      "control": false,
+      "defect": "Arc21 source mutation: a commit is made",
+      "gate": "arc21 guard: pre == post",
+      "caught": true,
+      "restored": true,
+      "consequence": "HARNESS SAFETY VIOLATION → exit 3 (nothing is reverted automatically)",
+      "firedCheck": "HEAD moved: 687b4e3b7214 -> 0dcda6010584 (a commit, checkout or reset happened); a ref changed: a branch, tag or stash was created, moved or deleted"
+    },
+    {
+      "n": 125,
+      "control": true,
+      "defect": "(control) the real plan, intent store and database after every injection",
+      "gate": "prove-gates restores everything it breaks",
+      "caught": true,
+      "restored": true,
+      "consequence": "nothing real was changed",
+      "firedCheck": "plan and store byte-identical; every table and sequence digests as before"
+    }
+  ]
+}

@@ -62,13 +62,18 @@ export interface ExecuteResult {
   readonly path: string;
 }
 
-/** The WP3 assessment. Callers reach this only through a passed preflight and --confirm. */
+/**
+ * The WP3 assessment. Callers reach this only through a passed preflight and --confirm.
+ * `purpose: "reproduction"` (`run --confirm`, D3.61) runs exactly the same suite but records
+ * the run as a reproduction to compare with the official run — never a new result.
+ */
 export async function executeWp3(
   plan: Wp3Plan,
   specs: ReadonlyMap<string, ExecSpec>,
   arc21Pre: Arc21SourceState,
   expectedSchema: string,
   log: (s: string) => void = console.log,
+  purpose: "assessment" | "reproduction" = "assessment",
 ): Promise<ExecuteResult> {
   const sv = await readSchemaVersion();
   const runId = mintRunId(sv);
@@ -84,7 +89,9 @@ export async function executeWp3(
   const path = join(dir, "wp3-results.json");
   await writeFile(path, JSON.stringify({
     meta: {
-      runId, kind: "WP3 assessment", sut: ctx.sut, harness: ctx.harness, probes: ids.length, recorded: summary.records.length,
+      runId, kind: purpose === "reproduction" ? "WP3 reproduction" : "WP3 assessment",
+      ...(purpose === "reproduction" ? { purpose: "reproduction — the approved suite re-executed to compare with the official run; never a result (rubric/official-runs.json)" } : {}),
+      sut: ctx.sut, harness: ctx.harness, probes: ids.length, recorded: summary.records.length,
       rebuilds: summary.rebuilds, rebuildSeconds: summary.rebuildSeconds, elapsedSeconds: summary.elapsedSeconds,
       resetRetries: summary.resetRetries,
       aborted: summary.aborted,
