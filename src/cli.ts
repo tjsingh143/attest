@@ -386,6 +386,24 @@ async function dispatch(cmd: string, arc21Pre: Arc21SourceState): Promise<void> 
       if (!v.passed) process.exitCode = 1;
       break;
     }
+    case "reports": {
+      // WP7 outputs from the persisted evidence (D3.61): the assurance report, the
+      // plain-language summary and the dashboard. No database is touched.
+      const { loadEvidence, computeFacts } = await import("./evidence-facts.ts");
+      const { renderReport, REPORT_PATH } = await import("./wp7-report.ts");
+      const { renderSummary, SUMMARY_PATH } = await import("./wp7-summary.ts");
+      const { renderDashboard, DASHBOARD_PATH } = await import("./wp7-dashboard.ts");
+      const { mkdir: mk, writeFile: wf } = await import("node:fs/promises");
+      const { dirname } = await import("node:path");
+      const ev = await loadEvidence();
+      const facts = computeFacts(ev);
+      await wf(REPORT_PATH, renderReport(ev, facts));
+      await wf(SUMMARY_PATH, renderSummary(facts));
+      await mk(dirname(DASHBOARD_PATH), { recursive: true });
+      await wf(DASHBOARD_PATH, await renderDashboard(ev, facts));
+      console.log("  written: ASSURANCE_REPORT.md, SUMMARY.md, dashboard/index.html");
+      break;
+    }
     case "framework-sources": {
       // WP6's quoted framework texts, fetched from NIST's OSCAL catalog and the eCFR (D3.60).
       console.log("framework sources (network: NIST, eCFR, FDA) → rubric/framework-sources.json");

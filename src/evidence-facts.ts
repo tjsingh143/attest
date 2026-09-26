@@ -67,6 +67,8 @@ export interface Evidence {
   readonly findings: Rec;
   readonly cp4: Rec;
   readonly official: Rec;
+  /** framework-mapping.json (WP6), when it has been generated. */
+  readonly framework: Rec | null;
 }
 
 const json = async (p: string): Promise<Rec> => JSON.parse(await readFile(p, "utf8")) as Rec;
@@ -98,6 +100,7 @@ export async function loadEvidence(): Promise<Evidence> {
     findings: await json(join(RUNS_ROOT, runs.wp3, "wp5", "findings.json")),
     cp4: await json(join(ATTEST_ROOT, "rubric", "cp4-author-response.json")),
     official,
+    framework: await json(join(ATTEST_ROOT, "framework-mapping.json")).catch(() => null),
   };
 }
 

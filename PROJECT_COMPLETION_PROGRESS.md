@@ -67,7 +67,7 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 
 ## Current phase
 
-**CP4 approved (2026-09-25); A2 recorded; WP6 complete; CP5 superseded by A2; WP7 in progress.** No further
+**CP4 approved (2026-09-25); A2 recorded; WP6 complete (84fec6c); CP5 superseded by A2; WP7 IN PROGRESS — stopped at a usage limit, resumable from this file.** No further
 routine stops (A2). The CP4 stop that stood here is kept below as history.
 
 ## Commands and results
@@ -162,15 +162,40 @@ routine stops (A2). The CP4 stop that stood here is kept below as history.
 
 ## Exact next action
 
-*(History: "STOPPED AT CP4 — record the reply verbatim, D3.58, regenerate wp5, CP4 → approved" — done
-2026-09-25, D3.58/D3.59.)*
+*(History: CP4 applied `7da6262`; WP6 + CP5-superseded `84fec6c`, both pushed.)*
 
-1. WP6: `npm run attest wp6` — the framework mapping (NIST SP 800-53 Rev 5, 21 CFR Part 11 study
-   exercise) from the official evidence, AI-drafted rationale labelled (A2), independently validated;
-   the ≤ 1-page CSA note (limitations longer than claims). D3.60.
-2. CP5: record as *superseded by Amendment A2* with the generated package; never "approved".
-3. WP7: assurance report, dashboard, plain-language summary, README generated section; `attest
-   reports` regenerates every output from the official evidence; `attest validate-reports`
-   re-derives every headline number from raw evidence.
-4. Reproducibility audit (fresh clone), adversarial review, git hygiene, push, DB/backup
-   disposition, resume handoff.
+**WP7 is in progress. Done:** generators `src/wp7-report.ts` (assurance report, one section per tier,
+all 397 controls), `src/wp7-summary.ts` (plain-language, AI-drafted, jargon list), `src/wp7-dashboard.ts`
++ `src/dashboard/app.{css,js}` (self-contained local HTML; palette validated with the dataviz
+validator: ordinal ramp passes both modes; sub-3:1 status colours carry icon + label + table view),
+`src/wp7-readme.ts` (README generated block + splice), `src/evidence-facts.ts` (shared counts), and a
+first `npm run attest reports` that writes ASSURANCE_REPORT.md, SUMMARY.md, dashboard/index.html.
+Those three outputs were generated once and are **not yet reviewed, validated or committed**.
+
+**Remaining, in order:**
+1. `attest reports` must also chain `wp5` and `wp6` and splice the README block (add the markers
+   when rewriting README.md: status, commands incl. `framework-sources`/`wp6`/`validate-wp6`/`reports`,
+   layout, limitations, "not yet done" → done; A2 provenance statement).
+2. `src/wp7-validate.ts` + `attest validate-reports`: independent re-derivation (own counting code) of
+   every headline number in ASSURANCE_REPORT.md, SUMMARY.md, dashboard JSON and README block; claims
+   lint over every generated doc; SUMMARY jargon check (exempt the cross-reference line) and ≤ 650
+   words; regeneration byte-identical to disk.
+3. Review the three outputs by eye; render the dashboard (serve on 127.0.0.1 or open the file) and
+   look at it; fix what is wrong.
+4. prove-gates injections for validate-reports (tampered numbers, jargon, overclaiming, hand edit),
+   then `prove-gates` (DB must be at baseline: `bringup` + `seed-extensions` if in doubt).
+5. Extend `run`: fast path (bringup → inventory → WP1 → risk inputs → score → seed-extensions →
+   plan must equal the frozen matrix → compare inventory/tiers with frozen → `reports`); `--confirm`
+   adds execute-wp3 → validate-wp3 → wp4 → per-Test-ID comparison with the official run. Fix the
+   stale "WP3 is planned … NOT executed" message in `run`.
+6. D3.61 (WP7 decisions, coverage method: 222 named / 137 resource-only / 38 not exercised), CHECKPOINTS,
+   README; run the fast `run` as the reproducibility audit; fresh-clone regeneration check
+   (`ATTEST_ARC21_CHECKOUT` pointing at the protected checkout).
+7. Adversarial review (stale numbers, run ids, provenance labels, overclaiming, hashes, secrets —
+   `src/jwt.ts` holds only the Supabase CLI's documented local default, loopback only), git hygiene,
+   commit, push (no force), HEAD == origin/main.
+8. Local DB: currently an Attest baseline build (59 migrations, 5 Attest accounts, no foreign
+   sessions at 22:03 UTC). No verified restore procedure exists in the repo → leave both backups in
+   `.local-backups/` untouched and document path + state + a safe restore procedure (restore into a
+   scratch database first to verify; never over the shared DB without the author).
+9. Refresh the untracked `Attest RESUME_HANDOFF.md` with final facts; final report.
