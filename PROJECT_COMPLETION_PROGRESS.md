@@ -61,14 +61,14 @@ Predecessor log (implementation-preparation pass, complete): `WP3_IMPLEMENTATION
 | WP6 framework mapping | **COMPLETE** — study exercise; 16 entries (1 evidenced, 14 partial, 1 not mapped); `validate-wp6` 9/9 | D3.60; sources pinned in `rubric/framework-sources.json` |
 | **CP5** | **SUPERSEDED by Amendment A2** (not approved; `CP5_RECORD.md`) | separate author interaction waived prospectively |
 | WP7 reporting / dashboard | **COMPLETE** (2026-09-26) — `reports` + independent `validate-reports` 22/22 | D3.61; prove-gates 116/116, 9/9 controls |
-| Reproducibility audit | IN PROGRESS — scratch-copy `run` REPRODUCED 6/6; fresh-clone audit after this commit | D3.61, D3.62 |
-| Adversarial review | IN PROGRESS — secrets/history clean; stale-state sweep done | D3.62 |
-| Final docs / push / resume handoff | IN PROGRESS | |
+| Reproducibility audit | **COMPLETE** (2026-09-26) — fresh clone of origin/main `3d38af9`: reports byte-identical; `run` REPRODUCED 6/6 in 61 s; record `evidence/runs/20260926T202017Z-5695a4c3df2d/` | D3.62 |
+| Adversarial review | **COMPLETE** (2026-09-26) — findings fixed Attest-side; nothing in Arc21 touched | D3.62 |
+| Final docs / push / resume handoff | **COMPLETE** (2026-09-26) — HEAD == origin/main; the untracked résumé handoff rewritten | |
 
 ## Current phase
 
-**WP7 complete (2026-09-26); fresh-clone reproducibility audit, final docs, push and the résumé handoff
-follow.** No further routine stops (A2). *(History: WP7 had stopped at a usage limit on 2026-09-25 and
+**ATTEST COMPLETE (2026-09-26).** WP0–WP7 complete; CP1–CP4 approved; CP5 superseded by Amendment A2
+(not approved); reproducibility audit and adversarial review done (D3.62). No further routine stops (A2). *(History: WP7 had stopped at a usage limit on 2026-09-25 and
 resumed from this file on 2026-09-26 at `75257c0`.)*
 
 ## Commands and results
@@ -129,6 +129,11 @@ resumed from this file on 2026-09-26 at `75257c0`.)*
 | 2026-09-26 20:12 | `run` from a scratch copy of the working tree | **REPRODUCED** 6/6 comparisons; prove-gates 116/116; validate-reports 22/22; 53 s end to end |
 | 2026-09-26 | `validate-wp3` of the official run (scratch copy) | the committed `wp3-validation.{json,md}` reproduced byte for byte |
 | 2026-09-26 20:18 | final `prove-gates` + `reports` on the code committed next | **116/116, 9/9**; validate-reports **22/22** |
+| 2026-09-26 | commit `3d38af9` "WP7: complete assurance reports and dashboard", pushed | HEAD = origin/main |
+| 2026-09-26 20:19 | fresh clone of origin/main into the scratchpad; `npm ci`; `tsc --noEmit` | clean |
+| 2026-09-26 20:19 | `reports` in the clone | every file byte-identical to the commit (`git status` empty); validate-reports **22/22** |
+| 2026-09-26 20:20–20:21 | `run` in the clone (`ATTEST_ARC21_CHECKOUT` → the protected checkout) | **61 s**: rebuilt in 43.8 s; **REPRODUCED 6/6**; prove-gates **116/116, 9/9**; validate-reports **22/22**; Arc21 unchanged. Run directory and prove-gates record (commit `3d38af9`, clean tree) copied into this repository as the audit record |
+| 2026-09-26 | adversarial review | stale state only in dated history (Gate A packet and one CHECKPOINTS block bannered); tiers unchanged since `df8a3b7`; official records never modified since `fbc2318`; every hash resolves; no secret — D3.62 |
 
 ## Evidence generated in this mission
 
@@ -175,13 +180,9 @@ resumed from this file on 2026-09-26 at `75257c0`.)*
 
 ## Exact next action
 
-*(History: WP7 generators were written on 2026-09-25 and left unvalidated at a usage limit; finished
-2026-09-26.)*
+**None — the project is complete.** *(History: WP7 generators were written on 2026-09-25 and left
+unvalidated at a usage limit; finished on 2026-09-26 at `3d38af9`; audit and final documents after it.)*
 
-1. Commit the WP7 work (code, generated outputs, the prove-gates record, D3.61) and push.
-2. Fresh clone of origin/main into the scratchpad: `npm ci`, typecheck, `reports` (must leave the
-   clone unchanged), `validate-reports`, then `run` with `ATTEST_ARC21_CHECKOUT` at the protected
-   checkout; copy the clone's run directory into `evidence/runs/` as the audit record.
-3. D3.62 (audit + adversarial review results), CHECKPOINTS final section, this file final; final
-   `prove-gates` / `reports` if any code changed; commit, push, HEAD == origin/main.
-4. Rewrite the untracked `Attest RESUME_HANDOFF.md` from final truth.
+What remains is the author's, and none of it is required for completion: restoring a development
+dump over the shared database if wanted (`LOCAL_DATABASE.md`), and — optionally — `npm run attest run
+-- --confirm` to re-execute the assessment as a reproduction (D3.61, D3.62).

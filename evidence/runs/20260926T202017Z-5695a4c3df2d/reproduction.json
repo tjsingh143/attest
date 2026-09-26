@@ -1,0 +1,47 @@
+{
+  "WARNING": "A reproduction check, not a result: what a fresh rebuild re-derived, compared with the frozen evidence the reports are built from. The official runs are the author's selection (rubric/official-runs.json); nothing here replaces them.",
+  "against": {
+    "frozenCp3": "20260922T234324Z-5695a4c3df2d",
+    "plan": "20260924T201920Z-5695a4c3df2d",
+    "wp3": "20260925T014011Z-5695a4c3df2d"
+  },
+  "passed": true,
+  "comparisons": [
+    {
+      "name": "the control inventory (WP0) equals the frozen CP1 inventory",
+      "identical": true,
+      "differences": [],
+      "detail": "40 resources, 397 controls — identical in every drift class, count, role and anonymous reach"
+    },
+    {
+      "name": "the harness validation (WP1) reproduces the frozen one",
+      "identical": true,
+      "differences": [],
+      "detail": "5 scenarios detected and restored; the over-privileged connections blind as before"
+    },
+    {
+      "name": "the risk inputs (WP2 facts) equal the frozen ones",
+      "identical": true,
+      "differences": [],
+      "detail": "40 resources, every recorded field identical"
+    },
+    {
+      "name": "the risk tiers (WP2) equal the frozen CP3 tiers",
+      "identical": true,
+      "differences": [],
+      "detail": "40 resources, the same tier, impact, exposure and test count each; totals identical"
+    },
+    {
+      "name": "the WP3 plan equals the approved matrix and the plan the official run executed",
+      "identical": true,
+      "differences": [],
+      "detail": "345 Test IDs, the approved manifest's contract holds, every frozen field identical"
+    },
+    {
+      "name": "the AUTHOR INTENT store holds exactly the adopted sentences the official run recorded",
+      "identical": true,
+      "differences": [],
+      "detail": "240 sentences, all adopted, each the one the official run recorded"
+    }
+  ]
+}

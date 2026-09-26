@@ -1,6 +1,6 @@
 # prove-gates — the latest result
 
-> Written by `npm run attest prove-gates` at 2026-09-26T20:18:17.147Z; rewritten by every run. Harness `b0a87299d68a` (91 files), Attest commit `75257c082629` with uncommitted tracked changes.
+> Written by `npm run attest prove-gates` at 2026-09-26T20:21:12.386Z; rewritten by every run. Harness `b0a87299d68a` (91 files), Attest commit `3d38af93e80d`.
 
 **116 of 116 injected defects caught; 9 of 9 controls held; real state restored.**
 

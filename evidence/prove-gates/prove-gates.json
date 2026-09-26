@@ -1,13 +1,13 @@
 {
   "WARNING": "The latest `npm run attest prove-gates` result, rewritten by every run, pass or fail. Each row is one injected defect, or a control the gate must NOT fire on; a row may bundle several sub-cases, each named in its text. The reports cite counts computed from these rows. The harness hash identifies the code that ran; the commit is context (the tree may have had uncommitted changes, as recorded).",
-  "at": "2026-09-26T20:18:17.147Z",
+  "at": "2026-09-26T20:21:12.386Z",
   "harness": {
     "version": "0.1.0",
     "sourcesSha256": "b0a87299d68aca468a6cec002ee7c62a760df1e8feff9fa9f9b4991c0827f822",
     "fileCount": 91
   },
-  "attestCommit": "75257c08262950ad197c39c42d8d3b75c61a8c31",
-  "trackedChangesUncommitted": true,
+  "attestCommit": "3d38af93e80d3da0405b420a0055609fd6a71b5f",
+  "trackedChangesUncommitted": false,
   "summary": {
     "injected": 116,
     "caught": 116,
@@ -804,7 +804,7 @@
       "caught": true,
       "restored": true,
       "consequence": "the reports are accepted",
-      "firedCheck": "21 of 22 checks pass; identical twice; waiting for this run's record: 1"
+      "firedCheck": "22 of 22 checks pass; identical twice"
     },
     {
       "n": 80,
@@ -1254,7 +1254,7 @@
       "caught": true,
       "restored": true,
       "consequence": "HARNESS SAFETY VIOLATION → exit 3 (nothing is reverted automatically)",
-      "firedCheck": "HEAD moved: 687b4e3b7214 -> 0dcda6010584 (a commit, checkout or reset happened); a ref changed: a branch, tag or stash was created, moved or deleted"
+      "firedCheck": "HEAD moved: 08cf6f34938c -> a86f377cdaa5 (a commit, checkout or reset happened); a ref changed: a branch, tag or stash was created, moved or deleted"
     },
     {
       "n": 125,
