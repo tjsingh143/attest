@@ -185,10 +185,17 @@ and written up (`DECISIONS.md` D3.55, D3.56).
 
 ## How to run it
 
-Requires Docker, the Supabase CLI, Node 23.6 or later, and a local copy of the Arc21 repository —
-by default at `arc21 copy/` beside this repository; set `ATTEST_ARC21_CHECKOUT` to point anywhere
-else. The disposable database is the Supabase CLI's local stack for that checkout, reached on
-loopback only.
+All CLI commands require Node 23.6 or later, the npm dependencies, and a Git-backed
+Arc21 checkout that the read-only guard can fingerprint. Database commands additionally
+require Docker and the Supabase CLI. The protected checkout defaults to
+`arc21 copy/` **inside** this repository, as defined by `src/config.ts`; set
+`ATTEST_ARC21_CHECKOUT` to use another path. The disposable database is that checkout's local
+Supabase stack, reached on loopback only.
+
+Report-only commands read committed evidence and do not require a running database;
+they still enforce the checkout guard. The recorded assessment used a historical
+59-migration schema, not today's Arc21 `main`.
+See [reproducibility and target setup](docs/REPRODUCIBILITY.md) before running a database command.
 
 ```sh
 npm ci
@@ -360,3 +367,13 @@ commercially; Prowler does posture assessment for cloud accounts; several Postgr
 row-level security configuration. This is a first-principles build of the same idea against a
 system the author knows completely, so that every layer can be explained. Anything borrowed from
 those tools is cited where it is used.
+
+## Code excerpts
+
+[Verified code excerpts](docs/CODE_SAMPLES.md) provide direct source links for the main implementation boundaries.
+
+## Review material
+
+[Project portfolio](https://drive.google.com/drive/folders/1zGw3jHkmmMxunqU4JOENXhYa2F3WJpEB) contains the project overview, architecture,
+code examples, testing notes, and supporting evidence. Portfolio measurements
+retain their stated snapshot and verification boundaries.
