@@ -6,6 +6,7 @@ import { ATTEST_ROOT } from "../src/config.ts";
 import { neutralPresentation, presentationFiles, presentationIssues } from "../src/presentation.ts";
 import { buildReportOutputs } from "../src/wp7-run.ts";
 import { loadReportInputs, validateReportsLoaded, PROVE_GATES_CURRENCY_CHECK } from "../src/wp7-validate.ts";
+import { proveReportGates } from "../src/wp3-fault-injection.ts";
 
 test("credit claims are rejected for either people or assistants", () => {
   for (const text of ["Taij Singh", "Created by ChatGPT", "Built by me", "We developed this", "AI-drafted report", "The author wrote the system"]) {
@@ -77,4 +78,11 @@ test("tampered result counts and injected bylines still fail the current validat
   const byline = structuredClone(data);
   byline.docs.report += "\nCreated by ChatGPT.\n";
   assert.ok(validateReportsLoaded(byline).checks.some((c) => !c.passed && /neutral/i.test(c.name)));
+});
+
+test("every report fault injection still applies and is caught after the presentation change", async () => {
+  const rows = await proveReportGates();
+  assert.ok(rows.some((row) => row.control));
+  assert.ok(rows.some((row) => /creator byline/.test(row.defect)));
+  for (const row of rows) assert.ok(row.caught && row.restored, row.defect + ": " + row.firedCheck);
 });

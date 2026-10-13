@@ -1423,7 +1423,7 @@ type Rec7 = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
  * passes on the real outputs and fails on the tampered copy. A tamper that matches nothing is
  * reported as not applied — never as caught (D3.37).
  */
-async function proveReportGates(): Promise<InjectionResult[]> {
+export async function proveReportGates(): Promise<InjectionResult[]> {
   const out: InjectionResult[] = [];
   const { buildReportOutputs, rel } = await import("./wp7-run.ts");
   const V = await import("./wp7-validate.ts");
@@ -1504,7 +1504,7 @@ async function proveReportGates(): Promise<InjectionResult[]> {
     claims: "no generated document claims compliance",
     prov: "no generated document claims remediation",
     stale: "the current-state documents carry no stale project state",
-    labels: "every output carries its provenance label",
+    labels: "current reading views are neutral",
     plain: "the plain-language summary has no jargon",
     hand: "the README's evidence numbers live only in its generated sections",
     cmds: "every command the README documents",
@@ -1521,7 +1521,7 @@ async function proveReportGates(): Promise<InjectionResult[]> {
   inject("not measured presented as passing in prose: \"The 13 not measured tests are counted as effective.\"", [C.prov], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nThe 13 not measured tests are counted as effective.\n"), true));
   inject("stale state in the README: \"WP3 is planned and implemented but NOT executed.\"", [C.stale], (x) => edit(x, "readme", (t) => t.replace("## The question\n", "## The question\n\nWP3 is planned and implemented but NOT executed.\n"), true));
   inject("stale state in the report: \"CP4 is presented, awaiting the author.\"", [C.stale], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nCP4 is presented, awaiting the author.\n"), true));
-  inject("AI-drafted text labelled as the author's: the summary's label rewritten to \"Written by the author\"", [C.labels], (x) => edit(x, "summary", (t) => t.replace(/Drafted by AI from the assessment's recorded results and not written by the author \(Amendment A2\)/, "Written by the author from the assessment's recorded results"), true));
+  inject("a creator byline added to the neutral summary: \"Created by ChatGPT.\"", [C.labels], (x) => edit(x, "summary", (t) => `${t}\nCreated by ChatGPT.\n`, true));
   inject("AI-assisted narrative claimed as the author's own: \"The findings narrative was written by the author.\"", [C.prov], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nThe findings narrative was written by the author.\n"), true));
   inject("remediation claimed complete: \"Remediation of A4 was completed and verified.\"", [C.prov], (x) => edit(x, "report", (t) => t.replace("## 14. Limitations\n", "## 14. Limitations\n\nRemediation of A4 was completed and verified.\n"), true));
   inject("Arc21 described as fixed on the dashboard: \"Arc21 has been fixed.\"", [C.prov], (x) => edit(x, "dashboard", (t) => t.replace("<footer>", "<footer>Arc21 has been fixed. "), true));
@@ -1544,7 +1544,7 @@ async function proveReportGates(): Promise<InjectionResult[]> {
     const premise = (cp4: string) => {
       const x = copy();
       x.proveGates = passing;
-      x.docs.readme = x.docs.readme.replace(/^\*\*Status: [^\n]*/m, "**Status: complete.** Every work package is done.");
+      x.docs.readme = x.docs.readme.replace(/^\*\*Status: [^\n]*/m, "**Status: recorded assessment complete.** Every work package is done.");
       (x.cp4 as Rec7).approval = { ...(x.cp4 as Rec7).approval, CP4: cp4 };
       return check(x).checks.find((c) => c.name.startsWith(C.readme));
     };
