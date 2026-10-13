@@ -14,6 +14,7 @@ import {
   MAPPING_JSON_PATH, MAPPING_MD_PATH, renderCp5Record, renderMapping, SUPPORT_TEXT, type MappingEntry,
 } from "./wp6-mapping.ts";
 import { validateWp6, validateWp6Loaded, type Wp6Validation } from "./wp6-validate.ts";
+import { presentationFiles } from "./presentation.ts";
 
 type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -49,7 +50,7 @@ export async function buildWp6Files(ev?: Evidence, f?: Facts): Promise<{ problem
   files.set(join(dir, "wp6-validation.json"), JSON.stringify({ wp3RunId: facts.runs.wp3, ...validation }, null, 2) + "\n");
   files.set(CP5_RECORD_PATH, cp5);
   files.set(join(dir, "CP5_RECORD.md"), cp5);
-  return { problems: [], files, entries, validation };
+  return { problems: [], files: presentationFiles(files), entries, validation };
 }
 
 export async function runWp6(log: (s: string) => void): Promise<{ ok: boolean }> {

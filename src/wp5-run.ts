@@ -19,6 +19,7 @@ import { ATTEST_ROOT, RUNS_ROOT } from "./config.ts";
 import { buildWp5, blankNarratives, renderFindings, statusSummary, verifyItem, CP4_PACKET_PATH, FINDINGS_PATH, NARRATIVES_PATH, type ItemVerification } from "./wp5-findings.ts";
 import { renderCp4Packet } from "./cp4-packet.ts";
 import { WP5_ITEMS } from "./wp5-guidance.ts";
+import { presentationFiles } from "./presentation.ts";
 
 type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -91,7 +92,7 @@ export async function buildWp5Files(opts: { wp3RunId: string; planRunId: string;
     supersededWp4.push({ runId: d, why: why.get(d) ?? "an earlier WP4 run; see DECISIONS.md D3.56" });
   }
   files.set(CP4_PACKET_PATH, renderCp4Packet({ wp5: r, validation, superseded, supersededWp4, drift, generatedAt: new Date().toISOString() }));
-  return { problems: [], files, result: r };
+  return { problems: [], files: presentationFiles(files), result: r };
 }
 
 export async function writeWp5(opts: { wp3RunId: string; planRunId: string; wp4RunId: string | null; log: (s: string) => void }): Promise<{ ok: boolean }> {

@@ -25,3 +25,4 @@ Attest RESUME_HANDOFF.md
 # from the working tree, rebuilt from in disposable runs. Scratch, not evidence;
 # the evidence is what each run writes under evidence/runs/.
 .wp4-states/
+.presentation-captures/

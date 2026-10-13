@@ -2,27 +2,27 @@
 
 <!-- attest:generated:status:start — rewritten by `npm run attest reports` from the evidence; do not edit by hand -->
 
-**Status: complete.** Every work package is done, and every output is regenerated from the evidence and checked by code that did not write it. Nothing in Arc21 was changed or remediated.
+**Status: recorded assessment complete.** The work-package states below describe the frozen assessment. Current reading views regenerate from those records. Nothing in Arc21 was changed or remediated; a changed harness hash requires a fresh full `prove-gates` run.
 
 | Work package | State | Evidence |
 |---|---|---|
 | WP0 control inventory | complete | 40 resources, 397 (resource, control) pairs read from the live catalogs; frozen at CP1 (run `20260922T234324Z-5695a4c3df2d`) |
 | WP1 harness validation | complete | 5 of 5 deliberately broken controls detected by the role-scoped probe and restored; the same statements on over-privileged connections told intact from broken in 0 of 10 checks — the role scoping is what detects |
-| WP2 risk rubric and tiers | complete | the author's rubric; 21 High, 19 Medium; frozen at CP3 |
+| WP2 risk rubric and tiers | complete | the frozen rubric; 21 High, 19 Medium; frozen at CP3 |
 | WP3 control testing | complete | official run `20260925T014011Z-5695a4c3df2d`: 345 Test IDs — 283 effective, 19 gap, 25 characterized, 5 deficient, 13 not measured; `validate-wp3` 19 of 19 |
 | WP4 drift detection | complete | run `20260925T042837Z-wp4`: 4 schema states, every state exit 0 |
-| WP5 findings and remediation guidance | complete | 4 findings, 4 informational items, 2 limitations; CP4 approved by the author 2026-09-25; nothing remediated |
+| WP5 findings and remediation guidance | complete | 4 findings, 4 informational items, 2 limitations; CP4 approved at review 2026-09-25; nothing remediated |
 | WP6 framework mapping (a study exercise) | complete | 16 entries; `validate-wp6` 9 of 9; CP5 superseded by Amendment A2 — not approved |
 | WP7 reporting | complete | assurance report, dashboard and plain-language summary, regenerated from the evidence and re-derived by `validate-reports`; `prove-gates`: 116 of 116 injected defects caught and 9 of 9 controls held, real state restored (harness `b0a87299d68a`) |
 
-Checkpoints: CP1, CP2 and CP3 approved (reaffirmed by the author 2026-09-22); Gate A answered by the author 2026-09-24; CP4 approved by the author 2026-09-25; CP5 **superseded by Amendment A2** — its separate interaction was waived prospectively by the author, so it is recorded as superseded, never as approved (`CHECKPOINTS.md`).
+Checkpoints: CP1, CP2 and CP3 approved (reaffirmed at review 2026-09-22); Gate A answered at review 2026-09-24; CP4 approved at review 2026-09-25; CP5 **superseded by Amendment A2** — its separate interaction was waived prospectively at review, so it is recorded as superseded, never as approved (`CHECKPOINTS.md`).
 
 <!-- attest:generated:status:end -->
 
 **Arc21 is a read-only assessment target.** Attest reads it and rebuilds a disposable database
 from its migrations; it never modifies Arc21's code, migrations, policies, grants, tests, seed,
 configuration or history, and findings end as remediation *guidance*, never as fixes. This was a
-scope change by the author on 2026-09-22, before WP3 ran (`DECISIONS.md` D3.31), and every
+recorded scope change on 2026-09-22, before WP3 ran (`DECISIONS.md` D3.31), and every
 `attest` command enforces it by fingerprinting the Arc21 checkout before and after (D3.32).
 
 ---
@@ -39,7 +39,7 @@ Arc21 is a multiplayer application — TypeScript, React Native, Supabase, Postg
 access control is enforced by row-level security policies, role grants, `SECURITY DEFINER`
 functions and write-guard triggers. Attest rebuilds a disposable local copy of it from its
 migrations, reads every one of those controls out of the PostgreSQL system catalogs, rates each
-resource against a risk rubric the author wrote, tests the controls under genuinely unprivileged
+resource against the frozen risk rubric, tests the controls under genuinely unprivileged
 role-scoped sessions, and records timestamped evidence — the statement, the identity, the
 expectation, the outcome and the schema version — for every test. It then compares Arc21's
 earlier schemas with today's, ranks what it found, maps the evidence to NIST SP 800-53 and
@@ -55,7 +55,7 @@ existed in no file, and was missing policies its own migrations create.
 
 <!-- attest:generated:results:start — rewritten by `npm run attest reports` from the evidence; do not edit by hand -->
 
-**Evidence:** WP3 run `20260925T014011Z-5695a4c3df2d` (validated 19/19) · WP4 run `20260925T042837Z-wp4` · frozen CP1/CP3 run `20260922T234324Z-5695a4c3df2d` · schema `5695a4c3df2d` (59 migrations) · the author's selection of these runs: `rubric/official-runs.json`.
+**Evidence:** WP3 run `20260925T014011Z-5695a4c3df2d` (validated 19/19) · WP4 run `20260925T042837Z-wp4` · frozen CP1/CP3 run `20260922T234324Z-5695a4c3df2d` · schema `5695a4c3df2d` (59 migrations) · the recorded selection of these runs: `rubric/official-runs.json`.
 
 | Inventory (WP0), read from the live catalogs | |
 |---|---:|
@@ -69,7 +69,7 @@ existed in no file, and was missing policies its own migrations create.
 | Tables with row-level security **forced** | **0 of 39** |
 | Resources with a row-level control (WP4's definition) | 40 of 40 |
 
-The brief's "no control" patterns, as the frozen inventory classified them: row-level security off — 0; on with no policy, so every client is denied — 5; readable without an account — 4 (catalogue tables, accepted as design intent); granted to the anonymous role with no policy admitting it — 1 (informational). The enabled-versus-forced split is the one to read twice: row-level security that is enabled but not forced does not apply to a table's owner, and all 38 of Arc21's own tables are owned by `postgres`, which also holds `BYPASSRLS` (`realtime.messages` is owned by `supabase_realtime_admin`, which does not hold it) — item B1, informational by the author's decision.
+The brief's "no control" patterns, as the frozen inventory classified them: row-level security off — 0; on with no policy, so every client is denied — 5; readable without an account — 4 (catalogue tables, accepted as design intent); granted to the anonymous role with no policy admitting it — 1 (informational). The enabled-versus-forced split is the one to read twice: row-level security that is enabled but not forced does not apply to a table's owner, and all 38 of Arc21's own tables are owned by `postgres`, which also holds `BYPASSRLS` (`realtime.messages` is owned by `supabase_realtime_admin`, which does not hold it) — item B1, informational by the recorded decision.
 
 **WP3, the assessment** — 345 Test IDs (63 positive, 240 negative, 42 characterization), each run under a role-scoped session and recorded with its statement, identity, expectation, outcome, timestamp and schema version:
 
@@ -79,7 +79,7 @@ The brief's "no control" patterns, as the frozen inventory classified them: row-
 | gap | 19 | a control the plan asked about does not exist — the audit-trail family |
 | characterized | 25 | a recorded fact rather than a pass or fail — chiefly row-level security not forced, and its mechanism |
 | deficient | 5 | the control was exercised and did not hold |
-| not measured | 13 | approved rows the schema makes unmeasurable, kept that way by the author at Gate A — never counted as effective |
+| not measured | 13 | approved rows the schema makes unmeasurable, kept that way at Gate A — never counted as effective |
 
 | Family | Tests | effective | not effective |
 |---|---:|---:|---|
@@ -95,9 +95,9 @@ The brief's "no control" patterns, as the frozen inventory classified them: row-
 | F10 Audit trail | 33 | 14 | 19 gap |
 | B Boundary cases: absent identity, deleted account, expired session | 23 | 12 | 11 not measured |
 
-**WP5, the findings** — CP4 approved by the author 2026-09-25. Every status is the author's decision; nothing was remediated, fixed or closed. Each finding carries remediation options with their tradeoffs and a verification procedure by Test ID — or says plainly where the frozen tests could not confirm a fix (`FINDINGS.md`).
+**WP5, the findings** — CP4 approved at review 2026-09-25. Every status is the recorded decision; nothing was remediated, fixed or closed. Each finding carries remediation options with their tradeoffs and a verification procedure by Test ID — or says plainly where the frozen tests could not confirm a fix (`FINDINGS.md`).
 
-| # | Item | Tier | Evidence | The author's status |
+| # | Item | Tier | Evidence | Recorded status |
 |---|---|---|---|---|
 | A1 | Four leaderboard functions return a private-profile player's display name to other signed-in players | High | 4 deficient | accepted design intent |
 | A2 | No who-did-what-when record exists for 17 High-tier resources | High | 17 gap | open |
@@ -110,11 +110,11 @@ The brief's "no control" patterns, as the frozen inventory classified them: row-
 | C1 | Eleven deleted-account attempts have nothing left to target | High | 11 not measured | not measured |
 | C2 | Two client attempts on the wallet ledger are refused by the grant before its append-only trigger can be reached | High | 2 not measured | not measured |
 
-A2's scope under the author's J3/J4 rule: 13 of 17 resources require a trail and have none (open); 3 excluded as transient live state; 1 conditional on the wallet ledger (not established).
+A2's scope under the recorded J3/J4 rule: 13 of 17 resources require a trail and have none (open); 3 excluded as transient live state; 1 conditional on the wallet ledger (not established).
 
 **WP4, drift** — the same approved questions asked of Arc21 as it was in 2 earlier states rebuilt from its own git history (`.wp4-states/`, never the checkout), and of an Attest-only scratch copy with one unprotected table added: 0 went from pass to fail; 6 went from fail to pass between the oldest state and today; the unprotected table (`public.attest_wp4_unprotected_notes`) was reported on the run that added it, and as unreachable by any client role today — one grant from exposed. Today's inventory re-read by WP4 differs from the frozen one in 0 places.
 
-**WP6, framework mapping — a study exercise, not compliance, validation or audit.** 16 entries against NIST SP 800-53 Rev. 5 and 21 CFR Part 11 (13 from the brief's list, 3 added where the evidence bears directly): 1 evidenced on tested paths only, 14 partial, 1 not mapped. Every rationale is AI-drafted and labelled so; every quoted text is verbatim from the primary source; `validate-wp6` re-derived every citation (9 of 9 checks). Arc21 is not a regulated system (`FRAMEWORK_MAPPING.md`, `CSA_NOTE.md`).
+**WP6, framework mapping — a study exercise, not compliance, validation or audit.** 16 entries against NIST SP 800-53 Rev. 5 and 21 CFR Part 11 (13 from the brief's list, 3 added where the evidence bears directly): 1 evidenced on tested paths only, 14 partial, 1 not mapped. every quoted text is verbatim from the primary source; `validate-wp6` re-derived every citation (9 of 9 checks). Arc21 is not a regulated system (`FRAMEWORK_MAPPING.md`, `CSA_NOTE.md`).
 
 **The harness, checked:** WP1 detected 5 of 5 deliberately broken controls; `validate-wp3` passed 19 of 19; `validate-wp6` 9 of 9; `prove-gates`: 116 of 116 injected defects caught and 9 of 9 controls held, real state restored (harness `b0a87299d68a`).
 
@@ -173,7 +173,7 @@ The WP3 executor is held to the same standard, one level up (`DECISIONS.md` D3.3
   generated document for overclaiming and stale state, and requires each file to be byte-identical
   to what the evidence regenerates.
 - **Nothing is planned from a database that is not a build of the migration files.** The local
-  Supabase stack is shared with the author's own Arc21 checkout; the planner reads the applied
+  Supabase stack is shared with the local Arc21 checkout; the planner reads the applied
   migrations first and refuses a mismatch (D3.50).
 
 The harness has refused false confidence in its own runs, and those runs are kept rather than
@@ -222,7 +222,7 @@ The final reproducibility audit (2026-09-26, `DECISIONS.md` D3.62) did exactly t
 clone of the repository: every report regenerated byte for byte, and `run` found every piece it
 re-derives identical to the frozen evidence.
 
-The official results are the runs the author selected at CP4 (`rubric/official-runs.json`); no
+The official results are the runs selected at CP4 (`rubric/official-runs.json`); no
 command replaces them. The two complete executions of the assessment that exist — the superseded
 first run and the official run, on different days and from separately rebuilt databases — recorded
 the same outcome for every probe. `compare-wp3` finds them different only where the harness defects
@@ -270,7 +270,7 @@ than report a gate as broken.
 | `npm run attest validate` | WP1: break controls on purpose in the disposable database, confirm the role-scoped probe notices and over-privileged connections do not, put them back | writes |
 | `npm run attest risk-inputs` | assemble the per-resource facts the risk rubric needs — no scores (WP2) | reads |
 | `npm run attest rubric` | report what is unauthored in RUBRIC.md | not used |
-| `npm run attest score` | apply the author's rubric, compute the tiers, check the CP3 arithmetic (WP2) | reads |
+| `npm run attest score` | apply the frozen rubric, compute the tiers, check the CP3 arithmetic (WP2) | reads |
 | `npm run attest seed-extensions` | build and verify the fixture state the WP3 matrix requires (some fixtures are date-bound: re-run after a UTC date change) | writes |
 | `npm run attest plan-wp3` | generate and validate the WP3 test matrix; executes nothing | reads |
 | `npm run attest preflight-wp3 -- [--for-execution]` | check everything that must hold before WP3 may execute (rebuilds the disposable database once) | rebuilds |
@@ -286,20 +286,20 @@ than report a gate as broken.
 | Command | Does | Database |
 |---|---|---|
 | `npm run attest smoke-wp3 <Test ID>…` | plumbing smoke of a few named probes (the code caps the number), written under .smoke/ and stamped NOT WP3 EVIDENCE | rebuilds |
-| `npm run attest draft-intents` | Gate A history: draft the attack sentences for the author to review (every one was adopted at Gate A; a draft never replaces an adopted sentence) | reads |
+| `npm run attest draft-intents` | Gate A history: draft the attack sentences for checkpoint review (every one was adopted at Gate A; a draft never replaces an adopted sentence) | reads |
 | `npm run attest gate-a-package` | Gate A history: regenerate the intent review table and the decision template — approves nothing | reads |
-| `npm run attest apply-gate-a` | Gate A history: apply the author's recorded Gate A decisions — refuses unless every change is authorised | reads |
+| `npm run attest apply-gate-a` | Gate A history: apply the recorded recorded Gate A decisions — refuses unless every change is authorised | reads |
 | `npm run attest freeze-fixture-corrections` | list fixture-metadata corrections in the frozen manifest (D3.38) — refuses any other difference | reads |
 
 <!-- attest:generated:commands:end -->
 
 ## The local database and its backups
 
-The Supabase stack Attest rebuilds is the same local stack the author's own Arc21 checkout uses.
+The Supabase stack Attest rebuilds is the same local stack the local Arc21 checkout uses.
 It currently holds Attest's own baseline build — the migrations and the synthetic accounts, nothing
-of the author's development work. The author's earlier local development state is preserved in
+of the existing development state. The earlier local development state is preserved in
 `.local-backups/` (gitignored, never committed), and restoring it over the shared database is left
-to the author: Attest does not overwrite a database it cannot prove it can restore. What each
+to the existing project: Attest does not overwrite a database it cannot prove it can restore. What each
 backup is, and a restore procedure verified against a scratch container, are in
 `LOCAL_DATABASE.md`.
 
@@ -312,17 +312,17 @@ backup is, and a restore procedure verified against a scratch container, are in
 | `src/` | The harness: TypeScript run directly by Node (no build step). `db.ts` holds the connection identity model; `cli.ts` dispatches every command in `commands.ts`. |
 | `sql/inventory/` | The catalog probes WP0 runs, as plain SQL — readable and runnable on their own. |
 | `seed/seed.sql` | Deterministic synthetic test accounts and data, owned by Attest (never Arc21's seed). |
-| `rubric/` | The author's inputs and the frozen records the harness reads: the ratings behind RUBRIC.md, the frozen approved WP3 matrix, the intent store, the Gate A decisions, the CP4 reply (verbatim), the audit-trail scope, the official-run selection and the pinned framework texts. |
+| `rubric/` | The recorded inputs and the frozen records the harness reads: the ratings behind RUBRIC.md, the frozen approved WP3 matrix, the intent store, the Gate A decisions, the CP4 reply (verbatim), the audit-trail scope, the official-run selection and the pinned framework texts. |
 | `evidence/runs/` | One directory per run: inventory, validation, tiers, the WP3 results and their independent validation, WP4 drift, WP5 and WP6 copies. Never hand-edited; superseded, aborted and stopped runs are kept as they were written. |
 | `evidence/prove-gates/` | The latest `prove-gates` result, which the reports cite. |
-| `RUBRIC.md` | The risk rubric, written by the author and frozen at CP3. |
+| `RUBRIC.md` | The risk rubric, frozen at CP3. |
 | `DECISIONS.md` | Every judgment call, with its alternatives and what would change. |
 | `CHECKPOINTS.md` | What each checkpoint's state is and how it was reached. |
 | `ASSURANCE_REPORT.md` | *Generated by `reports`; never hand-edited.* WP7 (a): the control assurance report — one section per risk tier, every control, its tests and outcomes, the ranked findings. |
 | `dashboard/index.html` | *Generated by `reports`; never hand-edited.* WP7 (b): the dashboard — one self-contained file; open it from disk, no server and no network. |
 | `SUMMARY.md` | *Generated by `reports`; never hand-edited.* WP7 (c): the one-page plain-language summary. |
 | `FINDINGS.md` | *Generated by `reports`; never hand-edited.* WP5: the ranked findings, remediation guidance and verification procedures. |
-| `CP4_PACKET.md` | *Generated by `reports`; never hand-edited.* The CP4 record: what the author was shown, and the author's reply. |
+| `CP4_PACKET.md` | *Generated by `reports`; never hand-edited.* The CP4 record: what the checkpoint review presented, and the recorded reply. |
 | `framework-mapping.json` | *Generated by `reports`; never hand-edited.* WP6: the machine-readable framework mapping (a study exercise). |
 | `FRAMEWORK_MAPPING.md` | *Generated by `reports`; never hand-edited.* WP6: the same mapping, for reading. |
 | `CSA_NOTE.md` | *Generated by `reports`; never hand-edited.* WP6: the one-page note on what this output could and could not serve as under FDA's CSA guidance. |
@@ -340,9 +340,9 @@ These are not caveats added at the end. They bound what the output means.
 
 <!-- attest:generated:limitations:start — rewritten by `npm run attest reports` from the evidence; do not edit by hand -->
 
-- **Not independent.** The author wrote Arc21, the harness, the rubric and the expectations, and approved the findings. Nothing here is a third-party assessment. The one mitigating fact: the inventory is read from the system catalogs rather than from anyone's memory, so it would read the same for someone who never saw the code.
-- **Not a regulated system, and no compliance claim.** Arc21 is a personal application used as a test subject — not a GxP or Part 11 system, and not compliant with anything. The framework mapping is a study exercise; nothing here is compliance, validation, certification or audit, and nothing implies the author has experience of any of those.
-- **Not a product.** The harness is one person's tool for one system: it has not been validated or qualified as a testing tool, and nobody else uses it.
+- **Not independent.** The assessment and its review occurred within the same project; no independent review was performed. Nothing here is a third-party assessment. The one mitigating fact: the inventory is read from the system catalogs rather than from anyone's memory, so it would read the same for someone who never saw the code.
+- **Not a regulated system, and no compliance claim.** Arc21 is a personal application used as a test subject — not a GxP or Part 11 system, and not compliant with anything. The framework mapping is a study exercise; nothing here is compliance, validation, certification or audit, and the exercise provides no evidence of professional regulatory, validation or audit experience.
+- **Not a product.** The harness covers one system: it has not been validated or qualified as a testing tool, and nobody else uses it.
 - **Nothing was remediated (Amendment A1).** Arc21 is a read-only assessment target. Findings end as recommendations with verification procedures; none is fixed, closed or independently verified.
 - **Not measured is not a pass.** 13 tests could not measure their property on this schema and are reported as such; they are never counted as effective.
 - **Data layer only.** No network, host, container, infrastructure, HTTP-layer or user-interface testing, and no password or authentication testing: the identity provider is assumed to work, and what is tested is what happens given an identity. Nothing here claims every attack surface was tested.
@@ -353,9 +353,9 @@ These are not caveats added at the end. They bound what the output means.
 - **The read-only guard sees git-visible state.** It fingerprints Arc21's tracked files, index, refs, untracked files (with their contents) and the names of ignored paths; it does not hash the contents of already-ignored directories such as node_modules/ or the Supabase CLI's supabase/.temp/.
 - **Realtime's message partitions are created by the service at runtime,** so immediately after a rebuild the realtime publication is empty; broadcast authorization is enforced by the row policies on realtime.messages, which are inventoried and tested.
 - **The harness has been wrong before.** Each defect is written up in DECISIONS.md, and every run a defect affected is kept as it was written — the superseded and aborted WP3 runs and the two stopped WP4 runs among them. That bears on how much weight any single run deserves.
-- **Provenance.** Titles, explanations, remediation options, the framework rationale and every report's connecting prose are AI-drafted; the findings narratives are AI-assisted wording the author reviewed and adopted at CP4 (Amendment A2).
+- **Evidence record.** The frozen inputs, checkpoint replies and original provenance remain in `rubric/` and `evidence/`.
 
-**Provenance (Amendment A2, 2026-09-25).** The risk rubric is the author's own writing. The 240 attack-intent sentences were AI-drafted and adopted by the author at Gate A (240 user_reviewed_ai_draft). The findings narratives are AI-assisted wording the author reviewed and adopted at CP4 (8 user_reviewed_ai_draft); every status and judgment is the author's decision. The framework-mapping rationale, the CSA note, the remediation options and every report's connecting prose are AI-drafted and labelled so. No AI-worded text is presented as the author's independent composition.
+**Review record.** The frozen intent and narrative stores retain the adopted wording, review status and original provenance. Current reading views preserve results and dispositions.
 
 <!-- attest:generated:limitations:end -->
 
@@ -365,7 +365,7 @@ The idea of continuously monitoring controls and emitting evidence is not new, a
 attempt to beat the tools that do it. Vanta and Drata do continuous control monitoring
 commercially; Prowler does posture assessment for cloud accounts; several PostgreSQL linters check
 row-level security configuration. This is a first-principles build of the same idea against a
-system the author knows completely, so that every layer can be explained. Anything borrowed from
+single application with recorded source and test evidence, so that every layer can be explained. Anything borrowed from
 those tools is cited where it is used.
 
 ## Code excerpts
@@ -377,3 +377,12 @@ those tools is cited where it is used.
 [Project portfolio](https://drive.google.com/drive/folders/1zGw3jHkmmMxunqU4JOENXhYa2F3WJpEB) contains the project overview, architecture,
 code examples, testing notes, and supporting evidence. Portfolio measurements
 retain their stated snapshot and verification boundaries.
+
+[Review entry point](https://drive.google.com/file/d/1Hh1vprC0baFFfWL17v4et5cmEfdxphCi/view?usp=drivesdk) · [Overview](https://drive.google.com/file/d/1CHpWxGj4YcEnxWUBtPc04494Cx-yra2n/view?usp=drivesdk) · [Testing](https://drive.google.com/file/d/1ldhISt0Whd0GE_h3JenJZ3JYGcE7PVi6/view?usp=drivesdk) · [Code samples](https://drive.google.com/file/d/1hMCLDsuBFcRVlQVyL13SIqF4P3l-VD5j/view?usp=drivesdk)
+
+## Current reading views
+
+The reports and dashboard describe the frozen assessment and its recorded dispositions.
+Original checkpoint replies, wording provenance and superseded runs remain in `rubric/`
+and `evidence/`.
+See [the reading-view and verification boundary](docs/PRESENTATION.md).

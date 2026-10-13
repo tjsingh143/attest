@@ -14,6 +14,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ATTEST_ROOT, RUNS_ROOT } from "./config.ts";
 import { lintClaims, wordCount } from "./claims-lint.ts";
+import { neutralPresentation } from "./presentation.ts";
 
 type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -130,7 +131,11 @@ export function validateWp6Loaded(m: Rec, note: string, sources: Rec, recs: read
 
 export async function validateWp6(wp3RunId: string): Promise<Wp6Validation> {
   const m = JSON.parse(await readFile(join(ATTEST_ROOT, "framework-mapping.json"), "utf8")) as Rec;
-  const note = await readFile(join(ATTEST_ROOT, "CSA_NOTE.md"), "utf8");
+  const note = await readFile(join(RUNS_ROOT, wp3RunId, "wp6", "CSA_NOTE.md"), "utf8");
+  const view = await readFile(join(ATTEST_ROOT, "CSA_NOTE.md"), "utf8");
+  if (view !== neutralPresentation(note)) {
+    return { passed: false, checks: [{ name: "the current CSA view matches the frozen evidence", passed: false, detail: "CSA_NOTE.md differs from the neutral reading view of the frozen note" }] };
+  }
   const sources = JSON.parse(await readFile(join(ATTEST_ROOT, "rubric", "framework-sources.json"), "utf8")) as Rec;
   const recs = (JSON.parse(await readFile(join(RUNS_ROOT, wp3RunId, "wp3-results.json"), "utf8")) as Rec).records as Rec[];
   if (m.evidence?.wp3Run !== wp3RunId) {

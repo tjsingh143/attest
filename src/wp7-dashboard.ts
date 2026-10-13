@@ -145,7 +145,7 @@ ${css}</style>
     <p class="sub" id="asof"></p>
     <div class="banner">
       <span class="chip">Arc21 is read-only: nothing remediated, fixed or closed</span>
-      <span class="chip">Not an independent audit — the author tested their own system</span>
+      <span class="chip">Not an independent audit — assessment and review within the same project</span>
       <span class="chip">Framework mapping is a study exercise</span>
       <span class="chip">Generated from evidence by <code>npm run attest reports</code></span>
     </div>

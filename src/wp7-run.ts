@@ -25,6 +25,7 @@ import { renderSummary, SUMMARY_PATH } from "./wp7-summary.ts";
 import { renderDashboard, DASHBOARD_PATH } from "./wp7-dashboard.ts";
 import { README_PATH, renderReadmeBlocks, spliceReadme } from "./wp7-readme.ts";
 import type { InjectionResult } from "./wp3-fault-injection.ts";
+import { presentationFiles } from "./presentation.ts";
 
 const run = promisify(execFile);
 
@@ -59,12 +60,12 @@ export async function buildReportOutputs(mode: "write" | "compare"): Promise<Bui
   if (mode === "write") await writeAll(wp6.files);
   const ev = await loadEvidence();
   const f = computeFacts(ev);
-  const wp7 = new Map<string, string>([
+  const wp7 = presentationFiles(new Map<string, string>([
     [REPORT_PATH, renderReport(ev, f)],
     [SUMMARY_PATH, renderSummary(f)],
     [DASHBOARD_PATH, await renderDashboard(ev, f)],
     [README_PATH, spliceReadme(await readFile(README_PATH, "utf8"), renderReadmeBlocks(ev, f))],
-  ]);
+  ]));
   if (mode === "write") await writeAll(wp7);
   return { problems: [], files: new Map([...wp5.files, ...wp6.files, ...wp7]) };
 }

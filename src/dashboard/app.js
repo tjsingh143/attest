@@ -176,7 +176,7 @@
       return el("tr", {}, [el("td", { text: x.label }), el("td", { class: "num", text: String(x.resources.length) }), el("td", {}, [x.resources.length ? el("code", { text: x.resources.join(", ") }) : null, x.resources.length ? " — " : "", x.note])]);
     })),
   ])]);
-  var forced = el("p", { class: "sub", style: "margin-top:10px" }, [el("strong", { text: "Enabled is not forced: " }), "row-level security is forced on none of the " + cov.tables + " tables (" + cov.notForced + " not forced), so a table's owner is not subject to it — informational by the author's decision (B1)."]);
+  var forced = el("p", { class: "sub", style: "margin-top:10px" }, [el("strong", { text: "Enabled is not forced: " }), "row-level security is forced on none of the " + cov.tables + " tables (" + cov.notForced + " not forced), so a table's owner is not subject to it — informational by the recorded CP4 decision (B1)."]);
   $("coverage").appendChild(el("div", { class: "grid2" }, [
     el("section", { class: "card" }, [
       el("h2", { text: "Resources with a row-level control" }),
@@ -194,7 +194,7 @@
 
   // ---------------------------------------------------------------- findings
   var ft = el("table");
-  ft.appendChild(el("thead", {}, [el("tr", {}, ["#", "Item", "Tier", "Evidence", "Tests", "The author's status", ""].map(function (h, i) { return el("th", { class: i === 4 ? "num" : "", text: h }); }))]));
+  ft.appendChild(el("thead", {}, [el("tr", {}, ["#", "Item", "Tier", "Evidence", "Tests", "Recorded status", ""].map(function (h, i) { return el("th", { class: i === 4 ? "num" : "", text: h }); }))]));
   var fb = el("tbody");
   D.findings.forEach(function (f) {
     var show;
@@ -210,8 +210,8 @@
   ft.appendChild(fb);
   $("findings").appendChild(el("section", { class: "card" }, [
     el("h2", { text: "Ranked findings (WP5)" }),
-    el("p", { class: "sub", text: "Ranked from the frozen tiers and the evidence; each status is the author's decision at CP4 (" + m.cp4 + "). Nothing was remediated, fixed or closed. Full detail: FINDINGS.md." }),
-    D.scope ? el("p", { class: "sub", text: "A2 under the author's rule: " + D.scope.trailRequired + " of " + D.scope.total + " resources require a trail and have none; " + D.scope.excluded + " excluded as transient live state; " + D.scope.conditional + " conditional on J4." }) : null,
+    el("p", { class: "sub", text: "Ranked from the frozen tiers and the evidence; each status is recorded at CP4 (" + m.cp4 + "). Nothing was remediated, fixed or closed. Full detail: FINDINGS.md." }),
+    D.scope ? el("p", { class: "sub", text: "A2 under the recorded scope rule: " + D.scope.trailRequired + " of " + D.scope.total + " resources require a trail and have none; " + D.scope.excluded + " excluded as transient live state; " + D.scope.conditional + " conditional on J4." }) : null,
     el("div", { class: "tablewrap" }, [ft]),
   ]));
 
@@ -239,7 +239,7 @@
   })));
   $("framework").appendChild(el("section", { class: "card" }, [
     el("h2", { text: "Framework mapping — a study exercise (WP6)" }),
-    el("p", { class: "sub", text: "Not compliance, not validation, not certification, not an independent audit; Arc21 is not a regulated system. Rationale AI-drafted. Full text: FRAMEWORK_MAPPING.md and CSA_NOTE.md." }),
+    el("p", { class: "sub", text: "Not compliance, not validation, not certification, not an independent audit; Arc21 is not a regulated system. Full text: FRAMEWORK_MAPPING.md and CSA_NOTE.md." }),
     el("div", { class: "tablewrap" }, [mt]),
   ]));
 
@@ -279,7 +279,7 @@
     var r = D.records[id];
     var dl = el("dl");
     function row(k, v) { if (v) { dl.appendChild(el("dt", { text: k })); dl.appendChild(el("dd", { text: v })); } }
-    var INTENT = { user_reviewed_ai_draft: "Attack simulated (AI-drafted intent, adopted by the author at Gate A)", user_authored: "Attack simulated (the author's intent)" };
+    var INTENT = { user_reviewed_ai_draft: "Attack simulated (reviewed at Gate A)", user_authored: "Attack simulated (recorded intent)" };
     row("Identity", r.i); row("Expected", r.e); row("Actual", r.x); row("Parameters", r.a); row(INTENT[r.np] || ("Attack simulated (intent" + (r.np ? ", " + r.np : "") + ")"), r.n); row("Verdict reason", r.vr); row("Control", r.c); row("Resource", r.r);
     return el("div", { class: "test" }, [
       el("div", { class: "row" }, [el("strong", { style: "color:var(--ink-1)", text: id }), statusKey(r.v), el("span", { text: r.p }), el("span", { text: r.f }), el("span", { class: "mono", text: r.ts })]),

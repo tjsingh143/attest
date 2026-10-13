@@ -27,6 +27,7 @@ import { lintClaims, sentences, wordCount } from "./claims-lint.ts";
 import { COMMANDS, DISPATCHED } from "./commands.ts";
 import { readHarnessVersion } from "./harness-version.ts";
 import { blockEnd, blockStart, handWritten, LAYOUT, README_BLOCKS } from "./wp7-readme.ts";
+import { presentationIssues } from "./presentation.ts";
 
 type Rec = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -412,7 +413,7 @@ export function validateReportsLoaded(x: ReportInputs): ReportsValidation {
     const gapSplit = /none at all for (\d+) kinds[^,]*, and only part of one for (\d+) more/.exec(S);
     if (!gapSplit || numIn(gapSplit[1]) !== (absentItem?.testIds.length ?? -1) || numIn(gapSplit[2]) !== (partialItem?.testIds.length ?? -1)) bad.push(`the no-record split says ${gapSplit?.[1]}/${gapSplit?.[2]}`);
     const scope = ((x.auditScope.resources ?? []) as Rec[]);
-    const req = /Under a rule the author set, (\d+) of the (\d+)/.exec(S);
+    const req = /Under the recorded scope rule, (\d+) of the (\d+)/.exec(S);
     if (!req || numIn(req[1]) !== scope.filter((r) => r.disposition === "trail_required").length || numIn(req[2]) !== scope.length) bad.push(`the trail scope says ${req?.[1]} of ${req?.[2]}; the scope file gives ${scope.filter((r) => r.disposition === "trail_required").length} of ${scope.length}`);
     // the claims behind "every direct attempt was stopped" and "the balance stayed correct"
     for (const c of ["F1", "F2", "F3", "F4", "F6", "F8"]) { const fc = byFam.get(c)!; if (fc.deficient || fc.gap) bad.push(`"every direct attempt was stopped" but ${c} has ${fc.deficient} deficient / ${fc.gap} gap`); }
@@ -513,7 +514,7 @@ export function validateReportsLoaded(x: ReportInputs): ReportsValidation {
     if (!trig || numIn(trig[1]) !== wp0.triggersRefuse) bad.push(`refusing triggers: ${trig?.[1]}`);
     const pol = /\((\d+) positive, (\d+) negative, (\d+) characterization\)/.exec(res);
     if (!pol || numIn(pol[1]) !== (byPol.positive ?? 0) || numIn(pol[2]) !== (byPol.negative ?? 0) || numIn(pol[3]) !== (byPol.characterization ?? 0)) bad.push("polarity split");
-    const findT = table(res, /^\|\s*#\s*\|\s*Item\s*\|\s*Tier\s*\|\s*Evidence\s*\|\s*The author's status\s*\|/);
+    const findT = table(res, /^\|\s*#\s*\|\s*Item\s*\|\s*Tier\s*\|\s*Evidence\s*\|\s*Recorded status\s*\|/);
     if (findT.length !== items.length) bad.push(`findings table has ${findT.length} rows, WP5 has ${items.length}`);
     for (const row of findT) {
       const i = items.find((z) => z.id === row[0]);
@@ -537,8 +538,8 @@ export function validateReportsLoaded(x: ReportInputs): ReportsValidation {
     const w3 = wp3Row ? /official run `([^`]+)`: (\d+) Test IDs — (\d+) effective, (\d+) gap, (\d+) characterized, (\d+) deficient, (\d+) not measured/.exec(wp3Row[2]!) : null;
     if (!w3 || w3[1] !== off.wp3 || !sameCounts({ total: numIn(w3[2]), effective: numIn(w3[3]), gap: numIn(w3[4]), characterized: numIn(w3[5]), deficient: numIn(w3[6]), not_measured: numIn(w3[7]) }, raw)) bad.push("the status table's WP3 row");
     if (!/CP5 \*\*superseded by Amendment A2\*\*[^\n]*never as approved/.test(st) || /\bCP5\b[^;\n]{0,40}\bapproved by the author\b/.test(st)) bad.push("the status block does not record CP5 as superseded by Amendment A2, never approved");
-    if (!/CP4 approved by the author \d{4}-\d{2}-\d{2}/.test(st) !== !/^approved\b/.test(String(x.cp4.approval?.CP4 ?? ""))) bad.push("the status block's CP4 state is not the recorded approval");
-    const claimsComplete = /^\*\*Status: complete\.\*\*/m.test(st);
+    if (!/CP4 approved at review \d{4}-\d{2}-\d{2}/.test(st) !== !/^approved\b/.test(String(x.cp4.approval?.CP4 ?? ""))) bad.push("the status block's CP4 state is not the recorded approval");
+    const claimsComplete = /^\*\*Status: recorded assessment complete\.\*\*/m.test(st);
     const conditions = [
       x.wp3Validation.passed === true, ((x.drift.states ?? []) as Rec[]).every((s) => Number(s.exit) === 0),
       /^approved\b/.test(String(x.cp4.approval?.CP4 ?? "")), wv?.passed === true, pg.injected > 0 && pg.caught === pg.injected && pg.held === pg.controls && pg.restored,
@@ -614,7 +615,7 @@ export function validateReportsLoaded(x: ReportInputs): ReportsValidation {
       if (row[2] !== i.tier) bad.push(`${i.id}: tier ${row[2]} vs ${i.tier}`);
     }
     const posture = lineWith(d.report, /^\| Findings \(WP5, after CP4\) \|/) ?? "";
-    const pm = /(\d+) findings \((\d+) open: ([^)]*)\), (\d+) informational items, (\d+) limitations — CP4 approved by the author (\d{4}-\d{2}-\d{2})/.exec(posture);
+    const pm = /(\d+) findings \((\d+) open: ([^)]*)\), (\d+) informational items, (\d+) limitations — CP4 approved at review (\d{4}-\d{2}-\d{2})/.exec(posture);
     if (!pm || numIn(pm[1]) !== items.filter((i) => i.part === "finding").length || numIn(pm[2]) !== openIds.length || pm[3] !== openIds.join(", ") || numIn(pm[4]) !== items.filter((i) => i.part === "informational").length || numIn(pm[5]) !== items.filter((i) => i.part === "limitation").length) bad.push(`posture findings line: ${pm?.slice(1).join("/")}`);
     add("each finding's status is the author's recorded CP4 decision, and its Test IDs and evidence class are the records'", bad, `${items.length} items; ${openIds.length} open (${openIds.join(", ")}); every non-effective record in exactly one`);
   }
@@ -700,13 +701,11 @@ export function validateReportsLoaded(x: ReportInputs): ReportsValidation {
     const stale = current.flatMap(([w, t]) => staleLint(t, w));
     add("the current-state documents carry no stale project state (WP3 unrun, a checkpoint pending, a package unfinished)", stale, "clean");
     const prove: string[] = [];
-    if (!/Drafted by AI[^.]*not written by the author/.test(d.summary)) prove.push("SUMMARY.md: the AI-drafted label is missing or altered");
-    if (!/Connecting prose is AI-drafted/.test(d.report)) prove.push("ASSURANCE_REPORT.md: the AI-drafted label is missing");
-    if (!/AI-assisted wording the author reviewed and adopted/.test(d.report)) prove.push("ASSURANCE_REPORT.md: the narratives' A2 provenance is missing");
-    if (!/No AI-worded text is presented as the author's independent composition/.test(d.readme)) prove.push("README.md: the provenance statement is missing");
+    for (const [w, t] of texts) prove.push(...presentationIssues(t, w));
+    if (!/original (?:review |wording )?provenance|original provenance/i.test(d.readme)) prove.push("README.md: no link between the current reading view and its original provenance record");
     if (!/CP5[^|\n]*superseded by Amendment A2/.test(d.readme) || !/superseded by Amendment A2/.test(d.cp5)) prove.push("CP5 is not recorded as superseded by Amendment A2");
     for (const [w, t] of [[DOCS.report, d.report], [DOCS.dashboard, d.dashboard], [DOCS.readme, d.readme]] as const) if (!/not an independent audit|The assessment is not independent|Not independent\./i.test(t)) prove.push(`${w}: does not state the assessment is not independent`);
-    add("every output carries its provenance label and says the assessment is not independent", prove, "labels present");
+    add("current reading views are neutral, retain the original provenance record and state the assessment is not independent", prove, "neutral presentation; original provenance retained");
   }
 
   // 13. the summary is plain and one page ----------------------------------------------------------
