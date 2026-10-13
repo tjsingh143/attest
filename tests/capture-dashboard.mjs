@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { chromium } from "playwright";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const out = join(root, ".presentation-captures");
+const out = join(root, "presentation-captures");
 await mkdir(out, { recursive: true });
 const source = await readFile(join(root, "dashboard", "index.html"));
 const browser = await chromium.launch({ headless: true });
